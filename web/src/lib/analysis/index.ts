@@ -18,6 +18,12 @@ export type {
   GuideRegion,
   Landmark,
 } from "./framing";
-export { createHandLandmarker, detectHands, disposeHandLandmarker, PIVOT_INDICES } from "./landmarks";
+export {
+  createHandLandmarker,
+  detectHands,
+  disposeHandLandmarker,
+  normalizeKeypoints,
+  PIVOT_INDICES,
+} from "./landmarks";
 export { analyzeCapture } from "./pipeline";
 export type { AnalysisStage, AnalyzeOptions, QualityReport } from "./pipeline";
