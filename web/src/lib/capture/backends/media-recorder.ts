@@ -80,6 +80,11 @@ export class MediaRecorderCapture implements CaptureBackend {
     };
   }
 
+  async preview(opts: CaptureOpts): Promise<MediaStream> {
+    this.stream ??= await this.acquireStream(opts);
+    return this.stream;
+  }
+
   async start(opts: CaptureOpts): Promise<void> {
     if (this.recorder) throw new CaptureError("not_recording", "Capture already in progress.");
 
@@ -92,7 +97,9 @@ export class MediaRecorderCapture implements CaptureBackend {
     }
     this.mimeType = mimeType;
 
-    this.stream = await this.acquireStream(opts);
+    // Reuse the viewfinder stream when preview() already acquired one;
+    // re-acquiring mid-session costs a visible camera restart.
+    this.stream ??= await this.acquireStream(opts);
     await this.onStreamAcquired(this.stream);
 
     this.recorder = new MediaRecorder(this.stream, { mimeType });
