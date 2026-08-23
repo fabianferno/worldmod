@@ -44,8 +44,13 @@ export type VideoCapture = {
   width: number;
   height: number;
   fps_nominal: number;
-  /** Measured, not assumed — thermal throttling makes these diverge mid-episode. */
-  fps_observed: number;
+  /**
+   * Measured, not assumed — thermal throttling makes these diverge mid-episode.
+   * Null where the platform cannot report it at signing time (Safari); the
+   * value is then derived from decoded PTS and lives outside the signed
+   * commitment, for the same reason CIDs do.
+   */
+  fps_observed: number | null;
   frame_timing: FrameTiming;
   /** Whatever lens we actually got. Safari will not reliably surface ultra-wide. */
   device_label: string | null;

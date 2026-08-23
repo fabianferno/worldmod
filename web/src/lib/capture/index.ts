@@ -1,0 +1,11 @@
+export { createCaptureBackend, isSecureCaptureContext } from "./factory";
+export type { CaptureFactoryOptions } from "./factory";
+export { classifyUserAgent, detectFrameTiming, negotiateMimeType, MIME_CANDIDATES } from "./detect";
+export { ImuRecorder, observedRate, requestMotionPermission } from "./imu";
+export type { AccelSource, ImuRecording, MotionPermission } from "./imu";
+export { decodeImuStream, encodeImuStream, imuStreamByteLength } from "./imu-codec";
+export type { ImuSample, ImuStream } from "./imu-codec";
+export { MockCapture } from "./backends/mock";
+export { MediaRecorderCapture } from "./backends/media-recorder";
+export { TrackProcessorCapture, supportsTrackProcessor } from "./backends/track-processor";
+export * from "./types";
