@@ -71,16 +71,16 @@ function Stat({
   note?: string;
 }) {
   return (
-    <div className="border-b border-white/10 py-2">
+    <div className="border-b border-line py-2">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-xs uppercase tracking-wide text-white/50">{label}</span>
+        <span className="text-xs uppercase tracking-wide text-muted">{label}</span>
         <span
           className={`font-mono text-sm tabular-nums ${warn ? "text-amber-400" : "text-white"}`}
         >
           {value}
         </span>
       </div>
-      {note ? <p className="mt-1 text-xs text-white/40">{note}</p> : null}
+      {note ? <p className="mt-1 text-xs text-subtle">{note}</p> : null}
     </div>
   );
 }
@@ -352,10 +352,10 @@ export default function CaptureClient() {
   const imuRate = capture?.imu.rateHzObserved ?? 0;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-neutral-950 text-white">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background text-foreground">
       <header className="px-5 pb-3 pt-6">
         <h1 className="text-lg font-semibold tracking-tight">Capture check</h1>
-        <p className="mt-1 text-sm text-white/50">
+        <p className="mt-1 text-sm text-muted">
           Tap once, mount the phone, and it records and scores a {EPISODE_MS / 1000}-second
           episode on its own.
         </p>
@@ -374,7 +374,7 @@ export default function CaptureClient() {
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${
                     option.bounty_id === bounty.bounty_id
                       ? "border-white/40 bg-white/10"
-                      : "border-white/15 text-white/60"
+                      : "border-white/15 text-muted"
                   }`}
                 >
                   {option.title}
@@ -383,14 +383,14 @@ export default function CaptureClient() {
             </div>
           ) : null}
 
-          <div className="rounded-xl border border-white/10 p-4">
+          <div className="rounded-xl border border-line p-4">
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="font-medium">{bounty.title}</h2>
               <span className="font-mono text-sm tabular-nums text-emerald-400">
                 ${bounty.per_episode_usdc.toFixed(2)}
               </span>
             </div>
-            <p className="mt-1 text-sm text-white/55">{bounty.task_spec}</p>
+            <p className="mt-1 text-sm text-muted">{bounty.task_spec}</p>
 
             {bounty.motion_policy === "require" ? (
               <p className="mt-2 text-xs text-amber-300/80">
@@ -424,7 +424,7 @@ export default function CaptureClient() {
         ) : null}
 
         {phase === "recording" ? (
-          <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-red-600/90 px-3 py-1">
+          <div className="interactive absolute left-3 top-3 flex items-center gap-2 rounded-full bg-red-600/90 px-3 py-1">
             <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
             <span className="font-mono text-xs tabular-nums">
               {(remainingMs / 1000).toFixed(1)}s
@@ -441,7 +441,7 @@ export default function CaptureClient() {
 
       <div className="px-5 py-4">
         {phase === "idle" ? (
-          <label className="mb-3 flex items-start gap-2.5 text-sm text-white/60">
+          <label className="mb-3 flex items-start gap-2.5 text-sm text-muted">
             <input
               type="checkbox"
               checked={shareLocation}
@@ -450,7 +450,7 @@ export default function CaptureClient() {
             />
             <span>
               Include a coarse location
-              <span className="block text-xs text-white/40">
+              <span className="block text-xs text-subtle">
                 Rounded to about 10km before it is recorded. Full precision never leaves
                 the phone.
               </span>
@@ -462,20 +462,20 @@ export default function CaptureClient() {
           <button
             onClick={begin}
             disabled={!secure}
-            className="w-full rounded-xl bg-white px-4 py-3.5 font-semibold text-neutral-950 disabled:opacity-40"
+            className="interactive w-full rounded-xl bg-white px-4 py-3.5 font-semibold text-neutral-950 disabled:opacity-40"
           >
             Start capture
           </button>
         ) : null}
 
         {phase === "preparing" ? (
-          <div className="rounded-xl border border-white/15 px-4 py-3.5 text-center text-sm font-medium">
+          <div className="interactive rounded-xl border border-white/15 px-4 py-3.5 text-center text-sm font-medium">
             Loading tracker…
           </div>
         ) : null}
 
         {phase === "countdown" || phase === "recording" ? (
-          <div className="rounded-xl border border-white/15 px-4 py-3.5 text-center text-sm text-white/60">
+          <div className="interactive rounded-xl border border-white/15 px-4 py-3.5 text-center text-sm text-muted">
             {phase === "countdown" ? "Starting automatically" : "Recording — stops on its own"}
           </div>
         ) : null}
@@ -483,7 +483,7 @@ export default function CaptureClient() {
         {phase === "done" || phase === "error" ? (
           <button
             onClick={again}
-            className="w-full rounded-xl border border-white/20 px-4 py-3.5 font-semibold"
+            className="interactive w-full rounded-xl border border-white/20 px-4 py-3.5 font-semibold"
           >
             Record another
           </button>
@@ -492,7 +492,7 @@ export default function CaptureClient() {
         {pending > 0 ? (
           <button
             onClick={retry}
-            className="mt-3 w-full rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-200"
+            className="interactive mt-3 w-full rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-200"
           >
             {pending} episode{pending === 1 ? "" : "s"} waiting to upload — retry
           </button>
@@ -533,7 +533,7 @@ export default function CaptureClient() {
               </ul>
             ) : null}
 
-            <p className="mt-2 truncate font-mono text-[10px] text-white/30">
+            <p className="mt-2 truncate font-mono text-[10px] text-subtle">
               {submitted.manifest_hash}
             </p>
           </div>
@@ -543,7 +543,7 @@ export default function CaptureClient() {
       {quality ? <QualityPanel report={quality} /> : null}
 
       <section className="px-5 pb-10">
-        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-white/40">
+        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">
           Device
         </h2>
         <Stat label="Platform" value={caps?.uaClass ?? "—"} />
@@ -562,7 +562,7 @@ export default function CaptureClient() {
 
         {capture ? (
           <>
-            <h2 className="mb-1 mt-6 text-xs font-semibold uppercase tracking-wide text-white/40">
+            <h2 className="mb-1 mt-6 text-xs font-semibold uppercase tracking-wide text-subtle">
               Last episode
             </h2>
             <Stat label="Duration" value={`${(capture.durationMs / 1000).toFixed(2)} s`} />

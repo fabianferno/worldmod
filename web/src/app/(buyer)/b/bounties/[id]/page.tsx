@@ -2,15 +2,128 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fileStore } from "@/lib/market/store";
 import { budgetBreakdown } from "@/lib/market/types";
+import type { StoredEpisode } from "@/lib/market/types";
 
 export const dynamic = "force-dynamic";
 
-function Row({ label, value }: { label: string; value: string }) {
+const pct = (v: number | null | undefined) =>
+  typeof v === "number" ? `${Math.round(v * 100)}%` : "—";
+
+const usd = (v: number) => `$${v.toFixed(2)}`;
+
+function Term({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-white/10 py-2">
-      <span className="text-xs uppercase tracking-wide text-white/50">{label}</span>
-      <span className="font-mono text-sm tabular-nums">{value}</span>
+    <div className="border-b border-line py-2.5 last:border-0">
+      <div className="flex items-baseline justify-between gap-4">
+        <dt className="text-sm text-muted">{label}</dt>
+        <dd className="tabular font-mono text-sm">{value}</dd>
+      </div>
+      {note ? <p className="mt-1 text-xs text-subtle">{note}</p> : null}
     </div>
+  );
+}
+
+/**
+ * One measurement with its bar. A buyer scans these to judge a batch, so the
+ * number and the bar sit together rather than the bar carrying it alone.
+ */
+function Score({ label, value }: { label: string; value: number | null }) {
+  const known = typeof value === "number";
+  const tone = !known
+    ? "bg-white/20"
+    : value >= 0.7
+      ? "bg-positive"
+      : value >= 0.4
+        ? "bg-caution"
+        : "bg-negative";
+
+  return (
+    <div className="min-w-24 flex-1">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-xs text-subtle">{label}</span>
+        <span className="tabular font-mono text-xs">{pct(value)}</span>
+      </div>
+      <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+        <div
+          className={`h-full rounded-full ${tone}`}
+          style={{ width: known ? `${Math.max(3, value * 100)}%` : "100%" }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function EpisodeRow({ episode }: { episode: StoredEpisode }) {
+  const verified =
+    episode.validation?.checks.manifest_intact && episode.validation?.checks.streams_intact;
+
+  return (
+    <li className="rounded-2xl border border-line bg-surface p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+        <span className="tabular font-mono text-xs text-muted">{episode.episode_id}</span>
+
+        <span
+          className={`rounded-md px-2 py-0.5 text-xs font-medium ${
+            episode.accepted
+              ? "bg-positive/15 text-positive"
+              : "bg-negative/15 text-negative"
+          }`}
+        >
+          {episode.accepted ? `Accepted · ${usd(episode.paid_usdc)}` : "Rejected"}
+        </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-3">
+        <Score label="Framing" value={episode.framing} />
+        <Score label="Motion match" value={episode.plausibility} />
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-subtle">
+        <span className="tabular">{episode.duration_s.toFixed(1)}s</span>
+        <span aria-hidden>·</span>
+        <span>{episode.ua_class.replace("_", " ")}</span>
+        <span aria-hidden>·</span>
+        <span>{episode.trust_level}</span>
+        {verified ? (
+          <>
+            <span aria-hidden>·</span>
+            {/* The distinction a buyer is actually paying for. */}
+            <span className="text-positive/80" title="Hashes recomputed from the uploaded bytes">
+              hashes verified
+            </span>
+          </>
+        ) : null}
+      </div>
+
+      {episode.reasons.length > 0 ? (
+        <ul className="mt-3 space-y-1 border-l-2 border-negative/30 pl-3 text-xs text-negative/85">
+          {episode.reasons.map((reason) => (
+            <li key={reason}>{reason}</li>
+          ))}
+        </ul>
+      ) : null}
+
+      {episode.accepted && episode.streams?.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {episode.streams.map((stream) => (
+            <a
+              key={stream.kind}
+              href={`/api/episodes/${episode.episode_id}/stream?kind=${stream.kind}`}
+              className="interactive rounded-lg border border-line px-2.5 py-1 text-xs font-medium hover:border-white/25 hover:text-accent"
+            >
+              {stream.kind === "rgb" ? "Video" : stream.kind.toUpperCase()}
+              <span className="ml-1.5 tabular text-subtle">
+                {(stream.bytes / 1_000_000).toFixed(1)}MB
+              </span>
+            </a>
+          ))}
+        </div>
+      ) : null}
+
+      <p className="mt-3 truncate font-mono text-[10px] text-subtle/70" title={episode.manifest_hash}>
+        {episode.manifest_hash}
+      </p>
+    </li>
   );
 }
 
@@ -24,104 +137,104 @@ export default async function BountyDetail({ params }: PageProps<"/b/bounties/[i
   const accepted = episodes.filter((e) => e.accepted);
   const paid = accepted.reduce((sum, e) => sum + e.paid_usdc, 0);
   const { allocated, balanced } = budgetBreakdown(bounty);
-
-  const pct = (v: number | null) => (v === null ? "—" : `${(v * 100).toFixed(0)}%`);
+  const progress = Math.min(1, accepted.length / bounty.min_episodes);
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8">
-      <Link href="/b/bounties" className="text-sm text-white/50 hover:text-white">
-        ← Bounties
+      <Link
+        href="/b/bounties"
+        className="interactive text-sm text-muted hover:text-foreground"
+      >
+        ← All bounties
       </Link>
 
-      <header className="mb-6 mt-3">
-        <h1 className="text-xl font-semibold tracking-tight">{bounty.title}</h1>
-        <p className="mt-2 text-sm text-white/60">{bounty.task_spec}</p>
+      <header className="mt-4">
+        <h1 className="text-2xl font-semibold">{bounty.title}</h1>
+        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">{bounty.task_spec}</p>
       </header>
 
+      <section className="mt-6 rounded-2xl border border-line bg-surface p-5">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm text-muted">Collected</p>
+            <p className="tabular mt-0.5 text-2xl font-semibold">
+              {accepted.length}
+              <span className="text-lg font-normal text-subtle"> / {bounty.min_episodes}</span>
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-muted">Paid out</p>
+            <p className="tabular mt-0.5 text-2xl font-semibold">{usd(paid)}</p>
+          </div>
+        </div>
+
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-accent" style={{ width: `${progress * 100}%` }} />
+        </div>
+      </section>
+
       {bounty.motion_policy === "allow_static" ? (
-        <p className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+        <p className="mt-4 rounded-2xl border border-caution/25 bg-caution/10 p-4 text-sm leading-relaxed text-caution">
           This is a seated task, so head motion is too small to verify captures against the
           gyroscope. Episodes here are accepted without that evidence and are the easiest in
-          the network to fake — priced and trusted accordingly.
+          the network to fake — price and trust them accordingly.
         </p>
       ) : null}
 
-      <section className="mb-6">
-        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-white/40">
-          Terms
-        </h2>
-        <Row label="Per episode" value={`$${bounty.per_episode_usdc.toFixed(2)}`} />
-        <Row label="Episodes wanted" value={String(bounty.min_episodes)} />
-        <Row label="Duration" value={`${bounty.duration_range_s[0]}–${bounty.duration_range_s[1]}s`} />
-        <Row label="Min framing" value={pct(bounty.min_framing)} />
-        <Row
-          label="Min plausibility"
-          value={bounty.motion_policy === "require" ? pct(bounty.min_plausibility) : "not required"}
-        />
-        <Row label="Min trust level" value={bounty.min_trust_level} />
-        <Row label="License" value={bounty.license} />
-        <Row
-          label="Budget"
-          value={`$${bounty.budget_usdc.toFixed(2)}${balanced ? "" : ` (allocates $${allocated.toFixed(2)})`}`}
-        />
-        <Row label="Paid so far" value={`$${paid.toFixed(2)}`} />
+      <section className="mt-6">
+        <h2 className="text-sm font-medium text-muted">Terms</h2>
+        <dl className="mt-2 rounded-2xl border border-line bg-surface px-4 py-1">
+          <Term label="Per episode" value={usd(bounty.per_episode_usdc)} />
+          <Term
+            label="Duration"
+            value={`${bounty.duration_range_s[0]}–${bounty.duration_range_s[1]}s`}
+          />
+          <Term label="Minimum framing" value={pct(bounty.min_framing)} />
+          <Term
+            label="Minimum motion match"
+            value={
+              bounty.motion_policy === "require" ? pct(bounty.min_plausibility) : "not required"
+            }
+          />
+          <Term label="Minimum trust level" value={bounty.min_trust_level} />
+          <Term label="Licence" value={bounty.license.replace(/_/g, " ")} />
+          <Term
+            label="Escrowed"
+            value={usd(bounty.budget_usdc)}
+            note={balanced ? undefined : `Allocations total ${usd(allocated)} — this does not balance.`}
+          />
+          <Term label="Utility pool" value={usd(bounty.utility_pool_usdc)} />
+        </dl>
       </section>
 
-      <section>
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/40">
-          Episodes ({accepted.length} accepted of {episodes.length})
-        </h2>
+      <section className="mt-6">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-sm font-medium text-muted">
+            Episodes <span className="tabular text-subtle">({episodes.length})</span>
+          </h2>
+          {accepted.length > 0 ? (
+            <span className="text-xs text-subtle">Downloads are licensed on acceptance</span>
+          ) : null}
+        </div>
 
         {episodes.length === 0 ? (
-          <p className="rounded-xl border border-white/10 p-6 text-center text-sm text-white/50">
-            No submissions yet.
-          </p>
+          <div className="mt-2 rounded-2xl border border-dashed border-line p-8 text-center">
+            <p className="text-sm font-medium">No submissions yet</p>
+            <p className="mx-auto mt-1 max-w-xs text-sm leading-relaxed text-subtle">
+              Contributors see this bounty as soon as they open the capture screen. Share the
+              link to reach more of them.
+            </p>
+            <Link
+              href="/c"
+              className="interactive mt-4 inline-block rounded-xl border border-line px-4 py-2 text-sm font-medium hover:border-white/25"
+            >
+              Record one yourself
+            </Link>
+          </div>
         ) : (
-          <ul className="space-y-2">
-            {episodes.map((e) => (
-              <li
-                key={e.episode_id}
-                className="rounded-xl border border-white/10 p-3.5"
-              >
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="font-mono text-xs text-white/60">{e.episode_id}</span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      e.accepted
-                        ? "bg-emerald-500/15 text-emerald-300"
-                        : "bg-red-500/15 text-red-300"
-                    }`}
-                  >
-                    {e.accepted ? `accepted · $${e.paid_usdc.toFixed(2)}` : "rejected"}
-                  </span>
-                </div>
-
-                <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/60">
-                  <span className="rounded bg-white/5 px-2 py-0.5">
-                    framing {pct(e.framing)}
-                  </span>
-                  <span className="rounded bg-white/5 px-2 py-0.5">
-                    plausibility {pct(e.plausibility)}
-                  </span>
-                  <span className="rounded bg-white/5 px-2 py-0.5">
-                    {e.duration_s.toFixed(1)}s
-                  </span>
-                  <span className="rounded bg-white/5 px-2 py-0.5">{e.trust_level}</span>
-                  <span className="rounded bg-white/5 px-2 py-0.5">{e.ua_class}</span>
-                </div>
-
-                {e.reasons.length > 0 ? (
-                  <ul className="mt-2 space-y-0.5 text-xs text-red-300/80">
-                    {e.reasons.map((reason) => (
-                      <li key={reason}>· {reason}</li>
-                    ))}
-                  </ul>
-                ) : null}
-
-                <p className="mt-2 truncate font-mono text-[10px] text-white/25">
-                  {e.manifest_hash}
-                </p>
-              </li>
+          <ul className="mt-2 space-y-2">
+            {episodes.map((episode) => (
+              <EpisodeRow key={episode.episode_id} episode={episode} />
             ))}
           </ul>
         )}

@@ -24,7 +24,7 @@ function Field({
   return (
     <label className="block py-3">
       <span className="text-sm font-medium">{label}</span>
-      {hint ? <span className="mt-0.5 block text-xs text-white/45">{hint}</span> : null}
+      {hint ? <span className="mt-0.5 block text-xs text-subtle">{hint}</span> : null}
       <div className="mt-2">{children}</div>
     </label>
   );
@@ -134,7 +134,7 @@ export function NewBountyForm() {
   return (
     <form onSubmit={submit}>
       <section>
-        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-white/40">Task</h2>
+        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">Task</h2>
 
         <Field label="Title">
           <input
@@ -169,7 +169,7 @@ export function NewBountyForm() {
                 className={`rounded-full border px-3 py-1.5 text-xs ${
                   modalities.includes(id)
                     ? "border-emerald-400/50 bg-emerald-500/15 text-emerald-200"
-                    : "border-white/15 text-white/60"
+                    : "border-white/15 text-muted"
                 }`}
               >
                 {label}
@@ -202,7 +202,7 @@ export function NewBountyForm() {
       </section>
 
       <section className="mt-4">
-        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-white/40">
+        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">
           Quality bar
         </h2>
 
@@ -243,11 +243,11 @@ export function NewBountyForm() {
                 type="button"
                 onClick={() => setMotionPolicy(option.value)}
                 className={`block w-full rounded-lg border p-3 text-left ${
-                  motionPolicy === option.value ? "border-white/40 bg-white/5" : "border-white/10"
+                  motionPolicy === option.value ? "border-white/40 bg-white/5" : "border-line"
                 }`}
               >
                 <span className="text-sm font-medium">{option.label}</span>
-                <span className="mt-0.5 block text-xs text-white/45">{option.note}</span>
+                <span className="mt-0.5 block text-xs text-subtle">{option.note}</span>
               </button>
             ))}
           </div>
@@ -268,7 +268,7 @@ export function NewBountyForm() {
       </section>
 
       <section className="mt-4">
-        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-white/40">Budget</h2>
+        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">Budget</h2>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Episodes wanted">
@@ -333,7 +333,7 @@ export function NewBountyForm() {
             <span className="text-sm font-medium">Total to escrow</span>
             <span className="font-mono text-xl tabular-nums">${budget.toFixed(2)}</span>
           </div>
-          <p className="mt-1 text-xs text-white/45">
+          <p className="mt-1 text-xs text-subtle">
             Derived from the allocations above, not entered separately — a bounty that promises
             more than it holds would run dry while paying contributors who had already done the
             work.
@@ -350,12 +350,12 @@ export function NewBountyForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="mt-5 w-full rounded-xl bg-white px-4 py-3.5 font-semibold text-neutral-950 disabled:opacity-40"
+        className="interactive mt-5 w-full rounded-xl bg-white px-4 py-3.5 font-semibold text-neutral-950 disabled:opacity-40"
       >
         {submitting ? "Posting…" : `Post bounty and escrow $${budget.toFixed(2)}`}
       </button>
 
-      <p className="mt-2 text-center text-xs text-white/35">
+      <p className="mt-2 text-center text-xs text-subtle">
         Testnet. No mainnet value moves.
       </p>
     </form>
