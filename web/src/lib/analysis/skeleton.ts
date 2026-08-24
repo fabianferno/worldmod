@@ -59,6 +59,13 @@ export interface SkeletonStyle {
   boneColor: string;
   jointColor: string;
   pivotColor: string;
+  /**
+   * Sizes are FRACTIONS of the surface's shorter edge, not pixels.
+   *
+   * Fixed pixel sizes looked correct on the live overlay and wrong on the
+   * review canvas, which is a 192px analysis frame scaled up roughly four
+   * times for display — the marks scaled with it and swamped the hand.
+   */
   boneWidth: number;
   jointRadius: number;
   pivotRadius: number;
@@ -68,9 +75,9 @@ export const DEFAULT_SKELETON_STYLE: SkeletonStyle = {
   boneColor: "rgba(56, 189, 248, 0.9)",
   jointColor: "rgba(255, 255, 255, 0.85)",
   pivotColor: "#f97316",
-  boneWidth: 2,
-  jointRadius: 2.5,
-  pivotRadius: 4.5,
+  boneWidth: 0.006,
+  jointRadius: 0.007,
+  pivotRadius: 0.013,
 };
 
 /**
@@ -92,7 +99,13 @@ export function drawHand(
   const x = (i: number) => hand[i].x * width;
   const y = (i: number) => hand[i].y * height;
 
-  ctx.lineWidth = style.boneWidth;
+  // Marks scale with the surface so the overlay reads the same at any size.
+  const unit = Math.min(width, height);
+  const boneWidth = style.boneWidth * unit;
+  const jointRadius = style.jointRadius * unit;
+  const pivotRadius = style.pivotRadius * unit;
+
+  ctx.lineWidth = boneWidth;
   ctx.strokeStyle = style.boneColor;
   ctx.lineCap = "round";
 
@@ -107,7 +120,7 @@ export function drawHand(
   ctx.fillStyle = style.jointColor;
   for (let i = 0; i < hand.length; i++) {
     ctx.beginPath();
-    ctx.arc(x(i), y(i), style.jointRadius, 0, Math.PI * 2);
+    ctx.arc(x(i), y(i), jointRadius, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -115,7 +128,7 @@ export function drawHand(
   for (const i of PIVOT_INDICES) {
     if (!hand[i]) continue;
     ctx.beginPath();
-    ctx.arc(x(i), y(i), style.pivotRadius, 0, Math.PI * 2);
+    ctx.arc(x(i), y(i), pivotRadius, 0, Math.PI * 2);
     ctx.fill();
   }
 }

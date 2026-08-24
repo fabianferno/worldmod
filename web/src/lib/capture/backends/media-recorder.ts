@@ -41,6 +41,17 @@ export class MediaRecorderCapture implements CaptureBackend {
   private t0 = 0;
   private stopTimer: ReturnType<typeof setTimeout> | null = null;
   private recorderError: Error | null = null;
+  /**
+   * Resolves once the recorder has emitted its final data.
+   *
+   * MediaRecorder.stop() flips state to "inactive" synchronously but
+   * delivers `dataavailable` asynchronously. Inferring completion from state
+   * meant that when the internal duration cap stopped the recorder and the
+   * caller stopped it a moment later, the second path saw "inactive", skipped
+   * waiting, and assembled a blob from an empty chunk list — observed on
+   * device as "Recording produced no data" on an otherwise good 15s take.
+   */
+  private finished: Promise<void> | null = null;
 
   get frameTiming(): FrameTiming {
     return "recorder_anchored";
@@ -118,6 +129,11 @@ export class MediaRecorderCapture implements CaptureBackend {
 
     this.imu = new ImuRecorder();
 
+    // Established before start so it cannot miss the event.
+    this.finished = new Promise<void>((resolve) => {
+      this.recorder!.addEventListener("stop", () => resolve(), { once: true });
+    });
+
     await new Promise<void>((resolve, reject) => {
       const rec = this.recorder!;
       rec.onstart = () => {
@@ -153,12 +169,10 @@ export class MediaRecorderCapture implements CaptureBackend {
 
     this.clearStopTimer();
 
-    if (recorder.state !== "inactive") {
-      await new Promise<void>((resolve) => {
-        recorder.addEventListener("stop", () => resolve(), { once: true });
-        recorder.stop();
-      });
-    }
+    // Stop if still running, then wait for the recorder's own completion
+    // regardless of who stopped it. State alone does not mean the data landed.
+    if (recorder.state !== "inactive") recorder.stop();
+    await this.finished;
 
     const imuRecording = imu.stop();
     const durationMs = performance.now() - this.t0;
@@ -285,6 +299,7 @@ export class MediaRecorderCapture implements CaptureBackend {
   }
 
   private reset(): void {
+    this.finished = null;
     this.recorder = null;
     this.imu = null;
     this.chunks = [];

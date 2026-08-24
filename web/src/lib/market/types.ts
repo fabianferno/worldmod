@@ -1,0 +1,108 @@
+/**
+ * Marketplace types.
+ *
+ * Follows product-spec §7 with two deliberate departures, both recorded in
+ * docs/superpowers/specs/2026-08-23-contributor-pwa-design.md §10:
+ *
+ *  1. A framing threshold sits alongside the plausibility threshold. The spec
+ *     only had the latter, but an authentic episode that never caught the
+ *     hands is useless training data, and the two failures are unrelated.
+ *  2. Plausibility carries an explicit MOTION POLICY. See below.
+ */
+
+/** Modalities a bounty can require. Mirrors product-spec §3.1. */
+export type Modality = "rgb" | "imu" | "audio" | "gps" | "orientation";
+
+export type TrustLevel = "self_reported" | "heuristic" | "attested" | "hardware";
+
+/**
+ * What to do when a capture has too little head motion to score plausibility.
+ *
+ * The flow-vs-gyro check needs the head to rotate. Seated desk tasks — typing
+ * being the clearest case — barely move it: a real keyboard capture measured
+ * 0.8 deg/s on device, well under the threshold where correlation means
+ * anything. Requiring plausibility on such a bounty would reject every honest
+ * submission, so the bounty states its position instead of the validator
+ * guessing.
+ *
+ *   "require"      — an unscorable episode is rejected. For tasks with real
+ *                    head movement, where a still capture is suspicious.
+ *   "allow_static" — an unscorable episode is accepted and marked as carrying
+ *                    no motion evidence. Honest for seated tasks, and weaker:
+ *                    these episodes are the easiest in the network to fake.
+ */
+export type MotionPolicy = "require" | "allow_static";
+
+export interface Bounty {
+  bounty_id: string;
+  title: string;
+  task_spec: string;
+  /** Stable identifier for the task, used to group episodes. */
+  task: string;
+  required_modalities: Modality[];
+  min_episodes: number;
+  duration_range_s: [number, number];
+  /** Minimum flow-vs-gyro correlation, 0–1. */
+  min_plausibility: number;
+  motion_policy: MotionPolicy;
+  /** Minimum share of frames with hands usefully framed, 0–1. */
+  min_framing: number;
+  min_trust_level: TrustLevel;
+  budget_usdc: number;
+  per_episode_usdc: number;
+  utility_pool_usdc: number;
+  validator_fee_usdc: number;
+  treasury_fee_usdc: number;
+  license: string;
+  deadline: number;
+  created_at: number;
+  status: "open" | "closed";
+}
+
+/** What a contributor submits after their episode is scored on-device. */
+export interface EpisodeSubmission {
+  episode_id: string;
+  bounty_id: string;
+  entity_id: string;
+  manifest_hash: string;
+  duration_s: number;
+  /** Null when the capture had too little motion to judge. */
+  plausibility: number | null;
+  framing: number | null;
+  trust_level: TrustLevel;
+  ua_class: string;
+  recorded_at: number;
+}
+
+export interface StoredEpisode extends EpisodeSubmission {
+  accepted: boolean;
+  reasons: string[];
+  /** Set when accepted, from the bounty's per-episode rate. */
+  paid_usdc: number;
+  received_at: number;
+}
+
+/**
+ * A bounty's money must add up.
+ *
+ * product-spec §7's example bounty spends its whole budget on per-episode
+ * payments plus the utility pool, leaving nothing for the validator and
+ * treasury that §13 allocates 5% each. One of the two is wrong; this makes the
+ * inconsistency impossible to commit.
+ */
+export function budgetBreakdown(bounty: Bounty): {
+  episodes: number;
+  allocated: number;
+  balanced: boolean;
+} {
+  const episodes = bounty.per_episode_usdc * bounty.min_episodes;
+  const allocated =
+    episodes + bounty.utility_pool_usdc + bounty.validator_fee_usdc + bounty.treasury_fee_usdc;
+
+  // Float arithmetic on currency; compare to the cent.
+  return {
+    episodes,
+    allocated,
+    balanced: Math.abs(allocated - bounty.budget_usdc) < 0.005,
+  };
+}
