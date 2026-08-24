@@ -67,6 +67,8 @@ function quality(overrides: Partial<QualityReport> = {}): QualityReport {
       perAxis: { yaw: null, pitch: null },
       pairs: 110,
       motionRmsDegPerSec: 0.8,
+      lagMs: null,
+      peakProminence: null,
     },
     framesAnalyzed: 118,
     hands: [],
