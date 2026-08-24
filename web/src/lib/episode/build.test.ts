@@ -70,6 +70,7 @@ function quality(overrides: Partial<QualityReport> = {}): QualityReport {
     hands: [],
     preview: null,
     stats: { sampledFrames: 118, detections: 59, droppedTicks: 4, meanDetectMs: 42 },
+    signature: ["1122334455667788", "99aabbccddeeff00"],
     backend: "webgl",
     ...overrides,
   };

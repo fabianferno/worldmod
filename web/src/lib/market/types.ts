@@ -33,6 +33,9 @@ export type TrustLevel = "self_reported" | "heuristic" | "attested" | "hardware"
  */
 export type MotionPolicy = "require" | "allow_static";
 
+/** Re-exported from the validator so the stored shape tracks what it emits. */
+export type { ValidationResult } from "@/lib/validator/validate";
+
 export interface Bounty {
   bounty_id: string;
   title: string;
@@ -72,6 +75,8 @@ export interface EpisodeSubmission {
   trust_level: TrustLevel;
   ua_class: string;
   recorded_at: number;
+  /** Perceptual signature, sealed in the manifest, for duplicate detection. */
+  signature?: string[];
 }
 
 export interface StoredEpisode extends EpisodeSubmission {
@@ -80,6 +85,10 @@ export interface StoredEpisode extends EpisodeSubmission {
   /** Set when accepted, from the bounty's per-episode rate. */
   paid_usdc: number;
   received_at: number;
+  /** What the server independently verified, rather than what the client said. */
+  validation?: import("@/lib/validator/validate").ValidationResult;
+  /** Where the verified bytes landed. Empty when none were uploaded. */
+  streams?: Array<{ kind: string; uri: string; bytes: number }>;
 }
 
 /**

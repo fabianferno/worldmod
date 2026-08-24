@@ -19,6 +19,7 @@ import type { ImuSample } from "@/lib/capture";
 import { plausibility, type FlowSample, type PlausibilityReport } from "./correlate";
 import { framingScore, type FrameHands, type FramingReport } from "./framing";
 import type { LiveStats } from "./live";
+import { episodeSignature } from "@/lib/validator/phash";
 
 export interface QualityReport {
   framing: FramingReport;
@@ -33,6 +34,8 @@ export interface QualityReport {
    */
   preview: { image: ImageData; hands: FrameHands } | null;
   stats: LiveStats;
+  /** Perceptual signature, for near-duplicate detection. */
+  signature: string[];
   backend: string;
 }
 
@@ -42,6 +45,7 @@ export interface FinalizeInput {
   imu: readonly ImuSample[];
   stats: LiveStats;
   preview: { image: ImageData; hands: FrameHands } | null;
+  frameHashes?: readonly string[];
 }
 
 export function finalizeQuality({
@@ -50,6 +54,7 @@ export function finalizeQuality({
   imu,
   stats,
   preview,
+  frameHashes,
 }: FinalizeInput): QualityReport {
   return {
     framing: framingScore(hands),
@@ -58,6 +63,7 @@ export function finalizeQuality({
     hands: [...hands],
     preview,
     stats,
+    signature: episodeSignature(frameHashes ?? []),
     backend: tf.getBackend(),
   };
 }
