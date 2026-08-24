@@ -159,7 +159,9 @@ export function Result({
             hint={
               quality.plausibility.verdict === "insufficient_motion"
                 ? "You barely moved your head, so there was nothing to check against. Not a problem for this task."
-                : "Whether what the camera saw matches how the phone moved."
+                : quality.plausibility.motionRmsDegPerSec < 10
+                  ? `Only ${quality.plausibility.motionRmsDegPerSec.toFixed(0)} deg/s of head movement — too little to confirm much. Walking and looking around scores far higher.`
+                  : "Whether what the camera saw matches how the phone moved."
             }
           />
         </div>
