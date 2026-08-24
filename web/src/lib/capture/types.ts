@@ -11,6 +11,7 @@
  */
 
 import type { FrameTiming, UaClass } from "@/lib/manifest";
+import type { CoarseLocation } from "./geo";
 import type { ImuRecording } from "./imu";
 
 export interface VideoDeviceInfo {
@@ -37,6 +38,12 @@ export interface CaptureOpts {
   audio: boolean;
   /** Prefer the widest available lens — partial mitigation for the FOV problem. */
   preferWidestLens?: boolean;
+  /**
+   * Record a coarse position. Off unless asked: product-spec §3.1 makes GPS
+   * opt-in, and a head-mounted camera plus a location is a far more
+   * sensitive record than either alone.
+   */
+  location?: boolean;
   deviceId?: string;
 }
 
@@ -82,6 +89,10 @@ export interface RawCapture {
   video: CapturedVideo;
   audio: CapturedAudio | null;
   imu: ImuRecording;
+  /** OS-fused attitude estimate, when the platform reported one. */
+  orientation: { count: number; absolute: boolean } | null;
+  /** Coarse position, only when the contributor opted in. */
+  location: CoarseLocation | null;
   startedAtEpochMs: number;
   durationMs: number;
   /**

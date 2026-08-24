@@ -15,11 +15,19 @@ export default async function BountiesPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8">
-      <header className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight">Bounties</h1>
-        <p className="mt-1 text-sm text-white/50">
-          Demand-first: a buyer describes what they need, contributors go and generate it.
-        </p>
+      <header className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Bounties</h1>
+          <p className="mt-1 text-sm text-white/50">
+            Demand-first: a buyer describes what they need, contributors go and generate it.
+          </p>
+        </div>
+        <Link
+          href="/b/bounties/new"
+          className="shrink-0 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-neutral-950"
+        >
+          Post a bounty
+        </Link>
       </header>
 
       <ul className="space-y-3">

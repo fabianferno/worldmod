@@ -101,9 +101,13 @@ export default function CaptureClient() {
   const [liveHands, setLiveHands] = useState<Landmark[][]>([]);
   const [remainingMs, setRemainingMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [bounties, setBounties] = useState<Bounty[]>([]);
   const [bounty, setBounty] = useState<Bounty | null>(null);
   const [submitted, setSubmitted] = useState<StoredEpisode | null>(null);
   const [pending, setPending] = useState(0);
+  // Off by default. product-spec §3.1 makes location opt-in, and a
+  // head-mounted camera plus a position is more sensitive than either alone.
+  const [shareLocation, setShareLocation] = useState(false);
 
   const secure = useSyncExternalStore(noSubscribe, secureSnapshot, secureServerSnapshot);
 
@@ -137,9 +141,14 @@ export default function CaptureClient() {
     fetch("/api/bounties")
       .then((r) => r.json())
       .then((data: { bounties: Bounty[] }) => {
-        setBounty(data.bounties.find((b) => b.status === "open") ?? null);
+        const open = data.bounties.filter((b) => b.status === "open");
+        setBounties(open);
+        setBounty(open[0] ?? null);
       })
-      .catch(() => setBounty(null));
+      .catch(() => {
+        setBounties([]);
+        setBounty(null);
+      });
 
     const timers = timersRef.current;
     return () => {
@@ -250,7 +259,11 @@ export default function CaptureClient() {
   /** Starts the recording itself. Never triggered by a button. */
   const beginRecording = useCallback(async () => {
     try {
-      await backendRef.current!.start({ maxDurationMs: EPISODE_MS, audio: true });
+      await backendRef.current!.start({
+        maxDurationMs: EPISODE_MS,
+        audio: true,
+        location: shareLocation,
+      });
       analyzerRef.current?.start();
       setPhase("recording");
       setRemainingMs(EPISODE_MS);
@@ -268,7 +281,7 @@ export default function CaptureClient() {
     } catch (err) {
       fail(err);
     }
-  }, [fail, finish]);
+  }, [fail, finish, shareLocation]);
 
   /**
    * The only tap in the flow. It exists because iOS refuses a motion
@@ -349,14 +362,43 @@ export default function CaptureClient() {
       </header>
 
       {bounty ? (
-        <section className="mx-5 mb-4 rounded-xl border border-white/10 p-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="font-medium">{bounty.title}</h2>
-            <span className="font-mono text-sm tabular-nums text-emerald-400">
-              ${bounty.per_episode_usdc.toFixed(2)}
-            </span>
+        <section className="mx-5 mb-4">
+          {/* Before recording the wearer chooses the task; afterwards the choice
+              is fixed, because the episode was scored against that bounty. */}
+          {phase === "idle" && bounties.length > 1 ? (
+            <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
+              {bounties.map((option) => (
+                <button
+                  key={option.bounty_id}
+                  onClick={() => setBounty(option)}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${
+                    option.bounty_id === bounty.bounty_id
+                      ? "border-white/40 bg-white/10"
+                      : "border-white/15 text-white/60"
+                  }`}
+                >
+                  {option.title}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="rounded-xl border border-white/10 p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="font-medium">{bounty.title}</h2>
+              <span className="font-mono text-sm tabular-nums text-emerald-400">
+                ${bounty.per_episode_usdc.toFixed(2)}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-white/55">{bounty.task_spec}</p>
+
+            {bounty.motion_policy === "require" ? (
+              <p className="mt-2 text-xs text-amber-300/80">
+                Needs real head movement — a still capture cannot be verified against
+                the gyroscope and will be rejected.
+              </p>
+            ) : null}
           </div>
-          <p className="mt-1 text-sm text-white/55">{bounty.task_spec}</p>
         </section>
       ) : null}
 
@@ -398,6 +440,24 @@ export default function CaptureClient() {
       </section>
 
       <div className="px-5 py-4">
+        {phase === "idle" ? (
+          <label className="mb-3 flex items-start gap-2.5 text-sm text-white/60">
+            <input
+              type="checkbox"
+              checked={shareLocation}
+              onChange={(e) => setShareLocation(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              Include a coarse location
+              <span className="block text-xs text-white/40">
+                Rounded to about 10km before it is recorded. Full precision never leaves
+                the phone.
+              </span>
+            </span>
+          </label>
+        ) : null}
+
         {phase === "idle" ? (
           <button
             onClick={begin}
