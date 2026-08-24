@@ -59,26 +59,23 @@ const DEFAULTS = {
 const BORDER_MARGIN = 6;
 
 /**
- * Grayscale straight from a video element, without ever leaving the GPU.
+ * Grayscale from an already-rasterised canvas, without a CPU readback.
  *
- * The alternative — drawImage into a canvas, getImageData, then upload the
- * pixels back — costs a synchronous GPU-to-CPU readback per frame, which
+ * getImageData is the expensive step — a synchronous GPU-to-CPU transfer that
  * flushes the rendering pipeline. Measured on an S24 while recording: 46 gaps
  * longer than 1.5x the frame interval and one 1330ms hole with no video at
  * all, in the middle of the motion the validator needs most.
+ *
+ * The canvas is the source rather than the video element on purpose. Android
+ * delivers a hardware-decoded video texture that fromPixels can read as empty
+ * without raising anything, which stops tracking silently; drawing through a
+ * canvas first is cheap and always rasterises.
  */
-export function grayscaleFromVideo(video: HTMLVideoElement, maxEdge: number): tf.Tensor4D {
+export function grayscaleFromCanvas(canvas: HTMLCanvasElement): tf.Tensor4D {
   return tf.tidy(() => {
-    const rgb = tf.browser.fromPixels(video);
-    const [height, width] = rgb.shape;
-
-    const scale = Math.min(1, maxEdge / Math.max(width, height));
-    const h = Math.max(2, Math.round(height * scale));
-    const w = Math.max(2, Math.round(width * scale));
-
-    const resized = tf.image.resizeBilinear(rgb, [h, w]);
+    const rgb = tf.browser.fromPixels(canvas);
     const weights = tf.tensor1d([0.299, 0.587, 0.114]);
-    return resized.div(255).mul(weights).sum(2).expandDims(0).expandDims(3) as tf.Tensor4D;
+    return rgb.div(255).mul(weights).sum(2).expandDims(0).expandDims(3) as tf.Tensor4D;
   });
 }
 

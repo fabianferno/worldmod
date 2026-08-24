@@ -98,6 +98,14 @@ export function Details({
               value={String(quality.stats.droppedTicks)}
               warn={quality.stats.droppedTicks > quality.stats.sampledFrames / 2}
             />
+            <Row
+              label="Analysis errors"
+              value={String(quality.stats.errors)}
+              warn={quality.stats.errors > 0}
+            />
+            {quality.stats.lastError ? (
+              <Row label="Last error" value={quality.stats.lastError} warn />
+            ) : null}
             <Row label="Backend" value={quality.backend} />
             <Row label="Trust level" value="heuristic" />
           </>
