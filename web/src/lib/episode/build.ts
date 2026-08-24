@@ -151,5 +151,9 @@ export function toSubmission(
     trust_level: "heuristic",
     ua_class: String((manifest.client as { ua_class?: string }).ua_class ?? "other"),
     recorded_at: Number(manifest.recorded_at),
+    hands_visible_percent: quality?.framing.visibilityPercent ?? null,
+    detections: quality?.stats.detections,
+    analysis_errors: quality?.stats.errors,
+    analysis_error: quality?.stats.lastError ?? null,
   };
 }

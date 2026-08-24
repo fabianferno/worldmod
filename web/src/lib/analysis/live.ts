@@ -23,12 +23,21 @@
  *    against a nominal 30, ~114 frames missing from a 15s take, and one 1330ms
  *    gap with no video at all — during the movement the validator most needs.
  *
- *    Reading the video element directly was tried and reverted. On Android the
- *    stream is hardware-decoded, and both tf.browser.fromPixels and the hand
- *    detector can take that texture as empty without raising anything: hand
- *    tracking simply stopped, silently. Frames are therefore rasterised into a
- *    small canvas — cheap, and it stays on the GPU — and everything reads from
- *    that canvas instead.
+    Two input paths, deliberately:
+ *
+ *      flow      reads the canvas as a GPU texture, no readback at all;
+ *      detection is handed ImageData, which is the input it demonstrably
+ *                works with on this device.
+ *
+ *    Reading the video element directly was tried and reverted — Android
+ *    delivers a hardware-decoded texture that can come back empty with nothing
+ *    raised. Passing the canvas to the detector was tried and also reverted:
+ *    flow kept working through the very same canvas (motion scored 75% on a
+ *    real take) while detection returned nothing, so the canvas was fine and
+ *    the detector's handling of it was not.
+ *
+ *    The readback therefore stays, but only on detection ticks — half as often
+ *    as the version whose stalls started all this.
  *
  * fps_observed in the manifest is what will show the cost honestly.
  */
@@ -187,15 +196,19 @@ export class LiveAnalyzer {
       this.sampled++;
       const index = this.tickIndex++;
 
-      // One rasterisation per tick. Everything below reads from this canvas
-      // rather than from the video element, which Android hands over as a
-      // hardware-decoded texture that silently reads empty.
+      // One rasterisation per tick; Android's video texture cannot be read
+      // directly, so everything downstream works from this canvas.
       ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height);
 
-      // The only CPU readback, and only occasionally.
-      if (index % this.opts.hashEvery === 0) this.hashFrame(t);
+      const detecting = index % this.opts.detectEvery === 0;
+      const hashing = index % this.opts.hashEvery === 0;
 
-      if (index % this.opts.detectEvery === 0) await this.detect(t);
+      // One readback shared by both consumers that need CPU pixels.
+      const image = detecting || hashing ? ctx.getImageData(0, 0, canvas.width, canvas.height) : null;
+
+      if (image && hashing) this.hashFrame(image, t);
+      if (image && detecting) await this.detect(image, t);
+
       await this.trackFlow(t);
     } catch (err) {
       // A single bad frame must never end the recording — but a run of them is
@@ -209,14 +222,9 @@ export class LiveAnalyzer {
     }
   }
 
-  /** Perceptual signature for duplicate detection; needs pixels on the CPU. */
-  private hashFrame(t: number): void {
-    const ctx = this.ctx;
-    const canvas = this.canvas;
-    if (!ctx || !canvas) return;
-
+  /** Perceptual signature for duplicate detection. */
+  private hashFrame(image: ImageData, t: number): void {
     try {
-      const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
       this.frameHashes.push(dHash(image));
       this.lastImage = { image, t };
     } catch {
@@ -224,26 +232,23 @@ export class LiveAnalyzer {
     }
   }
 
-  private async detect(t: number): Promise<void> {
+  private async detect(image: ImageData, t: number): Promise<void> {
     const detector = await createHandLandmarker();
     const started = performance.now();
 
-    // The canvas, not the video element — see the note at the top of the file.
-    const canvas = this.canvas!;
-    const found = await detector.estimateHands(canvas, { flipHorizontal: false });
+    // ImageData, not the canvas — see the note at the top of the file.
+    const found = await detector.estimateHands(image, { flipHorizontal: false });
     this.detectMsTotal += performance.now() - started;
     this.detections++;
 
-    const hands = found.map((h) => normalizeKeypoints(h.keypoints, canvas.width, canvas.height));
+    const hands = found.map((h) => normalizeKeypoints(h.keypoints, image.width, image.height));
     const frame: FrameHands = { t, hands };
     this.hands.push(frame);
 
     // Retaining a frame with hands means the review overlay can show why a
     // score came out as it did, rather than an arbitrary empty frame. It uses
     // the most recent hashed frame, since that is the only one on the CPU.
-    if (hands.some((h) => h.length > 0) && this.lastImage) {
-      this.preview = { image: this.lastImage.image, hands: frame };
-    }
+    if (hands.some((h) => h.length > 0)) this.preview = { image, hands: frame };
 
     this.opts.onHands?.(hands);
   }
