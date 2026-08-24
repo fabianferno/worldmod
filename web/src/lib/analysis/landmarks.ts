@@ -20,14 +20,10 @@
 
 import "@tensorflow/tfjs";
 import * as handPoseDetection from "@tensorflow-models/hand-pose-detection";
-import type { FrameHands, Landmark } from "./framing";
-import type { SampledFrame } from "./frames";
+import type { Landmark } from "./framing";
 
 const DETECTOR_URL = "/models/hand/detector/model.json";
 const LANDMARK_URL = "/models/hand/landmark/model.json";
-
-/** Wrist and knuckles — the joints a hand actually rotates about. */
-export const PIVOT_INDICES = [0, 1, 2, 5, 9, 13, 17] as const;
 
 type Detector = handPoseDetection.HandDetector;
 
@@ -64,37 +60,6 @@ export function normalizeKeypoints(
 ): Landmark[] {
   if (width <= 0 || height <= 0) return [];
   return keypoints.map(({ x, y }) => ({ x: x / width, y: y / height }));
-}
-
-export interface DetectOptions {
-  onProgress?: (done: number, total: number) => void;
-  signal?: AbortSignal;
-}
-
-export async function detectHands(
-  frames: readonly SampledFrame[],
-  options: DetectOptions = {},
-): Promise<FrameHands[]> {
-  if (frames.length === 0) return [];
-
-  const detector = await createHandLandmarker();
-  const out: FrameHands[] = [];
-
-  for (let i = 0; i < frames.length; i++) {
-    if (options.signal?.aborted) break;
-
-    const { t, image } = frames[i];
-    const detected = await detector.estimateHands(image, { flipHorizontal: false });
-
-    const hands: Landmark[][] = detected.map((hand) =>
-      normalizeKeypoints(hand.keypoints, image.width, image.height),
-    );
-
-    out.push({ t, hands });
-    options.onProgress?.(i + 1, frames.length);
-  }
-
-  return out;
 }
 
 /** Free the models. Called when leaving the capture flow. */

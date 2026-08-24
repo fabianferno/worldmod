@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { GUIDE_REGION, PIVOT_INDICES, type QualityReport } from "@/lib/analysis";
+import { drawHand, GUIDE_REGION, type QualityReport } from "@/lib/analysis";
 
 /**
  * A meter reads 0-100 only when there is something to measure. A verdict of
@@ -80,25 +80,7 @@ function PivotOverlay({ report }: { report: QualityReport }) {
     );
     ctx.setLineDash([]);
 
-    for (const hand of hands.hands) {
-      // Every joint, faint.
-      ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
-      for (const point of hand) {
-        ctx.beginPath();
-        ctx.arc(point.x * image.width, point.y * image.height, 1.6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Wrist and knuckles emphasised — the pivots the hand actually rotates about.
-      ctx.fillStyle = "#f97316";
-      for (const index of PIVOT_INDICES) {
-        const point = hand[index];
-        if (!point) continue;
-        ctx.beginPath();
-        ctx.arc(point.x * image.width, point.y * image.height, 3.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
+    for (const hand of hands.hands) drawHand(ctx, hand, image.width, image.height);
   }, [report]);
 
   if (!report.preview) return null;
@@ -158,8 +140,13 @@ export function QualityPanel({ report }: { report: QualityReport }) {
       <PivotOverlay report={report} />
 
       <p className="mt-3 text-xs text-white/30">
-        {report.framesAnalyzed} frames analysed in {(report.elapsedMs / 1000).toFixed(1)}s
-        on the {report.backend} backend. Scored on this device, before upload.
+        {report.framesAnalyzed} frames sampled live, {report.stats.detections} hand
+        detections at {report.stats.meanDetectMs.toFixed(0)}ms each on the {report.backend}
+        backend
+        {report.stats.droppedTicks > 0
+          ? `, ${report.stats.droppedTicks} ticks dropped to keep up`
+          : ""}
+        . Scored on this device during the take, before upload.
       </p>
     </section>
   );

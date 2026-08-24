@@ -43,15 +43,26 @@ export function detectFrameTiming(scope: object = globalThis): FrameTiming {
 /**
  * Pick the recording mime type the platform will actually honour.
  *
- * Safari records MP4/H.264; Chromium prefers WebM. The negotiated result goes
- * into the manifest rather than being assumed, per product-spec §3.1.
+ * **WebM is preferred over MP4, and the order matters.** Chromium reports
+ * video/mp4 as a supported recording type, but what it writes is a fragmented
+ * MP4 whose moov declares a duration of roughly zero. Verified on an S24
+ * Ultra: a 1MB, 8-second recording reported a sub-0.125s duration, seeking
+ * landed nowhere, and playback fired `ended` immediately without presenting a
+ * single frame — so on-device analysis got nothing to work with.
+ *
+ * Chromium's WebM output has none of those problems. Safari cannot record WebM
+ * at all, and its MP4 output is well-formed, so MP4 stays in the list below
+ * WebM as the path Safari will take.
+ *
+ * The negotiated result goes into the manifest rather than being assumed, per
+ * product-spec §3.1.
  */
 export const MIME_CANDIDATES = [
-  "video/mp4;codecs=avc1",
-  "video/mp4",
   "video/webm;codecs=vp9,opus",
   "video/webm;codecs=vp8,opus",
   "video/webm",
+  "video/mp4;codecs=avc1",
+  "video/mp4",
 ] as const;
 
 export function negotiateMimeType(

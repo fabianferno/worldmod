@@ -7,8 +7,6 @@ export type {
 } from "./correlate";
 export { estimateFlow, toGrayscale } from "./flow";
 export type { FlowEstimate, FlowOptions } from "./flow";
-export { extractFrames } from "./frames";
-export type { ExtractOptions, SampledFrame } from "./frames";
 export { framingScore, handInsideFraction, isInside, GUIDE_REGION } from "./framing";
 export type {
   FrameHands,
@@ -20,10 +18,18 @@ export type {
 } from "./framing";
 export {
   createHandLandmarker,
-  detectHands,
   disposeHandLandmarker,
   normalizeKeypoints,
-  PIVOT_INDICES,
 } from "./landmarks";
-export { analyzeCapture } from "./pipeline";
-export type { AnalysisStage, AnalyzeOptions, QualityReport } from "./pipeline";
+export { LiveAnalyzer } from "./live";
+export type { LiveAnalyzerOptions, LiveStats } from "./live";
+export {
+  drawHand,
+  DEFAULT_SKELETON_STYLE,
+  HAND_CONNECTIONS,
+  HAND_LANDMARK_COUNT,
+  PIVOT_INDICES,
+} from "./skeleton";
+export type { SkeletonStyle } from "./skeleton";
+export { finalizeQuality } from "./pipeline";
+export type { FinalizeInput, QualityReport } from "./pipeline";
