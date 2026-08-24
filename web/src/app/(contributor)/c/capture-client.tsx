@@ -198,6 +198,7 @@ export default function CaptureClient() {
             entityId: entityId(),
             assetId: "asset_phone",
             clientVersion: CLIENT_VERSION,
+            uaClass: caps?.uaClass ?? "other",
           });
 
           const response = await fetch("/api/episodes", {
@@ -219,7 +220,7 @@ export default function CaptureClient() {
     } finally {
       releaseWakeLock();
     }
-  }, [bounty, clearTimers, fail, releaseWakeLock]);
+  }, [bounty, caps, clearTimers, fail, releaseWakeLock]);
 
   /** Starts the recording itself. Never triggered by a button. */
   const beginRecording = useCallback(async () => {

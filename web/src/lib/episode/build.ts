@@ -13,6 +13,7 @@
 import type { QualityReport } from "@/lib/analysis";
 import type { RawCapture } from "@/lib/capture";
 import { encodeImuStream } from "@/lib/capture";
+import type { UaClass } from "@/lib/manifest";
 import {
   SCHEMA_VERSION,
   sealManifest,
@@ -31,6 +32,12 @@ export interface BuildEpisodeInput {
   entityId: string;
   assetId: string;
   clientVersion: string;
+  /**
+   * Detected platform. Recorded so downstream analysis can segment by it —
+   * a hardcoded value made every episode claim "other" regardless of the
+   * device, which is worse than omitting the field.
+   */
+  uaClass: UaClass;
 }
 
 /** Random, unguessable, and stable for one episode. */
@@ -42,7 +49,7 @@ export function newEpisodeId(): string {
 export async function buildEpisodeManifest(
   input: BuildEpisodeInput,
 ): Promise<SealedEpisodeManifest> {
-  const { capture, quality, bountyId, task, entityId, assetId, clientVersion } = input;
+  const { capture, quality, bountyId, task, entityId, assetId, clientVersion, uaClass } = input;
 
   const imuBytes = encodeImuStream(capture.imu.stream);
 
@@ -55,7 +62,7 @@ export async function buildEpisodeManifest(
     task,
     duration_s: Number((capture.durationMs / 1000).toFixed(3)),
     recorded_at: Math.floor(capture.startedAtEpochMs / 1000),
-    client: { type: "pwa", version: clientVersion, ua_class: "other" },
+    client: { type: "pwa", version: clientVersion, ua_class: uaClass },
     capture: {
       video: {
         codec: capture.video.mimeType,
