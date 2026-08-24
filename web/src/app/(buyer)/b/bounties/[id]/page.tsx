@@ -140,7 +140,7 @@ export default async function BountyDetail({ params }: PageProps<"/b/bounties/[i
   const progress = Math.min(1, accepted.length / bounty.min_episodes);
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-5 py-8">
+    <main className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-5 py-8">
       <Link
         href="/b/bounties"
         className="interactive text-sm text-muted hover:text-foreground"

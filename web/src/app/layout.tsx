@@ -55,10 +55,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <Nav />
-        <div id="main" className="flex flex-1 flex-col">
+        <div id="main" className="flex flex-1 flex-col overflow-hidden">
           {children}
         </div>
+        <Nav />
       </body>
     </html>
   );

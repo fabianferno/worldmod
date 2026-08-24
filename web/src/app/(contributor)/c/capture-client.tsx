@@ -21,23 +21,21 @@ import {
 import { buildEpisodeManifest, toSubmission } from "@/lib/episode/build";
 import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/episode/queue";
 import type { Bounty, StoredEpisode } from "@/lib/market/types";
+import { Details } from "./details";
 import { LiveOverlay } from "./overlay";
-import { QualityPanel } from "./quality";
+import { Result } from "./result";
 
-/** Episode length. product-spec §3 puts useful episodes at 10–30s. */
 const EPISODE_MS = 15_000;
-
-/** Time to get the phone mounted after the one tap the browser requires. */
 const COUNTDOWN_MS = 5_000;
-
 const CLIENT_VERSION = "0.1.0";
 
-/**
- * A pseudonymous contributor id, kept on the device.
- *
- * Stands in for the embedded wallet address until that lands. product-spec
- * §11 allows individuals to stay pseudonymous, and no PII goes on-chain.
- */
+type Phase = "idle" | "preparing" | "countdown" | "recording" | "done" | "error";
+
+const noSubscribe = () => () => {};
+const secureSnapshot = () => isSecureCaptureContext();
+const secureServerSnapshot = () => true;
+
+/** Pseudonymous, device-held. Stands in for the embedded wallet address. */
 function entityId(): string {
   const key = "worldmod.entity_id";
   try {
@@ -48,41 +46,8 @@ function entityId(): string {
     localStorage.setItem(key, id);
     return id;
   } catch {
-    // Private mode or blocked storage: a session-scoped id still works.
-    return "0x" + "0".repeat(40);
+    return `0x${"0".repeat(40)}`;
   }
-}
-
-type Phase = "idle" | "preparing" | "countdown" | "recording" | "done" | "error";
-
-const noSubscribe = () => () => {};
-const secureSnapshot = () => isSecureCaptureContext();
-const secureServerSnapshot = () => true;
-
-function Stat({
-  label,
-  value,
-  warn,
-  note,
-}: {
-  label: string;
-  value: string;
-  warn?: boolean;
-  note?: string;
-}) {
-  return (
-    <div className="border-b border-line py-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-xs uppercase tracking-wide text-muted">{label}</span>
-        <span
-          className={`font-mono text-sm tabular-nums ${warn ? "text-amber-400" : "text-white"}`}
-        >
-          {value}
-        </span>
-      </div>
-      {note ? <p className="mt-1 text-xs text-subtle">{note}</p> : null}
-    </div>
-  );
 }
 
 export default function CaptureClient() {
@@ -97,7 +62,6 @@ export default function CaptureClient() {
   const [motion, setMotion] = useState<MotionPermission | null>(null);
   const [capture, setCapture] = useState<Awaited<ReturnType<CaptureBackend["stop"]>> | null>(null);
   const [quality, setQuality] = useState<QualityReport | null>(null);
-  const [imuBytes, setImuBytes] = useState<number | null>(null);
   const [liveHands, setLiveHands] = useState<Landmark[][]>([]);
   const [remainingMs, setRemainingMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -105,8 +69,7 @@ export default function CaptureClient() {
   const [bounty, setBounty] = useState<Bounty | null>(null);
   const [submitted, setSubmitted] = useState<StoredEpisode | null>(null);
   const [pending, setPending] = useState(0);
-  // Off by default. product-spec §3.1 makes location opt-in, and a
-  // head-mounted camera plus a position is more sensitive than either alone.
+  const [earned, setEarned] = useState(0);
   const [shareLocation, setShareLocation] = useState(false);
 
   const secure = useSyncExternalStore(noSubscribe, secureSnapshot, secureServerSnapshot);
@@ -125,9 +88,26 @@ export default function CaptureClient() {
     try {
       wakeLockRef.current = await navigator.wakeLock?.request("screen");
     } catch {
-      // Unsupported or refused; capture still works, the screen may sleep.
+      // Unsupported or refused; capture works, the screen may just sleep.
     }
   }, []);
+
+  /** Everything this device has been paid, across bounties. */
+  const readEarnings = useCallback(async (): Promise<number> => {
+    const me = entityId();
+    const response = await fetch("/api/episodes");
+    const data = (await response.json()) as { episodes: StoredEpisode[] };
+    return data.episodes
+      .filter((e) => e.entity_id === me && e.accepted)
+      .reduce((sum, e) => sum + e.paid_usdc, 0);
+  }, []);
+
+  const refreshEarnings = useCallback(() => {
+    // Informational; failing to read a balance must never block a capture.
+    readEarnings()
+      .then(setEarned)
+      .catch(() => {});
+  }, [readEarnings]);
 
   useEffect(() => {
     const backend = createCaptureBackend();
@@ -135,8 +115,9 @@ export default function CaptureClient() {
     backend.probe().then(setCaps).catch(() => setCaps(null));
 
     listPending()
-      .then((queued) => setPending(queued.length))
+      .then((q) => setPending(q.length))
       .catch(() => setPending(0));
+    refreshEarnings();
 
     fetch("/api/bounties")
       .then((r) => r.json())
@@ -145,10 +126,7 @@ export default function CaptureClient() {
         setBounties(open);
         setBounty(open[0] ?? null);
       })
-      .catch(() => {
-        setBounties([]);
-        setBounty(null);
-      });
+      .catch(() => setBounties([]));
 
     const timers = timersRef.current;
     return () => {
@@ -157,7 +135,7 @@ export default function CaptureClient() {
       timers.forEach(clearTimeout);
       wakeLockRef.current?.release().catch(() => {});
     };
-  }, []);
+  }, [refreshEarnings]);
 
   useEffect(() => {
     const onVisible = () => {
@@ -177,7 +155,6 @@ export default function CaptureClient() {
     setPhase("error");
   }, []);
 
-  /** Ends the episode and scores it from what was gathered live. */
   const finish = useCallback(async () => {
     clearTimers();
     const live = analyzerRef.current?.stop() ?? null;
@@ -185,9 +162,7 @@ export default function CaptureClient() {
     try {
       const result = await backendRef.current!.stop();
       setCapture(result);
-      setImuBytes(encodeImuStream(result.imu.stream).byteLength);
 
-      // Everything was measured during the take; this is pure assembly.
       const report = live
         ? finalizeQuality({
             flow: live.flow,
@@ -201,9 +176,6 @@ export default function CaptureClient() {
       if (report) setQuality(report);
       setPhase("done");
 
-      // Seal and submit. The commitment covers the streams and the scores
-      // together, so a contributor cannot report one number here and another
-      // to the validator.
       if (bounty) {
         try {
           const manifest = await buildEpisodeManifest({
@@ -221,15 +193,15 @@ export default function CaptureClient() {
           const imuBlob = new Blob([encodeImuStream(result.imu.stream) as BlobPart], {
             type: "application/octet-stream",
           });
-
-          // Persisted before any network call: a dropped upload must cost a
-          // retry, not a take the wearer has already performed.
           const entry = {
             episode_id: submission.episode_id,
             manifest,
             submission,
             streams: { rgb: result.video.blob, imu: imuBlob },
           };
+
+          // Saved before the network is involved: a dropped upload costs a
+          // retry, never a take that has already been performed.
           await enqueueEpisode(entry);
           setPending((await listPending()).length);
 
@@ -240,12 +212,14 @@ export default function CaptureClient() {
             last_error: null,
           });
 
-          if (outcome.ok) setSubmitted(outcome.episode as StoredEpisode);
-          else setError(`${outcome.error ?? "Upload failed."} Saved for retry.`);
-
+          if (outcome.ok) {
+            setSubmitted(outcome.episode as StoredEpisode);
+            refreshEarnings();
+          } else {
+            setError(`${outcome.error ?? "Upload failed."} Saved — it will retry.`);
+          }
           setPending((await listPending()).length);
         } catch (err) {
-          // A failed submission must not lose a good recording.
           setError(err instanceof Error ? err.message : String(err));
         }
       }
@@ -254,9 +228,8 @@ export default function CaptureClient() {
     } finally {
       releaseWakeLock();
     }
-  }, [bounty, caps, clearTimers, fail, releaseWakeLock]);
+  }, [bounty, caps, clearTimers, fail, refreshEarnings, releaseWakeLock]);
 
-  /** Starts the recording itself. Never triggered by a button. */
   const beginRecording = useCallback(async () => {
     try {
       await backendRef.current!.start({
@@ -275,19 +248,13 @@ export default function CaptureClient() {
         if (left > 0) timersRef.current.push(setTimeout(tick, 100));
       };
       tick();
-
-      // The wearer cannot reach the screen, so the episode ends itself.
       timersRef.current.push(setTimeout(() => void finish(), EPISODE_MS));
     } catch (err) {
       fail(err);
     }
   }, [fail, finish, shareLocation]);
 
-  /**
-   * The only tap in the flow. It exists because iOS refuses a motion
-   * permission request outside a user gesture — not because someone wearing
-   * the phone could press anything afterwards.
-   */
+  /** The only tap in the flow — iOS refuses motion permission without a gesture. */
   const begin = useCallback(async () => {
     setError(null);
     setQuality(null);
@@ -309,7 +276,6 @@ export default function CaptureClient() {
 
       const analyzer = new LiveAnalyzer(videoRef.current!, { onHands: setLiveHands });
       analyzerRef.current = analyzer;
-      // Loading the model here keeps it out of the first seconds of the take.
       await analyzer.warmUp();
 
       setPhase("countdown");
@@ -328,13 +294,6 @@ export default function CaptureClient() {
     }
   }, [acquireWakeLock, beginRecording, fail]);
 
-  const retry = useCallback(async () => {
-    setError(null);
-    const { failed } = await flushQueue();
-    setPending((await listPending()).length);
-    if (failed > 0) setError(`${failed} episode(s) still queued.`);
-  }, []);
-
   const again = useCallback(() => {
     clearTimers();
     analyzerRef.current?.dispose();
@@ -349,265 +308,149 @@ export default function CaptureClient() {
     setPhase("idle");
   }, [clearTimers]);
 
-  const imuRate = capture?.imu.rateHzObserved ?? 0;
+  const retry = useCallback(async () => {
+    setError(null);
+    await flushQueue();
+    setPending((await listPending()).length);
+    refreshEarnings();
+  }, [refreshEarnings]);
+
+  const live = phase === "countdown" || phase === "recording";
+  const seconds = Math.ceil(remainingMs / 1000);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background text-foreground">
-      <header className="px-5 pb-3 pt-6">
-        <h1 className="text-lg font-semibold tracking-tight">Capture check</h1>
-        <p className="mt-1 text-sm text-muted">
-          Tap once, mount the phone, and it records and scores a {EPISODE_MS / 1000}-second
-          episode on its own.
-        </p>
+    <main className="relative flex flex-1 flex-col">
+      {/* Balance leads. This is an earning app, not an instrument. */}
+      <header className="flex items-center justify-between px-5 pt-4">
+        <div>
+          <p className="text-xs text-subtle">Earned</p>
+          <p className="tabular text-2xl font-semibold tracking-tight">${earned.toFixed(2)}</p>
+        </div>
+
+        {bounty ? (
+          <div className="text-right">
+            <p className="text-xs text-subtle">This task pays</p>
+            <p className="tabular text-2xl font-semibold tracking-tight text-positive">
+              ${bounty.per_episode_usdc.toFixed(2)}
+            </p>
+          </div>
+        ) : null}
       </header>
 
-      {bounty ? (
-        <section className="mx-5 mb-4">
-          {/* Before recording the wearer chooses the task; afterwards the choice
-              is fixed, because the episode was scored against that bounty. */}
-          {phase === "idle" && bounties.length > 1 ? (
-            <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
-              {bounties.map((option) => (
-                <button
-                  key={option.bounty_id}
-                  onClick={() => setBounty(option)}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${
-                    option.bounty_id === bounty.bounty_id
-                      ? "border-white/40 bg-white/10"
-                      : "border-white/15 text-muted"
-                  }`}
-                >
-                  {option.title}
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="rounded-xl border border-line p-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-medium">{bounty.title}</h2>
-              <span className="font-mono text-sm tabular-nums text-emerald-400">
-                ${bounty.per_episode_usdc.toFixed(2)}
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-muted">{bounty.task_spec}</p>
-
-            {bounty.motion_policy === "require" ? (
-              <p className="mt-2 text-xs text-amber-300/80">
-                Needs real head movement — a still capture cannot be verified against
-                the gyroscope and will be rejected.
-              </p>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-
       {!secure ? (
-        <p className="mx-5 mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
-          Not a secure context. Camera and motion sensors are unavailable — reach this page
-          over https, or over localhost.
+        <p className="mx-5 mt-4 rounded-2xl border border-caution/25 bg-caution/10 p-3 text-sm text-caution">
+          Camera and motion need a secure connection. Open this over https.
         </p>
       ) : null}
 
-      <section className="relative mx-5 aspect-[3/4] overflow-hidden rounded-xl bg-black">
+      {/* The viewfinder is the screen, not a card sitting on a page. */}
+      <section className="relative mt-4 flex-1 overflow-hidden bg-black">
         <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
+        <LiveOverlay hands={liveHands} guide={GUIDE_REGION} showGuide={live} />
 
-        <LiveOverlay hands={liveHands} guide={GUIDE_REGION} showGuide={phase !== "idle"} />
+        {phase === "idle" && bounty ? (
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-5 pt-20">
+            <h1 className="text-xl font-semibold">{bounty.title}</h1>
+            <p className="mt-1 max-w-prose text-sm leading-relaxed text-white/70">
+              {bounty.task_spec}
+            </p>
+          </div>
+        ) : null}
+
+        {phase === "preparing" ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+            <p className="text-sm text-white/70">Getting the tracker ready</p>
+          </div>
+        ) : null}
 
         {phase === "countdown" ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/45">
-            <span className="font-mono text-6xl font-semibold tabular-nums">
-              {Math.ceil(remainingMs / 1000)}
-            </span>
-            <span className="mt-2 text-sm text-white/70">Mount the phone</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55">
+            <span className="tabular text-7xl font-semibold">{seconds}</span>
+            <p className="mt-2 text-sm text-white/75">Get the phone on</p>
           </div>
         ) : null}
 
         {phase === "recording" ? (
-          <div className="interactive absolute left-3 top-3 flex items-center gap-2 rounded-full bg-red-600/90 px-3 py-1">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
-            <span className="font-mono text-xs tabular-nums">
-              {(remainingMs / 1000).toFixed(1)}s
-            </span>
-          </div>
-        ) : null}
-
-        {phase === "recording" && liveHands.length === 0 ? (
-          <span className="absolute inset-x-0 bottom-3 text-center text-xs font-medium text-amber-300">
-            no hands detected — tilt down
-          </span>
-        ) : null}
-      </section>
-
-      <div className="px-5 py-4">
-        {phase === "idle" ? (
-          <label className="mb-3 flex items-start gap-2.5 text-sm text-muted">
-            <input
-              type="checkbox"
-              checked={shareLocation}
-              onChange={(e) => setShareLocation(e.target.checked)}
-              className="mt-0.5"
-            />
-            <span>
-              Include a coarse location
-              <span className="block text-xs text-subtle">
-                Rounded to about 10km before it is recorded. Full precision never leaves
-                the phone.
-              </span>
-            </span>
-          </label>
-        ) : null}
-
-        {phase === "idle" ? (
-          <button
-            onClick={begin}
-            disabled={!secure}
-            className="interactive w-full rounded-xl bg-white px-4 py-3.5 font-semibold text-neutral-950 disabled:opacity-40"
-          >
-            Start capture
-          </button>
-        ) : null}
-
-        {phase === "preparing" ? (
-          <div className="interactive rounded-xl border border-white/15 px-4 py-3.5 text-center text-sm font-medium">
-            Loading tracker…
-          </div>
-        ) : null}
-
-        {phase === "countdown" || phase === "recording" ? (
-          <div className="interactive rounded-xl border border-white/15 px-4 py-3.5 text-center text-sm text-muted">
-            {phase === "countdown" ? "Starting automatically" : "Recording — stops on its own"}
-          </div>
+          <>
+            <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-negative" />
+              <span className="tabular font-mono text-sm">{seconds}s</span>
+            </div>
+            {liveHands.length === 0 ? (
+              <p className="absolute inset-x-0 bottom-5 text-center text-sm font-medium text-caution">
+                Tilt down — hands out of view
+              </p>
+            ) : null}
+          </>
         ) : null}
 
         {phase === "done" || phase === "error" ? (
-          <button
-            onClick={again}
-            className="interactive w-full rounded-xl border border-white/20 px-4 py-3.5 font-semibold"
-          >
-            Record another
-          </button>
+          <div className="absolute inset-0 overflow-y-auto bg-background/97 p-5 backdrop-blur">
+            <Result submitted={submitted} quality={quality} error={error} onAgain={again} />
+            {capture ? (
+              <Details capture={capture} caps={caps} motion={motion} quality={quality} />
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+
+      {/* Primary action sits in the thumb zone, above the tab bar. */}
+      <div className="px-5 pb-4 pt-4">
+        {phase === "idle" ? (
+          <>
+            {bounties.length > 1 ? (
+              <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+                {bounties.map((option) => (
+                  <button
+                    key={option.bounty_id}
+                    onClick={() => setBounty(option)}
+                    className={`interactive shrink-0 rounded-full border px-3.5 py-2 text-sm font-medium ${
+                      option.bounty_id === bounty?.bounty_id
+                        ? "border-white/35 bg-white/10"
+                        : "border-line text-muted"
+                    }`}
+                  >
+                    {option.title}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            <button
+              onClick={begin}
+              disabled={!secure}
+              className="interactive w-full rounded-2xl bg-foreground py-4 text-base font-semibold text-background disabled:opacity-40"
+            >
+              Start · {EPISODE_MS / 1000}s
+            </button>
+
+            <label className="mt-3 flex items-center justify-center gap-2 text-xs text-subtle">
+              <input
+                type="checkbox"
+                checked={shareLocation}
+                onChange={(e) => setShareLocation(e.target.checked)}
+              />
+              Include a coarse location, rounded to ~10km
+            </label>
+          </>
+        ) : null}
+
+        {live || phase === "preparing" ? (
+          <p className="py-4 text-center text-sm text-subtle">
+            {phase === "recording" ? "Stops on its own" : "Starting automatically"}
+          </p>
         ) : null}
 
         {pending > 0 ? (
           <button
             onClick={retry}
-            className="interactive mt-3 w-full rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-200"
+            className="interactive mt-3 w-full rounded-2xl border border-caution/40 bg-caution/10 py-3 text-sm font-medium text-caution"
           >
-            {pending} episode{pending === 1 ? "" : "s"} waiting to upload — retry
+            {pending} waiting to upload — retry
           </button>
         ) : null}
-
-        {error ? (
-          <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-            {error}
-          </p>
-        ) : null}
       </div>
-
-      {submitted ? (
-        <section className="mx-5 mb-2">
-          <div
-            className={`rounded-xl border p-4 ${
-              submitted.accepted
-                ? "border-emerald-500/30 bg-emerald-500/10"
-                : "border-red-500/30 bg-red-500/10"
-            }`}
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="font-medium">
-                {submitted.accepted ? "Episode accepted" : "Episode rejected"}
-              </span>
-              {submitted.accepted ? (
-                <span className="font-mono text-lg tabular-nums text-emerald-300">
-                  +${submitted.paid_usdc.toFixed(2)}
-                </span>
-              ) : null}
-            </div>
-
-            {submitted.reasons.length > 0 ? (
-              <ul className="mt-2 space-y-1 text-sm text-red-200/90">
-                {submitted.reasons.map((reason) => (
-                  <li key={reason}>· {reason}</li>
-                ))}
-              </ul>
-            ) : null}
-
-            <p className="mt-2 truncate font-mono text-[10px] text-subtle">
-              {submitted.manifest_hash}
-            </p>
-          </div>
-        </section>
-      ) : null}
-
-      {quality ? <QualityPanel report={quality} /> : null}
-
-      <section className="px-5 pb-10">
-        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">
-          Device
-        </h2>
-        <Stat label="Platform" value={caps?.uaClass ?? "—"} />
-        <Stat label="Frame timing" value={caps?.frameTiming ?? "—"} />
-        <Stat label="Recording format" value={caps?.mimeType ?? "unsupported"} />
-        <Stat label="Motion permission" value={motion ?? "not requested"} />
-        <Stat
-          label="Cameras"
-          value={caps ? String(caps.videoDevices.length) : "—"}
-          note={
-            caps && !caps.canSelectLens
-              ? "Lens selection unavailable — cannot opt into a wider field of view."
-              : undefined
-          }
-        />
-
-        {capture ? (
-          <>
-            <h2 className="mb-1 mt-6 text-xs font-semibold uppercase tracking-wide text-subtle">
-              Last episode
-            </h2>
-            <Stat label="Duration" value={`${(capture.durationMs / 1000).toFixed(2)} s`} />
-            <Stat label="Resolution" value={`${capture.video.width}×${capture.video.height}`} />
-            <Stat label="fps nominal" value={capture.video.fpsNominal.toFixed(1)} />
-            <Stat
-              label="fps observed"
-              value={
-                capture.video.fpsObserved === null
-                  ? "unknown"
-                  : capture.video.fpsObserved.toFixed(2)
-              }
-              warn={
-                capture.video.fpsObserved !== null &&
-                capture.video.fpsObserved < capture.video.fpsNominal * 0.8
-              }
-              note="Live tracking competes with the encoder; this is where that shows."
-            />
-            <Stat label="Frames" value={String(capture.video.frameCount)} />
-            <Stat
-              label="IMU rate"
-              value={`${imuRate.toFixed(1)} Hz`}
-              warn={imuRate > 0 && imuRate < 40}
-            />
-            <Stat label="IMU samples" value={String(capture.imu.samples)} />
-            <Stat label="Acceleration" value={capture.imu.accelSource} />
-            <Stat
-              label="Measured skew"
-              value={
-                capture.measuredSkewMs === null
-                  ? "unknown"
-                  : `${capture.measuredSkewMs.toFixed(1)} ms`
-              }
-            />
-            <Stat
-              label="Video size"
-              value={`${(capture.video.blob.size / 1_000_000).toFixed(2)} MB`}
-            />
-            <Stat
-              label="IMU stream size"
-              value={imuBytes === null ? "—" : `${(imuBytes / 1000).toFixed(1)} kB`}
-            />
-          </>
-        ) : null}
-      </section>
     </main>
   );
 }

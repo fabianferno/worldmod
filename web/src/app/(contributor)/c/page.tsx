@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import CaptureClient from "./capture-client";
 
 export const metadata: Metadata = {
-  title: "Capture check — World Mod",
-  description: "Record a head-mounted episode and read what the device actually delivered.",
+  title: "Capture — World Mod",
+  description: "Record a short episode, get it scored on your device, get paid.",
 };
 
 /**

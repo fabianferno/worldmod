@@ -4,7 +4,7 @@ export const metadata = { title: "Not found — World Mod" };
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6">
       <p className="font-mono text-sm text-subtle">404</p>
       <h1 className="mt-2 text-xl font-semibold">That page does not exist</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted">

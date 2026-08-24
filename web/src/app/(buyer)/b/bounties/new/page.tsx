@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function NewBountyPage() {
   return (
-    <main className="mx-auto w-full max-w-2xl px-5 py-8">
+    <main className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-5 py-8">
       <Link href="/b/bounties" className="text-sm text-muted hover:text-white">
         ← Bounties
       </Link>
