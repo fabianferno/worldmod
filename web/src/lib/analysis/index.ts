@@ -22,7 +22,7 @@ export {
   normalizeKeypoints,
 } from "./landmarks";
 export { LiveAnalyzer } from "./live";
-export type { LiveAnalyzerOptions, LiveStats } from "./live";
+export type { LiveOverlayOptions, OverlayStats } from "./live";
 export {
   drawHand,
   DEFAULT_SKELETON_STYLE,
@@ -31,5 +31,3 @@ export {
   PIVOT_INDICES,
 } from "./skeleton";
 export type { SkeletonStyle } from "./skeleton";
-export { finalizeQuality } from "./pipeline";
-export type { FinalizeInput, QualityReport } from "./pipeline";

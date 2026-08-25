@@ -89,7 +89,17 @@ export interface EpisodeSubmission {
   analysis_error?: string | null;
 }
 
+/**
+ * Scoring takes over a minute on a real episode, so an upload cannot wait on
+ * it. An episode arrives `scoring`, and becomes `scored` when the validator
+ * has finished and the acceptance decision has been made.
+ */
+export type EpisodeStatus = "scoring" | "scored" | "failed";
+
 export interface StoredEpisode extends EpisodeSubmission {
+  status: EpisodeStatus;
+  /** Why scoring failed, when it did. */
+  scoring_error?: string | null;
   accepted: boolean;
   reasons: string[];
   /** Set when accepted, from the bounty's per-episode rate. */

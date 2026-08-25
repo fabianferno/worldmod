@@ -22,11 +22,18 @@ export interface MarketStore {
   getBounty(id: string): Promise<Bounty | null>;
   createBounty(bounty: Bounty): Promise<Bounty>;
   listEpisodes(bountyId?: string): Promise<StoredEpisode[]>;
-  submitEpisode(
+  /** Record an upload that has not been scored yet. */
+  acceptUpload(
     submission: EpisodeSubmission,
-    validation?: StoredEpisode["validation"],
     streams?: StoredEpisode["streams"],
   ): Promise<StoredEpisode>;
+  /** Apply the validator's findings and make the acceptance decision. */
+  completeScoring(
+    episodeId: string,
+    submission: Partial<EpisodeSubmission>,
+    validation: StoredEpisode["validation"],
+  ): Promise<StoredEpisode | null>;
+  failScoring(episodeId: string, reason: string): Promise<void>;
 }
 
 interface Snapshot {
@@ -84,38 +91,80 @@ export const fileStore: MarketStore = {
     return bountyId ? episodes.filter((e) => e.bounty_id === bountyId) : episodes;
   },
 
-  async submitEpisode(submission, validation, streams) {
+  async acceptUpload(submission, streams) {
     return enqueue(async () => {
       const snapshot = await read();
       const bounty = snapshot.bounties.find((b) => b.bounty_id === submission.bounty_id);
       if (!bounty) throw new Error(`Unknown bounty ${submission.bounty_id}.`);
 
-      // Idempotent on episode_id: a retried upload must not pay twice.
+      // Idempotent on episode_id: a retried upload must not be scored, or
+      // paid, twice.
       const existing = snapshot.episodes.find((e) => e.episode_id === submission.episode_id);
       if (existing) return existing;
 
-      const decision = evaluateEpisode(bounty, submission);
-
-      // The validator's findings are gates in their own right: an episode that
-      // fails integrity or duplicates prior work is not payable regardless of
-      // how well it scored against the bounty's thresholds.
-      const failures = validation?.failures ?? [];
-      const reasons = [...decision.reasons, ...failures];
-      const accepted = decision.accepted && failures.length === 0;
-
       const stored: StoredEpisode = {
         ...submission,
-        accepted,
-        reasons,
-        paid_usdc: accepted ? decision.paid_usdc : 0,
+        status: "scoring",
+        accepted: false,
+        reasons: [],
+        paid_usdc: 0,
         received_at: Math.floor(Date.now() / 1000),
-        validation,
         streams,
       };
 
       snapshot.episodes = [stored, ...snapshot.episodes];
       await write(snapshot);
       return stored;
+    });
+  },
+
+  async completeScoring(episodeId, submission, validation) {
+    return enqueue(async () => {
+      const snapshot = await read();
+      const index = snapshot.episodes.findIndex((e) => e.episode_id === episodeId);
+      if (index < 0) return null;
+
+      const episode = { ...snapshot.episodes[index], ...submission };
+      const bounty = snapshot.bounties.find((b) => b.bounty_id === episode.bounty_id);
+      if (!bounty) return null;
+
+      const decision = evaluateEpisode(bounty, episode);
+
+      // The validator's findings are gates in their own right: an episode that
+      // fails integrity or duplicates prior work is not payable however well it
+      // scored against the bounty's thresholds.
+      const failures = validation?.failures ?? [];
+      const reasons = [...decision.reasons, ...failures];
+      const accepted = decision.accepted && failures.length === 0;
+
+      const scored: StoredEpisode = {
+        ...episode,
+        status: "scored",
+        accepted,
+        reasons,
+        paid_usdc: accepted ? decision.paid_usdc : 0,
+        validation,
+      };
+
+      snapshot.episodes[index] = scored;
+      await write(snapshot);
+      return scored;
+    });
+  },
+
+  async failScoring(episodeId, reason) {
+    await enqueue(async () => {
+      const snapshot = await read();
+      const index = snapshot.episodes.findIndex((e) => e.episode_id === episodeId);
+      if (index < 0) return;
+
+      snapshot.episodes[index] = {
+        ...snapshot.episodes[index],
+        status: "failed",
+        scoring_error: reason,
+        reasons: ["Scoring failed on the server; this episode was not judged."],
+      };
+      await write(snapshot);
     });
   },
 };

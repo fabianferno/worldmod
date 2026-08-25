@@ -10,7 +10,6 @@
  * See docs/superpowers/specs/2026-08-23-contributor-pwa-design.md §4.
  */
 
-import type { QualityReport } from "@/lib/analysis";
 import type { RawCapture } from "@/lib/capture";
 import { encodeImuStream } from "@/lib/capture";
 import type { UaClass } from "@/lib/manifest";
@@ -26,7 +25,6 @@ import type { EpisodeSubmission } from "@/lib/market/types";
 
 export interface BuildEpisodeInput {
   capture: RawCapture;
-  quality: QualityReport | null;
   bountyId: string;
   task: string;
   entityId: string;
@@ -49,7 +47,7 @@ export function newEpisodeId(): string {
 export async function buildEpisodeManifest(
   input: BuildEpisodeInput,
 ): Promise<SealedEpisodeManifest> {
-  const { capture, quality, bountyId, task, entityId, assetId, clientVersion, uaClass } = input;
+  const { capture, bountyId, task, entityId, assetId, clientVersion, uaClass } = input;
 
   const imuBytes = encodeImuStream(capture.imu.stream);
 
@@ -110,50 +108,29 @@ export async function buildEpisodeManifest(
     self_report: { task_completed: true, notes: "" },
   };
 
-  // Quality is measured on this device and travels with the manifest, so the
-  // scores are covered by the same commitment as the streams they describe.
-  if (quality) {
-    manifest.quality = {
-      framing_percent: quality.framing.percent,
-      framing_verdict: quality.framing.verdict,
-      plausibility_percent: quality.plausibility.percent,
-      plausibility_verdict: quality.plausibility.verdict,
-      motion_rms_deg_per_sec: Number(quality.plausibility.motionRmsDegPerSec.toFixed(3)),
-      frames_analyzed: quality.framesAnalyzed,
-      // Perceptual signature is sealed with everything else, so a
-      // near-duplicate cannot be disguised by rewriting it in transit.
-      signature: [...quality.signature],
-      // The MVP produces heuristic data and says so on every record, per
-      // product-spec §6.4. Nothing here is device-attested.
-      trust_level: "heuristic",
-    };
-  }
 
   return sealManifest(manifest);
 }
 
-/** The marketplace record derived from a sealed manifest. */
-export function toSubmission(
-  manifest: SealedEpisodeManifest,
-  quality: QualityReport | null,
-): EpisodeSubmission {
-  const asFraction = (percent: number | null | undefined) =>
-    typeof percent === "number" ? percent / 100 : null;
-
+/**
+ * The marketplace record derived from a sealed manifest.
+ *
+ * Scores are absent by construction. The device draws a skeleton so the wearer
+ * can fix their framing; what an episode is worth is measured on the server
+ * from the bytes that arrived, because a contributor owns their phone and a
+ * self-reported score is a claim rather than evidence.
+ */
+export function toSubmission(manifest: SealedEpisodeManifest): EpisodeSubmission {
   return {
     episode_id: String(manifest.episode_id),
     bounty_id: String(manifest.bounty_id),
     entity_id: String(manifest.entity_id),
     manifest_hash: manifest.manifest_hash,
     duration_s: Number(manifest.duration_s),
-    plausibility: asFraction(quality?.plausibility.percent),
-    framing: asFraction(quality?.framing.percent),
+    plausibility: null,
+    framing: null,
     trust_level: "heuristic",
     ua_class: String((manifest.client as { ua_class?: string }).ua_class ?? "other"),
     recorded_at: Number(manifest.recorded_at),
-    hands_visible_percent: quality?.framing.visibilityPercent ?? null,
-    detections: quality?.stats.detections,
-    analysis_errors: quality?.stats.errors,
-    analysis_error: quality?.stats.lastError ?? null,
   };
 }
