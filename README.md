@@ -47,37 +47,46 @@ cd trainer && python3 -m venv --system-site-packages .venv
 ## How an episode moves through the system
 
 ```
- phone                          server                        buyer
- ─────                          ──────                        ─────
- record 15s ──┐
-              ├─ hand landmarks ─→ framing score
-              └─ optical flow ────→ motion score
-                    │
-              seal manifest (JCS + SHA-256, scores inside the commitment)
-                    │
-              IndexedDB ──── retryable upload ────→ recompute every hash
-                                                    from the bytes received
-                                                          │
-                                                    duplicate check
-                                                          │
-                                                    accept / reject ──→ $0.60
-                                                          │
-                                                    licensed download
+ phone                              server                        buyer
+ ─────                              ──────                        ─────
+ record 15s
+   └─ hand landmarks → skeleton overlay only
+        │
+   seal manifest (JCS + SHA-256)
+        │
+   IndexedDB ─── retryable upload ──→ verify every hash from the
+                                      bytes received, or refuse
+                                            │
+                                      decode every frame
+                                      hands → framing
+                                      optical flow + gyro → motion
+                                      perceptual hash → duplicates
+                                            │
+                                      accept / reject ──→ $0.60
+                                            │
+                                      licensed download ──────────→ video
 ```
 
-The commitment is computed on the phone before any byte leaves it, and the
-server recomputes it from what actually arrived. The client scores its own
-episode so the wearer gets feedback during the take; that score is advisory,
-and the server verifies rather than trusts it.
+**The phone draws a skeleton and nothing else.** It used to score too, and the
+recordings showed the cost: 26.9fps against a nominal 30, and gaps up to 818ms
+landing during movement — the device was damaging the footage in order to grade
+it. A client-computed score was never authoritative anyway, since the
+contributor owns the phone.
+
+The commitment is still computed on the device before any byte leaves it, so
+§6.1's integrity claim holds. Everything that decides acceptance or payment is
+measured on the server from the bytes that arrived. Scoring takes about a
+minute, so an upload does not wait on it: episodes arrive `scoring` and the
+client polls.
 
 ## What works, and what is honestly not there yet
 
-**Working, verified on a device.** Capture on Android Chrome with live hand
-tracking and an overlay. On-device scoring. Sealed manifests with server-side
-re-verification. Near-duplicate detection. Marketplace with bounties, acceptance
-reasons and licensed download. Four contracts with 45 tests, including relayed
-submission so a contributor never needs gas. A world model and federated rounds
-over the real episodes.
+**Working, verified on a device.** Capture on Android Chrome with a live hand
+skeleton. Sealed manifests, verified server-side from the uploaded bytes.
+Server-side scoring across every frame, with near-duplicate detection.
+Marketplace with bounties, acceptance reasons and licensed download. Four
+contracts with 45 tests, including relayed submission so a contributor never
+needs gas. A world model and federated rounds over the real episodes.
 
 **Measured and not good enough yet.** The world model does not beat a
 "predict no change" baseline (0.85 against 0.67), and federated rounds do not
