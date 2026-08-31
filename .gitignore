@@ -1,0 +1,24 @@
+node_modules/
+
+# Next.js build output
+web/.next/
+
+# Dev TLS certificates (regenerated locally)
+web/certificates/
+
+# Vision runtime assets — fetched by `npm run setup:vision`, not committed.
+# The MediaPipe WASM bundle and hand landmarker model are ~42MB of binaries
+# that would be cloned by everyone forever.
+web/public/mediapipe/
+web/public/models/
+
+# Local marketplace store
+web/.data/
+
+# Third-party agent skills — install with:
+#   npx skills add Leonxlnx/taste-skill
+.agents/
+
+# Trainer output — regenerate with trainer/run.py
+web/public/model-results.json
+trainer/.venv/
