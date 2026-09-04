@@ -1,4 +1,5 @@
 import { explorerTx } from "@/lib/chain/config";
+import { Traces } from "./traces";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fileStore } from "@/lib/market/store";
@@ -105,6 +106,13 @@ function EpisodeRow({ episode }: { episode: StoredEpisode }) {
           </>
         ) : null}
       </div>
+
+      {episode.status === "scored" ? (
+        <Traces
+          episodeId={episode.episode_id}
+          correlation={episode.validation?.checks.flow_gyro_corr ?? null}
+        />
+      ) : null}
 
       {episode.reasons.length > 0 ? (
         <ul className="mt-3 space-y-1 border-l-2 border-negative/30 pl-3 text-xs text-negative/85">

@@ -28,7 +28,9 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import * as tf from "@tensorflow/tfjs";
 import {
+  alignedTraces,
   plausibility,
+  type AlignedTrace,
   type FlowSample,
   type PlausibilityReport,
 } from "@/lib/analysis/correlate";
@@ -68,6 +70,8 @@ const DETECT_EVERY = 3;
 export interface Scores {
   framing: FramingReport;
   plausibility: PlausibilityReport;
+  /** The two traces at the best lag, for §6.3's overlay. Empty when unpaired. */
+  traces: AlignedTrace[];
   signature: string[];
   framesAnalyzed: number;
   elapsedMs: number;
@@ -239,9 +243,14 @@ export async function scoreEpisode(
         .filter(Boolean),
     );
 
+    const report = plausibility(flow, imu);
+
     return {
       framing: framingScore(hands),
-      plausibility: plausibility(flow, imu),
+      plausibility: report,
+      // At the lag the correlator actually chose, so the picture matches the
+      // number rather than showing an unaligned pair beside a good score.
+      traces: report.lagMs === null ? [] : alignedTraces(flow, imu, report.lagMs),
       signature,
       framesAnalyzed: frames.length,
       elapsedMs: Date.now() - started,

@@ -161,6 +161,69 @@ export function motionRms(rates: ReadonlyArray<{ wx: number; wy: number }>): num
 }
 
 /** Correlation between flow and gyro at one candidate lag. */
+/**
+ * The two traces, aligned at a given lag, for showing side by side.
+ *
+ * product-spec §6.3 asks for the flow and gyro traces overlaid, and demo scene
+ * 3 turns on them visibly diverging for a replay. The correlation number is
+ * the claim; this is the evidence a viewer can check without trusting it.
+ *
+ * Each channel is scaled independently to [-1, 1]. They are in different units
+ * — flow in pixels per second, gyro in degrees per second — and no fixed
+ * conversion exists without the camera's focal length, which a browser does not
+ * expose. What the check measures is whether the two move *together*, so the
+ * chart shows shape and deliberately not magnitude.
+ */
+export interface AlignedTrace {
+  t: number;
+  flowYaw: number;
+  gyroYaw: number;
+  flowPitch: number;
+  gyroPitch: number;
+}
+
+export function alignedTraces(
+  flow: readonly FlowSample[],
+  imu: readonly ImuSample[],
+  lagMs: number,
+  maxPoints = 160,
+): AlignedTrace[] {
+  const gyro = gyroRatesOverIntervals(imu, flow, lagMs);
+
+  const rows: Array<{ t: number; u: number; v: number; wx: number; wy: number }> = [];
+  for (let i = 0; i < flow.length; i++) {
+    const g = gyro[i];
+    if (!g) continue;
+    rows.push({ t: flow[i].t0, u: flow[i].u, v: flow[i].v, wx: g.wx, wy: g.wy });
+  }
+  if (rows.length === 0) return [];
+
+  const norm = (values: number[]): number[] => {
+    const peak = Math.max(...values.map(Math.abs));
+    return peak > 0 ? values.map((v) => v / peak) : values.map(() => 0);
+  };
+
+  const flowYaw = norm(rows.map((r) => r.u));
+  const gyroYaw = norm(rows.map((r) => r.wy));
+  const flowPitch = norm(rows.map((r) => r.v));
+  const gyroPitch = norm(rows.map((r) => r.wx));
+
+  // Even stride rather than a head slice: a truncated trace would hide exactly
+  // the divergence at the end of a take that this is meant to reveal.
+  const stride = Math.max(1, Math.ceil(rows.length / maxPoints));
+  const out: AlignedTrace[] = [];
+  for (let i = 0; i < rows.length; i += stride) {
+    out.push({
+      t: Math.round(rows[i].t),
+      flowYaw: Number(flowYaw[i].toFixed(4)),
+      gyroYaw: Number(gyroYaw[i].toFixed(4)),
+      flowPitch: Number(flowPitch[i].toFixed(4)),
+      gyroPitch: Number(gyroPitch[i].toFixed(4)),
+    });
+  }
+  return out;
+}
+
 function scoreAtLag(
   flow: readonly FlowSample[],
   imu: readonly ImuSample[],

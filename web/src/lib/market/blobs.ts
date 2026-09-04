@@ -8,7 +8,7 @@
  */
 
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 export interface StoredStream {
@@ -93,4 +93,32 @@ export async function storeStream(
     bytes: bytes.byteLength,
     content_type: contentType,
   };
+}
+
+/**
+ * Store an episode's aligned flow/gyro traces.
+ *
+ * Kept beside the streams rather than inside market.json: the store is read
+ * and rewritten on every marketplace operation, and a hundred and sixty points
+ * per episode would turn a small index into a large one for data only one
+ * screen ever reads.
+ */
+export async function storeTraces(episodeId: string, traces: unknown): Promise<void> {
+  if (!/^ep_[0-9a-f]{8,64}$/.test(episodeId)) {
+    throw new Error(`Refusing to store under a malformed episode id: ${episodeId}`);
+  }
+  const dir = join(ROOT, episodeId);
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, "traces.json"), JSON.stringify(traces));
+}
+
+export async function readTraces(episodeId: string): Promise<unknown | null> {
+  if (!/^ep_[0-9a-f]{8,64}$/.test(episodeId)) return null;
+  const path = join(ROOT, episodeId, "traces.json");
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(await readFile(path, "utf8"));
+  } catch {
+    return null;
+  }
 }

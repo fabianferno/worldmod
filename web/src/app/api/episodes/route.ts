@@ -16,7 +16,7 @@
  * device. The server recomputes every hash on arrival and every score after.
  */
 
-import { storeStream } from "@/lib/market/blobs";
+import { storeStream, storeTraces } from "@/lib/market/blobs";
 import { fileStore } from "@/lib/market/store";
 import type { EpisodeSubmission } from "@/lib/market/types";
 import type { Manifest } from "@/lib/manifest";
@@ -90,6 +90,10 @@ async function scoreInBackground(
       },
       priorFingerprints: prior,
     });
+
+    // Written before the verdict so the overlay is there the moment the
+    // episode turns up as scored.
+    await storeTraces(episodeId, scores.traces).catch(() => {});
 
     await fileStore.completeScoring(
       episodeId,
