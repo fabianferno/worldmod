@@ -8,7 +8,9 @@
       "EntityRegistry": "0x5f73D8d846AC9E8d487072f7Bd09af5e4E5c8928",
       "AssetRegistry": "0xd167a52404E546FF1342faf91f6c097568039708",
       "EpisodeRegistry": "0xA5dB7Ad4BcCA2E2a189c257606c4B96AD32b563F",
-      "BountyEscrow": "0x0Be163d4795D77dC8CdB2cAedF08e213ADef27D6"
+      "BountyEscrow": "0x0Be163d4795D77dC8CdB2cAedF08e213ADef27D6",
+      "DatasetRegistry": "0x1df8feDf50394A9e0f78cb0EF8F187D587812cbB",
+      "FederatedRound": "0x65297C410B96C3604b0A41921e355B24E6cf782e"
     },
     "notes": [
       "USDC is Circle's real testnet token, not one we deployed.",

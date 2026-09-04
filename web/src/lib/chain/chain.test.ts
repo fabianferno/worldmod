@@ -118,5 +118,7 @@ describe("deployed addresses", () => {
     expect(ADDRESSES.assetRegistry).toBe(deployed.AssetRegistry);
     expect(ADDRESSES.episodeRegistry).toBe(deployed.EpisodeRegistry);
     expect(ADDRESSES.bountyEscrow).toBe(deployed.BountyEscrow);
+    expect(ADDRESSES.datasetRegistry).toBe(deployed.DatasetRegistry);
+    expect(ADDRESSES.federatedRound).toBe(deployed.FederatedRound);
   });
 });
