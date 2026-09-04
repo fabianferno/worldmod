@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { pearson, type FlowSample } from "@/lib/analysis/correlate";
 import { estimateFlow, toGrayscale } from "@/lib/analysis/flow";
 import { decodeImuStream, type ImuSample } from "@/lib/capture/imu-codec";
+import { resolveStreamPath } from "@/lib/market/blobs";
 
 /**
  * Diagnoses WHY the flow-vs-gyro check shows no separation on real episodes.
@@ -42,7 +43,7 @@ function episodeDirs(): string[] {
   if (!existsSync(EPISODES_DIR)) return [];
   return readdirSync(EPISODES_DIR)
     .map((name) => join(EPISODES_DIR, name))
-    .filter((dir) => existsSync(join(dir, "rgb.webm")) && existsSync(join(dir, "imu.bin")));
+    .filter((dir) => resolveStreamPath(dir, "rgb") !== null && existsSync(join(dir, "imu.bin")));
 }
 
 function extractFrames(path: string): { t: number; image: ImageData }[] {
@@ -150,7 +151,7 @@ describe.skipIf(!runnable)("flow-vs-gyro alignment sweep", () => {
 
     for (const dir of dirs.slice(0, 2)) {
       const id = dir.split("/").pop()!;
-      const frames = extractFrames(join(dir, "rgb.webm"));
+      const frames = extractFrames(resolveStreamPath(dir, "rgb")!);
       const imu = decodeImuStream(new Uint8Array(readFileSync(join(dir, "imu.bin")))).samples;
       episodes.push({ id, flow: await flowSeries(frames), imu });
     }

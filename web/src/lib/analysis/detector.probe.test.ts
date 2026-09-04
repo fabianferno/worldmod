@@ -4,6 +4,7 @@ import { join } from "node:path";
 import * as handPoseDetection from "@tensorflow-models/hand-pose-detection";
 import * as tf from "@tensorflow/tfjs";
 import { beforeAll, describe, expect, it } from "vitest";
+import { resolveStreamPath } from "@/lib/market/blobs";
 
 /**
  * Does the hand detector find hands in frames this phone actually recorded?
@@ -112,13 +113,13 @@ describe.skipIf(!runnable)("hand detector against real recorded frames", () => {
 
     const dirs = readdirSync(EPISODES_DIR)
       .map((n) => join(EPISODES_DIR, n))
-      .filter((d) => existsSync(join(d, "rgb.webm")));
+      .filter((d) => resolveStreamPath(d, "rgb") !== null);
 
     const rows: string[] = [];
 
     for (const dir of dirs) {
       const id = dir.split("/").pop()!;
-      const sampled = frames(join(dir, "rgb.webm"), 8);
+      const sampled = frames(resolveStreamPath(dir, "rgb")!, 8);
 
       let withHands = 0;
       let totalPoints = 0;

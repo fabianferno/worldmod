@@ -27,9 +27,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import * as tf from "@tensorflow/tfjs";
-import { plausibility, type FlowSample, type PlausibilityReport } from "@/lib/analysis/correlate";
+import {
+  plausibility,
+  type FlowSample,
+  type PlausibilityReport,
+} from "@/lib/analysis/correlate";
 import { estimateFlow, toGrayscale } from "@/lib/analysis/flow";
-import { framingScore, type FrameHands, type FramingReport } from "@/lib/analysis/framing";
+import {
+  framingScore,
+  type FrameHands,
+  type FramingReport,
+} from "@/lib/analysis/framing";
 import { decodeImuStream, type ImuSample } from "@/lib/capture/imu-codec";
 import { detectHandsServerSide } from "./detector";
 import { dHash, episodeSignature } from "./phash";
@@ -70,13 +78,45 @@ interface SampledFrame {
   image: ImageData;
 }
 
-async function probeSize(path: string): Promise<{ width: number; height: number }> {
+async function probeSize(
+  path: string,
+): Promise<{ width: number; height: number }> {
   const { stdout } = await run("ffprobe", [
-    "-v", "error", "-select_streams", "v:0",
-    "-show_entries", "stream=width,height", "-of", "csv=p=0", path,
+    "-v",
+    "error",
+    "-select_streams",
+    "v:0",
+    "-show_entries",
+    "stream=width,height",
+    "-of",
+    "csv=p=0",
+    path,
   ]);
   const [width, height] = stdout.trim().split(",").map(Number);
   return { width, height };
+}
+
+/**
+ * The container, sniffed from the bytes. ffmpeg probes content rather than
+ * extension so this changes no behaviour — it stops the temp file from
+ * claiming an iPhone's MP4 is WebM while anyone is debugging one.
+ */
+function containerExtension(video: Uint8Array): string {
+  // ISO-BMFF: a `ftyp` box at offset 4. Matroska/WebM: the EBML magic.
+  if (
+    video.length > 8 &&
+    String.fromCharCode(...video.subarray(4, 8)) === "ftyp"
+  )
+    return "mp4";
+  if (
+    video.length > 4 &&
+    video[0] === 0x1a &&
+    video[1] === 0x45 &&
+    video[2] === 0xdf &&
+    video[3] === 0xa3
+  )
+    return "webm";
+  return "bin";
 }
 
 async function extractFrames(path: string): Promise<SampledFrame[]> {
@@ -89,8 +129,21 @@ async function extractFrames(path: string): Promise<SampledFrame[]> {
 
   const { stdout } = await run(
     "ffmpeg",
-    ["-v", "error", "-i", path, "-vf", `fps=${SAMPLE_FPS},scale=${w}:${h}`,
-     "-frames:v", String(MAX_FRAMES), "-f", "rawvideo", "-pix_fmt", "rgba", "-"],
+    [
+      "-v",
+      "error",
+      "-i",
+      path,
+      "-vf",
+      `fps=${SAMPLE_FPS},scale=${w}:${h}`,
+      "-frames:v",
+      String(MAX_FRAMES),
+      "-f",
+      "rawvideo",
+      "-pix_fmt",
+      "rgba",
+      "-",
+    ],
     { maxBuffer: 512 * 1024 * 1024, encoding: "buffer" },
   );
 
@@ -143,10 +196,13 @@ async function flowSeries(frames: SampledFrame[]): Promise<FlowSample[]> {
  * Writes the video to a temp file because ffmpeg needs to seek, which it cannot
  * do on a pipe — the container's index lives at the end.
  */
-export async function scoreEpisode(video: Uint8Array, imuBytes: Uint8Array): Promise<Scores> {
+export async function scoreEpisode(
+  video: Uint8Array,
+  imuBytes: Uint8Array,
+): Promise<Scores> {
   const started = Date.now();
   const directory = await mkdtemp(join(tmpdir(), "worldmod-"));
-  const videoPath = join(directory, "episode.webm");
+  const videoPath = join(directory, `episode.${containerExtension(video)}`);
 
   try {
     await writeFile(videoPath, video);
@@ -172,13 +228,15 @@ export async function scoreEpisode(video: Uint8Array, imuBytes: Uint8Array): Pro
     const flow = await flowSeries(frames);
 
     const signature = episodeSignature(
-      frames.map((frame) => {
-        try {
-          return dHash(frame.image);
-        } catch {
-          return "";
-        }
-      }).filter(Boolean),
+      frames
+        .map((frame) => {
+          try {
+            return dHash(frame.image);
+          } catch {
+            return "";
+          }
+        })
+        .filter(Boolean),
     );
 
     return {

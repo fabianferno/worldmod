@@ -108,7 +108,7 @@ export interface StoredEpisode extends EpisodeSubmission {
   /** What the server independently verified, rather than what the client said. */
   validation?: import("@/lib/validator/validate").ValidationResult;
   /** Where the verified bytes landed. Empty when none were uploaded. */
-  streams?: Array<{ kind: string; uri: string; bytes: number }>;
+  streams?: Array<{ kind: string; uri: string; bytes: number; content_type?: string }>;
 }
 
 /**

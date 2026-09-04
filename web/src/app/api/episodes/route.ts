@@ -50,9 +50,15 @@ async function scoreInBackground(
   try {
     const video = streams.find((s) => s.kind === "rgb");
     const imu = streams.find((s) => s.kind === "imu");
-    if (!video) throw new Error("No video stream was uploaded, so nothing can be scored.");
+    if (!video)
+      throw new Error(
+        "No video stream was uploaded, so nothing can be scored.",
+      );
 
-    const scores = await scoreEpisode(video.bytes, imu?.bytes ?? new Uint8Array());
+    const scores = await scoreEpisode(
+      video.bytes,
+      imu?.bytes ?? new Uint8Array(),
+    );
 
     const prior: EpisodeFingerprint[] = (await fileStore.listEpisodes())
       .filter((e) => e.episode_id !== episodeId && e.signature?.length)
@@ -105,16 +111,22 @@ async function scoreInBackground(
     await fileStore.completeScoring(
       episodeId,
       {
-        framing: scores.framing.percent === null ? null : scores.framing.percent / 100,
+        framing:
+          scores.framing.percent === null ? null : scores.framing.percent / 100,
         plausibility:
-          scores.plausibility.percent === null ? null : scores.plausibility.percent / 100,
+          scores.plausibility.percent === null
+            ? null
+            : scores.plausibility.percent / 100,
         hands_visible_percent: scores.framing.visibilityPercent,
         signature: scores.signature,
       },
       validation,
     );
   } catch (err) {
-    await fileStore.failScoring(episodeId, err instanceof Error ? err.message : String(err));
+    await fileStore.failScoring(
+      episodeId,
+      err instanceof Error ? err.message : String(err),
+    );
   }
 }
 
@@ -122,7 +134,10 @@ export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.includes("multipart/form-data")) {
     return Response.json(
-      { error: "Episodes must be uploaded as multipart/form-data with their streams." },
+      {
+        error:
+          "Episodes must be uploaded as multipart/form-data with their streams.",
+      },
       { status: 400 },
     );
   }
@@ -132,7 +147,10 @@ export async function POST(request: Request) {
   const submissionRaw = form.get("submission");
 
   if (typeof manifestRaw !== "string" || typeof submissionRaw !== "string") {
-    return Response.json({ error: "manifest and submission fields are required." }, { status: 400 });
+    return Response.json(
+      { error: "manifest and submission fields are required." },
+      { status: 400 },
+    );
   }
 
   let manifest: Manifest;
@@ -141,24 +159,41 @@ export async function POST(request: Request) {
     manifest = JSON.parse(manifestRaw) as Manifest;
     submission = JSON.parse(submissionRaw) as EpisodeSubmission;
   } catch {
-    return Response.json({ error: "manifest or submission is not valid JSON." }, { status: 400 });
+    return Response.json(
+      { error: "manifest or submission is not valid JSON." },
+      { status: 400 },
+    );
   }
 
-  if (!submission.episode_id || !submission.bounty_id || !submission.manifest_hash) {
+  if (
+    !submission.episode_id ||
+    !submission.bounty_id ||
+    !submission.manifest_hash
+  ) {
     return Response.json(
       { error: "episode_id, bounty_id and manifest_hash are required." },
       { status: 400 },
     );
   }
   if (!/^0x[0-9a-f]{64}$/.test(submission.manifest_hash)) {
-    return Response.json({ error: "manifest_hash is not a SHA-256 digest." }, { status: 400 });
+    return Response.json(
+      { error: "manifest_hash is not a SHA-256 digest." },
+      { status: 400 },
+    );
   }
 
   const bounty = await fileStore.getBounty(submission.bounty_id);
-  if (!bounty) return Response.json({ error: "No such bounty." }, { status: 404 });
+  if (!bounty)
+    return Response.json({ error: "No such bounty." }, { status: 404 });
 
-  const declared = (manifest.streams ?? {}) as Record<string, { sha256: string }>;
+  const declared = (manifest.streams ?? {}) as Record<
+    string,
+    { sha256: string; content_type?: string }
+  >;
   const streams: StreamBytes[] = [];
+  // The container each stream was recorded in, as sealed in the manifest, so
+  // an MP4 from an iPhone is not later served as though it were WebM.
+  const containers = new Map<string, string | undefined>();
   let total = 0;
 
   for (const [kind, meta] of Object.entries(declared)) {
@@ -167,13 +202,24 @@ export async function POST(request: Request) {
 
     total += part.size;
     if (total > MAX_UPLOAD_BYTES) {
-      return Response.json({ error: "Upload exceeds the size limit." }, { status: 413 });
+      return Response.json(
+        { error: "Upload exceeds the size limit." },
+        { status: 413 },
+      );
     }
-    streams.push({ kind, sha256: meta.sha256, bytes: new Uint8Array(await part.arrayBuffer()) });
+    streams.push({
+      kind,
+      sha256: meta.sha256,
+      bytes: new Uint8Array(await part.arrayBuffer()),
+    });
+    containers.set(kind, meta.content_type);
   }
 
   if (streams.length === 0) {
-    return Response.json({ error: "No stream bytes were uploaded." }, { status: 400 });
+    return Response.json(
+      { error: "No stream bytes were uploaded." },
+      { status: 400 },
+    );
   }
 
   // Integrity is checked before anything is stored: bytes that do not match
@@ -194,11 +240,21 @@ export async function POST(request: Request) {
 
   const stored = [];
   for (const stream of streams) {
-    stored.push(await storeStream(submission.episode_id, stream.kind, stream.bytes));
+    stored.push(
+      await storeStream(
+        submission.episode_id,
+        stream.kind,
+        stream.bytes,
+        containers.get(stream.kind),
+      ),
+    );
   }
 
   try {
-    const episode = await fileStore.acceptUpload({ ...submission, signature: [] }, stored);
+    const episode = await fileStore.acceptUpload(
+      { ...submission, signature: [] },
+      stored,
+    );
 
     // Fire and forget: the wearer gets their phone back, and the result appears
     // when the validator is done.

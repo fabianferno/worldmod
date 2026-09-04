@@ -62,10 +62,13 @@ def load_episodes(data_dir: Path) -> list[Episode]:
 
     episodes: list[Episode] = []
     for directory in sorted((data_dir / "episodes").iterdir()):
-        video = directory / "rgb.webm"
+        # The container varies by device — Safari records MP4, Chromium WebM —
+        # so match on the stream name and take whatever extension it landed in.
+        videos = sorted(directory.glob("rgb.*"))
         imu_path = directory / "imu.bin"
-        if not (video.exists() and imu_path.exists()):
+        if not (videos and imu_path.exists()):
             continue
+        video = videos[0]
 
         record = records.get(directory.name, {})
         episodes.append(

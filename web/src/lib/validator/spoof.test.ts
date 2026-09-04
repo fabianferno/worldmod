@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { plausibility, type FlowSample } from "@/lib/analysis/correlate";
 import { estimateFlow, toGrayscale } from "@/lib/analysis/flow";
 import { decodeImuStream, type ImuSample } from "@/lib/capture/imu-codec";
+import { resolveStreamPath } from "@/lib/market/blobs";
 
 /**
  * Separation test for the flow-vs-gyro check, against real recorded episodes.
@@ -52,7 +53,7 @@ function episodeDirs(): string[] {
   if (!existsSync(EPISODES_DIR)) return [];
   return readdirSync(EPISODES_DIR)
     .map((name) => join(EPISODES_DIR, name))
-    .filter((dir) => existsSync(join(dir, "rgb.webm")) && existsSync(join(dir, "imu.bin")));
+    .filter((dir) => resolveStreamPath(dir, "rgb") !== null && existsSync(join(dir, "imu.bin")));
 }
 
 function probeSize(path: string): { width: number; height: number } {
@@ -142,7 +143,7 @@ describe.skipIf(!runnable)("flow-vs-gyro separation on recorded episodes", () =>
 
     for (const dir of dirs.slice(0, 3)) {
       const id = dir.split("/").pop()!;
-      const frames = extractFrames(join(dir, "rgb.webm"));
+      const frames = extractFrames(resolveStreamPath(dir, "rgb")!);
       const imu = decodeImuStream(new Uint8Array(readFileSync(join(dir, "imu.bin")))).samples;
       episodes.push({ id, frames, imu });
       flows.set(id, await flowSeries(frames));

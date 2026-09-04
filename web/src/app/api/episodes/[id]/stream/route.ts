@@ -14,20 +14,33 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
+import { extensionFor } from "@/lib/market/blobs";
 import { fileStore } from "@/lib/market/store";
 
-const CONTENT_TYPES: Record<string, string> = {
+/**
+ * Last resort only. The container is recorded per episode at upload time,
+ * because it varies by device — Safari records MP4, Chromium WebM — and
+ * serving one as the other hands a buyer a file their tools will not open.
+ * These defaults apply only to episodes stored before that was recorded.
+ */
+const FALLBACK_CONTENT_TYPES: Record<string, string> = {
   rgb: "video/webm",
   imu: "application/octet-stream",
   audio: "audio/webm",
 };
 
-export async function GET(request: Request, ctx: RouteContext<"/api/episodes/[id]/stream">) {
+export async function GET(
+  request: Request,
+  ctx: RouteContext<"/api/episodes/[id]/stream">,
+) {
   const { id } = await ctx.params;
   const kind = new URL(request.url).searchParams.get("kind") ?? "rgb";
 
-  const episode = (await fileStore.listEpisodes()).find((e) => e.episode_id === id);
-  if (!episode) return Response.json({ error: "No such episode." }, { status: 404 });
+  const episode = (await fileStore.listEpisodes()).find(
+    (e) => e.episode_id === id,
+  );
+  if (!episode)
+    return Response.json({ error: "No such episode." }, { status: 404 });
 
   if (!episode.accepted) {
     return Response.json(
@@ -38,7 +51,10 @@ export async function GET(request: Request, ctx: RouteContext<"/api/episodes/[id
 
   const stream = episode.streams?.find((s) => s.kind === kind);
   if (!stream) {
-    return Response.json({ error: `Episode has no ${kind} stream.` }, { status: 404 });
+    return Response.json(
+      { error: `Episode has no ${kind} stream.` },
+      { status: 404 },
+    );
   }
 
   // The store records a file:// URI; resolve it rather than concatenating
@@ -47,23 +63,34 @@ export async function GET(request: Request, ctx: RouteContext<"/api/episodes/[id
   try {
     path = fileURLToPath(stream.uri);
   } catch {
-    return Response.json({ error: "Stream is not locally readable." }, { status: 404 });
+    return Response.json(
+      { error: "Stream is not locally readable." },
+      { status: 404 },
+    );
   }
 
   try {
     const info = await stat(path);
     const body = Readable.toWeb(createReadStream(path)) as ReadableStream;
 
+    const contentType =
+      stream.content_type ??
+      FALLBACK_CONTENT_TYPES[kind] ??
+      "application/octet-stream";
+
     return new Response(body, {
       headers: {
-        "content-type": CONTENT_TYPES[kind] ?? "application/octet-stream",
+        "content-type": contentType,
         "content-length": String(info.size),
-        "content-disposition": `attachment; filename="${id}-${kind}"`,
+        "content-disposition": `attachment; filename="${id}-${kind}.${extensionFor(contentType)}"`,
         // Licensed data must never be cached by a shared proxy.
         "cache-control": "private, no-store",
       },
     });
   } catch {
-    return Response.json({ error: "Stream bytes are missing on disk." }, { status: 410 });
+    return Response.json(
+      { error: "Stream bytes are missing on disk." },
+      { status: 410 },
+    );
   }
 }

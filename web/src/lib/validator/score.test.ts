@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { scoreEpisode } from "./score";
+import { resolveStreamPath } from "@/lib/market/blobs";
 
 /**
  * The server scorer, against episodes the phone actually recorded.
@@ -27,14 +28,14 @@ function runnable(): boolean {
 const dirs = runnable()
   ? readdirSync(EPISODES)
       .map((n) => join(EPISODES, n))
-      .filter((d) => existsSync(join(d, "rgb.webm")) && existsSync(join(d, "imu.bin")))
+      .filter((d) => resolveStreamPath(d, "rgb") !== null && existsSync(join(d, "imu.bin")))
   : [];
 
 describe.skipIf(dirs.length === 0)("server-side scoring", () => {
   it("scores a real episode from its uploaded bytes", async () => {
     const directory = dirs[0];
     const scores = await scoreEpisode(
-      new Uint8Array(readFileSync(join(directory, "rgb.webm"))),
+      new Uint8Array(readFileSync(resolveStreamPath(directory, "rgb")!)),
       new Uint8Array(readFileSync(join(directory, "imu.bin"))),
     );
 
@@ -65,7 +66,7 @@ describe.skipIf(dirs.length === 0)("server-side scoring", () => {
     // A corrupt motion stream must cost the motion check, not the whole run.
     const directory = dirs[0];
     const scores = await scoreEpisode(
-      new Uint8Array(readFileSync(join(directory, "rgb.webm"))),
+      new Uint8Array(readFileSync(resolveStreamPath(directory, "rgb")!)),
       new Uint8Array(),
     );
 
