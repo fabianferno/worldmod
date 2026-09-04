@@ -48,6 +48,15 @@ export interface ValidationResult {
   plausibility_score: number;
   checks: ValidationChecks;
   trust_level: TrustLevel;
+  /**
+   * Who scored it. product-spec §5's manifest carries this and §6.1 rests on
+   * it: "a specific wallet submitted a specific manifest" is only half the
+   * claim if the result cannot be traced to a validator either.
+   *
+   * Null where no validator identity is configured, which is honest — the
+   * alternative is naming one that did not sign anything.
+   */
+  validator: string | null;
   /** Reasons the episode cannot be trusted or used, in plain language. */
   failures: string[];
 }
@@ -83,6 +92,8 @@ export interface ValidateInput {
   durationRangeS: readonly [number, number];
   fingerprint?: EpisodeFingerprint;
   priorFingerprints?: readonly EpisodeFingerprint[];
+  /** The address recording this result, when the chain is configured. */
+  validator?: string | null;
 }
 
 /** Recompute the manifest hash from what arrived and compare. */
@@ -192,6 +203,7 @@ export async function validateEpisode(input: ValidateInput): Promise<ValidationR
     checks,
     // Every rung above this needs hardware attestation the web cannot reach.
     trust_level: "heuristic",
+    validator: input.validator ?? null,
     failures,
   };
 }

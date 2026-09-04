@@ -14,7 +14,12 @@
  * See docs/superpowers/specs/2026-08-23-contributor-pwa-design.md §5.1, §5.2.
  */
 
-import { detectFrameTiming, fovFromSettings, negotiateMimeType } from "../detect";
+import {
+  detectFrameTiming,
+  fovFromSettings,
+  negotiateAudioMimeType,
+  negotiateMimeType,
+} from "../detect";
 import { OrientationRecorder, readCoarseLocation } from "../geo";
 import { ImuRecorder } from "../imu";
 import {
@@ -39,6 +44,23 @@ export class MediaRecorderCapture implements CaptureBackend {
 
   private chunks: Blob[] = [];
   private mimeType = "";
+  /**
+   * A second recorder over the audio track alone.
+   *
+   * product-spec §3.1 lists audio as [MVP] and §5's schema gives it its own
+   * stream with its own digest. Audio was already inside the video container —
+   * it is the same getUserMedia stream — but muxed bytes cannot be hashed or
+   * licensed separately, so as far as the manifest was concerned the modality
+   * did not exist. This records it once more on its own.
+   *
+   * Optional in every direction: a device with no microphone, a denied
+   * permission or a browser that will not encode audio alone leaves it null,
+   * and the episode is complete without it.
+   */
+  private audioRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+  private audioMimeType = "";
+  private audioFinished: Promise<void> | null = null;
   private startedAtEpochMs = 0;
   private t0 = 0;
   private stopTimer: ReturnType<typeof setTimeout> | null = null;
@@ -130,6 +152,8 @@ export class MediaRecorderCapture implements CaptureBackend {
         "Recording was interrupted by the browser.",
       );
     };
+
+    this.startAudioRecorder();
 
     this.imu = new ImuRecorder();
     this.orientation = new OrientationRecorder();
@@ -226,7 +250,7 @@ export class MediaRecorderCapture implements CaptureBackend {
         frameTiming: this.frameTiming,
         frameTimestampsMs: videoDetail.frameTimestampsMs,
       },
-      audio: null,
+      audio: await this.finishAudio(),
       imu: imuRecording,
       orientation: orientationRecording
         ? { count: orientationRecording.count, absolute: orientationRecording.absolute }
@@ -247,6 +271,11 @@ export class MediaRecorderCapture implements CaptureBackend {
       if (this.recorder?.state !== "inactive") this.recorder?.stop();
     } catch {
       // Already torn down; nothing to salvage.
+    }
+    try {
+      if (this.audioRecorder?.state !== "inactive") this.audioRecorder?.stop();
+    } catch {
+      // Already torn down.
     }
     this.imu?.abort();
     this.orientation?.stop();
@@ -315,10 +344,67 @@ export class MediaRecorderCapture implements CaptureBackend {
     }
   }
 
+  /**
+   * Start recording the audio track on its own, if there is one.
+   *
+   * Never throws. Audio is an enrichment; a capture that failed because the
+   * microphone was busy would trade a whole episode for a modality nothing
+   * scores on.
+   */
+  private startAudioRecorder(): void {
+    this.audioRecorder = null;
+    this.audioChunks = [];
+    this.audioMimeType = "";
+    this.audioFinished = null;
+
+    const track = this.stream?.getAudioTracks()[0];
+    if (!track) return;
+
+    const mimeType = negotiateAudioMimeType();
+    if (!mimeType) return;
+
+    try {
+      const recorder = new MediaRecorder(new MediaStream([track]), { mimeType });
+      this.audioMimeType = mimeType;
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) this.audioChunks.push(e.data);
+      };
+      this.audioFinished = new Promise<void>((resolve) => {
+        recorder.addEventListener("stop", () => resolve(), { once: true });
+        recorder.addEventListener("error", () => resolve(), { once: true });
+      });
+      recorder.start();
+      this.audioRecorder = recorder;
+    } catch {
+      // Encoding audio alone is not universally supported; the video container
+      // still carries it, and the manifest simply declares no audio stream.
+      this.audioRecorder = null;
+      this.audioFinished = null;
+    }
+  }
+
+  private async finishAudio(): Promise<{ blob: Blob; mimeType: string } | null> {
+    const recorder = this.audioRecorder;
+    if (!recorder) return null;
+
+    try {
+      if (recorder.state !== "inactive") recorder.stop();
+      await this.audioFinished;
+    } catch {
+      return null;
+    }
+
+    const blob = new Blob(this.audioChunks, { type: this.audioMimeType });
+    return blob.size > 0 ? { blob, mimeType: this.audioMimeType } : null;
+  }
+
   private reset(): void {
     this.finished = null;
     this.recorder = null;
     this.imu = null;
     this.chunks = [];
+    this.audioRecorder = null;
+    this.audioChunks = [];
+    this.audioFinished = null;
   }
 }

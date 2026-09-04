@@ -23,8 +23,23 @@ import {
 } from "@/lib/manifest";
 import type { EpisodeSubmission } from "@/lib/market/types";
 
+/**
+ * What the contributor said about their own take.
+ *
+ * product-spec §5 carries `outcome` and `self_report` in the manifest, and an
+ * earlier version hardcoded both to success — a self-report nobody had
+ * reported, sealed into a signed commitment. A buyer filtering on
+ * `task_completed` was reading a constant.
+ */
+export interface SelfReport {
+  taskCompleted: boolean;
+  notes: string;
+}
+
 export interface BuildEpisodeInput {
   capture: RawCapture;
+  /** Omitted only where the contributor was never asked; never assumed true. */
+  selfReport?: SelfReport;
   bountyId: string;
   task: string;
   entityId: string;
@@ -50,6 +65,7 @@ export async function buildEpisodeManifest(
   const { capture, bountyId, task, entityId, assetId, clientVersion, uaClass } = input;
 
   const imuBytes = encodeImuStream(capture.imu.stream);
+  const audio = capture.audio;
 
   const manifest: EpisodeManifest = {
     episode_id: newEpisodeId(),
@@ -72,6 +88,7 @@ export async function buildEpisodeManifest(
         device_label: capture.video.deviceLabel,
         fov_deg: capture.video.fovDeg,
       },
+      audio: audio ? { codec: audio.mimeType, bytes: audio.blob.size } : null,
       imu: {
         rate_hz_observed: Number(capture.imu.rateHzObserved.toFixed(3)),
         samples: capture.imu.samples,
@@ -91,6 +108,17 @@ export async function buildEpisodeManifest(
         bytes: imuBytes.byteLength,
         content_type: "application/octet-stream",
       },
+      // Only when the device actually produced one. A declared stream with no
+      // bytes behind it would fail the server's own integrity check.
+      ...(audio
+        ? {
+            audio: {
+              sha256: await sha256Blob(audio.blob),
+              bytes: audio.blob.size,
+              content_type: audio.mimeType,
+            },
+          }
+        : {}),
     },
     sync: { method: capture.video.frameTiming, measured_skew_ms: capture.measuredSkewMs },
     orientation: capture.orientation
@@ -104,8 +132,11 @@ export async function buildEpisodeManifest(
           grid_km: capture.location.grid_km,
         }
       : null,
-    outcome: "success",
-    self_report: { task_completed: true, notes: "" },
+    // Reported, not assumed. Absent where the contributor was not asked.
+    outcome: input.selfReport ? (input.selfReport.taskCompleted ? "success" : "failure") : "unknown",
+    self_report: input.selfReport
+      ? { task_completed: input.selfReport.taskCompleted, notes: input.selfReport.notes }
+      : null,
   };
 
 

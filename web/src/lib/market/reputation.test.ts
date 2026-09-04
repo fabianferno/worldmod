@@ -61,6 +61,7 @@ describe("reputationFor", () => {
           ? {
               plausibility_score: 0,
               trust_level: "heuristic",
+              validator: null,
               failures: ["duplicate"],
               checks: {
                 manifest_intact: true,

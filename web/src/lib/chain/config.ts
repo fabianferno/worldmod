@@ -63,3 +63,4 @@ export function explorerAddress(address: string): string {
 }
 
 export { defineChain };
+
