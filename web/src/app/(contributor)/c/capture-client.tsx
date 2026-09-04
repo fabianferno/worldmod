@@ -17,6 +17,8 @@ import {
   type CaptureCapabilities,
   type MotionPermission,
 } from "@/lib/capture";
+import { anchorEpisode } from "@/lib/chain/anchor-client";
+import { deviceAddress } from "@/lib/chain/identity";
 import { buildEpisodeManifest, toSubmission } from "@/lib/episode/build";
 import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/episode/queue";
 import type { Bounty, StoredEpisode } from "@/lib/market/types";
@@ -87,17 +89,20 @@ function forgetAwaiting(): void {
   }
 }
 
-/** Pseudonymous, device-held. Stands in for the embedded wallet address. */
+/**
+ * The contributor's address, from a key this device actually holds.
+ *
+ * This used to be twenty random bytes formatted to look like an address. It
+ * read as an account and could never be one — nobody held the key, so nothing
+ * could be signed with it and every relayed call would have failed signature
+ * recovery. product-spec §11's contributor path is built on the phone signing.
+ */
 function entityId(): string {
-  const key = "worldmod.entity_id";
   try {
-    const existing = localStorage.getItem(key);
-    if (existing) return existing;
-    const bytes = crypto.getRandomValues(new Uint8Array(20));
-    const id = `0x${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
-    localStorage.setItem(key, id);
-    return id;
+    return deviceAddress();
   } catch {
+    // Storage refused. Capture still works and still pays into the local
+    // marketplace; only the on-chain commitment is unavailable.
     return `0x${"0".repeat(40)}`;
   }
 }
@@ -206,6 +211,31 @@ export default function CaptureClient() {
   }, [acquireWakeLock, phase]);
 
   /**
+   * Commit the episode's manifest hash on-chain.
+   *
+   * Deliberately after the verdict is already on screen and never awaited by
+   * it. product-spec §6.1's claim is about what the chain proves once the hash
+   * is there; putting an RPC between a contributor and their result would trade
+   * the thing that works for the thing that might.
+   */
+  const anchor = useCallback(async (episode: StoredEpisode) => {
+    if (episode.status !== "scored" || episode.anchor) return;
+
+    const storage = episode.streams?.find((s) => s.kind === "rgb")?.uri ?? "";
+    try {
+      const result = await anchorEpisode(
+        episode.episode_id,
+        episode.manifest_hash,
+        episode.bounty_id,
+        storage,
+      );
+      if (result) setSubmitted((current) => (current ? { ...current, anchor: result } : current));
+    } catch {
+      // Anchoring is additive. The episode stands without it.
+    }
+  }, []);
+
+  /**
    * Watch for the server's verdict.
    *
    * Scoring decodes every sampled frame, detects hands across the take and
@@ -228,6 +258,7 @@ export default function CaptureClient() {
             setSubmitted(data.episode);
             setPhase("done");
             refreshEarnings();
+            void anchor(data.episode);
             return;
           }
         } catch {
@@ -248,7 +279,7 @@ export default function CaptureClient() {
       // finished minutes ago is the bug this whole path exists to avoid.
       timersRef.current.push(setTimeout(() => void poll(), resumed ? 0 : 2000));
     },
-    [refreshEarnings],
+    [refreshEarnings, anchor],
   );
 
   /**

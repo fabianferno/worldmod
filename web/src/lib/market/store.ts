@@ -34,6 +34,8 @@ export interface MarketStore {
     validation: StoredEpisode["validation"],
   ): Promise<StoredEpisode | null>;
   failScoring(episodeId: string, reason: string): Promise<void>;
+  /** Attach an on-chain commitment to an episode already on disk. */
+  recordAnchor(episodeId: string, anchor: StoredEpisode["anchor"]): Promise<StoredEpisode | null>;
 }
 
 interface Snapshot {
@@ -149,6 +151,19 @@ export const fileStore: MarketStore = {
       snapshot.episodes[index] = scored;
       await write(snapshot);
       return scored;
+    });
+  },
+
+  async recordAnchor(episodeId, anchor) {
+    return enqueue(async () => {
+      const snapshot = await read();
+      const index = snapshot.episodes.findIndex((e) => e.episode_id === episodeId);
+      if (index < 0) return null;
+
+      const updated = { ...snapshot.episodes[index], anchor };
+      snapshot.episodes[index] = updated;
+      await write(snapshot);
+      return updated;
     });
   },
 

@@ -1,3 +1,4 @@
+import { explorerTx } from "@/lib/chain/config";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fileStore } from "@/lib/market/store";
@@ -84,6 +85,16 @@ function EpisodeRow({ episode }: { episode: StoredEpisode }) {
         <span>{episode.ua_class.replace("_", " ")}</span>
         <span aria-hidden>·</span>
         <span>{episode.trust_level}</span>
+        {episode.anchor?.onchain_episode_id ? (
+          <a
+            href={explorerTx(episode.anchor.txs[episode.anchor.txs.length - 1].hash)}
+            target="_blank"
+            rel="noreferrer"
+            className="interactive text-accent underline decoration-dotted"
+          >
+            on-chain #{episode.anchor.onchain_episode_id}
+          </a>
+        ) : null}
         {verified ? (
           <>
             <span aria-hidden>·</span>
