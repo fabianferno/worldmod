@@ -6,6 +6,10 @@
  * what turns "sync is best-effort" into a measured number instead of an
  * asserted one.
  *
+ * VideoFrame.timestamp does NOT share performance.now()'s origin — on Android
+ * Chrome it is microseconds since boot. Each frame is therefore tagged with its
+ * arrival time and the offset between the two clocks is estimated; see align.ts.
+ *
  * Two details are easy to get wrong and expensive when you do:
  *
  *  - Reading a track through a processor CONSUMES its frames, so the track is
@@ -19,10 +23,11 @@
  */
 
 import type { FrameTiming } from "@/lib/manifest";
+import { alignFrames, type FrameObservation } from "../align";
 import { MediaRecorderCapture } from "./media-recorder";
 
 interface VideoFrameLike {
-  /** Capture time in MICROseconds on the same clock family as performance.now. */
+  /** Capture time in MICROseconds, on the capture clock — not performance.now's. */
   timestamp: number;
   close(): void;
 }
@@ -38,7 +43,7 @@ export function supportsTrackProcessor(scope: object = globalThis): boolean {
 }
 
 export class TrackProcessorCapture extends MediaRecorderCapture {
-  private frameTimestampsUs: number[] = [];
+  private observations: FrameObservation[] = [];
   private sidecarTrack: MediaStreamTrack | null = null;
   private reader: ReadableStreamDefaultReader<VideoFrameLike> | null = null;
   private draining: Promise<void> | null = null;
@@ -58,7 +63,7 @@ export class TrackProcessorCapture extends MediaRecorderCapture {
     // The clone is what the processor consumes; the original stays with the
     // recorder untouched.
     this.sidecarTrack = track.clone();
-    this.frameTimestampsUs = [];
+    this.observations = [];
 
     const processor = new Ctor({ track: this.sidecarTrack });
     this.reader = processor.readable.getReader();
@@ -73,7 +78,7 @@ export class TrackProcessorCapture extends MediaRecorderCapture {
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
-        this.frameTimestampsUs.push(value.timestamp);
+        this.observations.push({ tsUs: value.timestamp, arrivalMs: performance.now() });
         // Close before the next read, always.
         value.close();
       }
@@ -97,22 +102,13 @@ export class TrackProcessorCapture extends MediaRecorderCapture {
     }
     await this.draining;
 
-    const us = this.frameTimestampsUs;
-    if (us.length === 0) {
-      return { frameCount: 0, fpsObserved: null, frameTimestampsMs: null, measuredSkewMs: null };
-    }
-
-    const firstUs = us[0];
-    const frameTimestampsMs = us.map((t) => (t - firstUs) / 1000);
-    const spanMs = frameTimestampsMs[frameTimestampsMs.length - 1];
+    const aligned = alignFrames(this.observations, this.captureStartMs);
 
     return {
-      frameCount: us.length,
-      fpsObserved: us.length > 1 && spanMs > 0 ? ((us.length - 1) / spanMs) * 1000 : null,
-      frameTimestampsMs,
-      // Offset between the first captured frame and the IMU clock's origin.
-      // This is the measured sync figure that replaces a hardcoded constant.
-      measuredSkewMs: firstUs / 1000 - this.captureStartMs,
+      frameCount: aligned.frameCount,
+      fpsObserved: aligned.fpsObserved,
+      frameTimestampsMs: aligned.frameCount > 0 ? aligned.frameTimestampsMs : null,
+      measuredSkewMs: aligned.measuredSkewMs,
     };
   }
 
@@ -121,7 +117,7 @@ export class TrackProcessorCapture extends MediaRecorderCapture {
     this.reader?.cancel().catch(() => {});
     this.sidecarTrack = null;
     this.reader = null;
-    this.frameTimestampsUs = [];
+    this.observations = [];
     super.abort();
   }
 }

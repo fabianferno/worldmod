@@ -217,6 +217,21 @@ mid-episode, so skew *accumulates* rather than staying constant.
 The client therefore emits both `fps_nominal` and a measured `fps_observed`, and
 skew is reported from what was measured rather than asserted as a constant.
 
+**Confirmed on hardware (S24 Ultra, 2026-08-23).** `VideoFrame.timestamp` does
+not share `performance.now()`'s origin — it reads as microseconds since boot,
+so naive subtraction reported 8,659,680 ms of skew. The two clocks are related
+by an unknown constant offset, estimated by tagging each frame with its arrival
+time and taking the minimum of `arrival - frameTs` across frames; latency is
+additive and non-negative, so the minimum is the tightest available estimate.
+The resulting figure is an upper bound carrying minimum pipeline latency, and
+measured 36.1 ms on the same device. The sidecar also taps the track before the
+recorder starts, so pre-roll frames are excluded from frame counts and rate.
+
+A second finding from the same session: Android halves capture frame rate in
+low light (30 -> 15 fps observed). Since flow-vs-gyro correlation depends on
+frame density, poorly lit indoor capture degrades the validator's primary
+signal, and task specs should call for adequate lighting.
+
 ### 5.3 IMU recorder (shared across backends)
 
 A `devicemotion` listener pushing `{t: performance.now(), accel, rotationRate}`.

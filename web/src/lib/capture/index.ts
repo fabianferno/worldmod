@@ -1,3 +1,5 @@
+export { alignFrames } from "./align";
+export type { FrameAlignment, FrameObservation } from "./align";
 export { createCaptureBackend, isSecureCaptureContext } from "./factory";
 export type { CaptureFactoryOptions } from "./factory";
 export { classifyUserAgent, detectFrameTiming, negotiateMimeType, MIME_CANDIDATES } from "./detect";
