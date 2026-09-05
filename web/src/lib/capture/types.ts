@@ -94,8 +94,14 @@ export interface RawCapture {
 export interface CaptureBackend {
   readonly frameTiming: FrameTiming;
   probe(): Promise<CaptureCapabilities>;
-  /** Live stream for the viewfinder, available between start() and stop(). */
+  /** Live stream for the viewfinder, available once preview() or start() has run. */
   readonly previewStream: MediaStream | null;
+  /**
+   * Acquire the camera and expose a live stream WITHOUT recording, so the
+   * wearer can check framing first. Given a phone's narrow field of view,
+   * discovering the hands are out of frame after a take is too late.
+   */
+  preview(opts: CaptureOpts): Promise<MediaStream | null>;
   start(opts: CaptureOpts): Promise<void>;
   stop(): Promise<RawCapture>;
   /** Tear down without producing a capture. Safe to call at any time. */

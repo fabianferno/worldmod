@@ -87,6 +87,11 @@ export class MockCapture implements CaptureBackend {
     };
   }
 
+  async preview(_opts: CaptureOpts): Promise<MediaStream | null> {
+    void _opts;
+    return null;
+  }
+
   async start(_opts: CaptureOpts): Promise<void> {
     void _opts;
     if (this.running) throw new CaptureError("not_recording", "Mock capture already running.");
