@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { analyzeCapture, type AnalysisStage, type QualityReport } from "@/lib/analysis";
+import { QualityPanel } from "./quality";
 import {
   CaptureError,
   createCaptureBackend,
@@ -21,7 +23,14 @@ const secureSnapshot = () => isSecureCaptureContext();
 /** Assume secure while rendering on the server; the client corrects on hydration. */
 const secureServerSnapshot = () => true;
 
-type Phase = "idle" | "ready" | "recording" | "done" | "error";
+type Phase = "idle" | "ready" | "recording" | "analyzing" | "done" | "error";
+
+const STAGE_LABEL: Record<AnalysisStage, string> = {
+  extracting: "Reading frames",
+  framing: "Finding hands",
+  motion: "Matching motion to gyroscope",
+  done: "Done",
+};
 
 /** Numbers the strap test exists to produce. */
 function Stat({
@@ -62,6 +71,10 @@ export default function CaptureClient() {
   const [imuBytes, setImuBytes] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [quality, setQuality] = useState<QualityReport | null>(null);
+  const [progress, setProgress] = useState<{ stage: AnalysisStage; done: number; total: number } | null>(
+    null,
+  );
   const secure = useSyncExternalStore(noSubscribe, secureSnapshot, secureServerSnapshot);
 
   useEffect(() => {
@@ -85,9 +98,17 @@ export default function CaptureClient() {
     }
   }, []);
 
+  const releaseWakeLock = useCallback(() => {
+    wakeLockRef.current?.release().catch(() => {});
+    wakeLockRef.current = null;
+  }, []);
+
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState === "visible" && phase === "recording") {
+      if (
+        document.visibilityState === "visible" &&
+        (phase === "recording" || phase === "analyzing")
+      ) {
         void acquireWakeLock();
       }
     };
@@ -148,21 +169,40 @@ export default function CaptureClient() {
   }, [fail]);
 
   const finish = useCallback(async () => {
+    let result: RawCapture;
     try {
-      const result = await backendRef.current!.stop();
+      result = await backendRef.current!.stop();
       setCapture(result);
       setImuBytes(encodeImuStream(result.imu.stream).byteLength);
-      setPhase("done");
+      setPhase("analyzing");
     } catch (err) {
       fail(err);
-    } finally {
-      wakeLockRef.current?.release().catch(() => {});
-      wakeLockRef.current = null;
+      releaseWakeLock();
+      return;
     }
-  }, [fail]);
+
+    // Scoring runs on the recorded blob, never during capture — the device
+    // already sheds frame rate under load, and analysing live would degrade
+    // the data being scored.
+    try {
+      setQuality(
+        await analyzeCapture(result, {
+          onProgress: (stage, done, total) => setProgress({ stage, done, total }),
+        }),
+      );
+    } catch (err) {
+      // A failed analysis must not discard a good recording.
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setProgress(null);
+      setPhase("done");
+      releaseWakeLock();
+    }
+  }, [fail, releaseWakeLock]);
 
   const again = useCallback(() => {
     setCapture(null);
+    setQuality(null);
     setError(null);
     backendRef.current = createCaptureBackend();
     setPhase("idle");
@@ -245,6 +285,19 @@ export default function CaptureClient() {
           </button>
         ) : null}
 
+        {phase === "analyzing" ? (
+          <div className="rounded-xl border border-white/15 px-4 py-3.5 text-center">
+            <span className="text-sm font-medium">
+              {progress ? STAGE_LABEL[progress.stage] : "Analysing"}
+            </span>
+            {progress && progress.total > 1 ? (
+              <span className="ml-2 font-mono text-xs tabular-nums text-white/50">
+                {progress.done}/{progress.total}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
         {phase === "done" || phase === "error" ? (
           <button
             onClick={again}
@@ -260,6 +313,8 @@ export default function CaptureClient() {
           </p>
         ) : null}
       </div>
+
+      {quality ? <QualityPanel report={quality} /> : null}
 
       <section className="px-5 pb-10">
         <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-white/40">
