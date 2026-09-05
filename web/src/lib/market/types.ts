@@ -116,7 +116,14 @@ export interface StoredEpisode extends EpisodeSubmission {
   /** What the server independently verified, rather than what the client said. */
   validation?: import("@/lib/validator/validate").ValidationResult;
   /** Where the verified bytes landed. Empty when none were uploaded. */
-  streams?: Array<{ kind: string; uri: string; bytes: number; content_type?: string }>;
+  streams?: Array<{
+    kind: string;
+    uri: string;
+    bytes: number;
+    /** Content address — the same bytes give this on any IPFS node. */
+    cid?: string;
+    content_type?: string;
+  }>;
   /**
    * The on-chain commitment, when one was made.
    *

@@ -224,7 +224,13 @@ export default function CaptureClient() {
   const anchor = useCallback(async (episode: StoredEpisode) => {
     if (episode.status !== "scored" || episode.anchor) return;
 
-    const storage = episode.streams?.find((s) => s.kind === "rgb")?.uri ?? "";
+    // The content address in preference to the file path: what goes on-chain
+    // should be resolvable by whoever reads it, and `file:///Users/...` is a
+    // commitment to a location only this machine has.
+    const rgb = episode.streams?.find((s) => s.kind === "rgb");
+    const storage = rgb?.cid
+      ? `${window.location.origin}/ipfs/${rgb.cid}`
+      : (rgb?.uri ?? "");
     try {
       const result = await anchorEpisode(
         episode.episode_id,

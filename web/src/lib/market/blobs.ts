@@ -1,20 +1,90 @@
 /**
  * Episode byte storage.
  *
- * Stands in for the content-addressed storage of product-spec §10.2 until a
- * provider is picked — the design keeps this behind one interface precisely so
- * that choice can wait. Files land under .data/episodes/<episode_id>/ where
- * they can be inspected, played and fed to the trainer without a gateway.
+ * Bytes land under .data/episodes/<episode_id>/ where they can be inspected,
+ * played and fed to the trainer without a gateway, and every stream also gets
+ * a real IPFS CID (see lib/storage/cid).
+ *
+ * The CID is the part that matters to §5 and §10.2. It is computed with kubo's
+ * own chunking, so anyone holding the video derives the same identifier and can
+ * check that the chain points at the footage they were handed. That makes the
+ * address a commitment rather than a filename, which a path on one laptop could
+ * never be.
+ *
+ * Whether those bytes are reachable by a stranger is a separate question, and
+ * the code keeps it separate: an unpinned CID is a correct address that only
+ * this node can currently serve. See lib/storage/pin.
  */
 
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { computeCid } from "@/lib/storage/cid";
+
+/**
+ * CID to file, so the gateway can serve an address without knowing which
+ * episode it belongs to — which is the point of content addressing.
+ */
+const INDEX = join(process.cwd(), ".data", "cids.json");
+
+async function readIndex(): Promise<Record<string, { path: string; contentType?: string }>> {
+  if (!existsSync(INDEX)) return {};
+  try {
+    return JSON.parse(await readFile(INDEX, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+async function appendIndex(cid: string, path: string, contentType?: string): Promise<void> {
+  const index = await readIndex();
+  index[cid] = { path, contentType };
+  await writeFile(INDEX, JSON.stringify(index, null, 2));
+}
+
+/** The media type implied by a stored file's extension. */
+function contentTypeFromPath(path: string): string | undefined {
+  const ext = path.slice(path.lastIndexOf(".") + 1).toLowerCase();
+  for (const [type, extension] of Object.entries(EXTENSIONS)) {
+    if (extension === ext) return type;
+  }
+  return undefined;
+}
+
+/**
+ * Give a file already on disk its content address.
+ *
+ * For episodes recorded before addressing existed. Indexes in place rather than
+ * re-storing: writing the bytes again under a freshly derived name left a
+ * second copy of a three megabyte video beside the first, which is how this
+ * function came to exist.
+ */
+export async function indexExistingFile(path: string): Promise<string | null> {
+  if (!existsSync(path)) return null;
+  try {
+    const bytes = new Uint8Array(await readFile(path));
+    const cid = await computeCid(bytes);
+    await appendIndex(cid, path, contentTypeFromPath(path));
+    return cid;
+  } catch {
+    return null;
+  }
+}
+
+/** Where the bytes for a content address live, if this node holds them. */
+export async function resolveCid(
+  cid: string,
+): Promise<{ path: string; contentType?: string } | null> {
+  if (!/^ba[a-z0-9]{20,}$/.test(cid)) return null;
+  return (await readIndex())[cid] ?? null;
+}
 
 export interface StoredStream {
   kind: string;
   uri: string;
   bytes: number;
+  /** Content address. The same bytes always produce this, on any IPFS node. */
+  cid?: string;
   /**
    * The container the bytes are actually in, taken from the sealed manifest.
    * An iPhone records MP4 and an Android WebM, so this cannot be assumed from
@@ -87,10 +157,22 @@ export async function storeStream(
   const name = `${kind}.${extensionFor(contentType)}`;
   await writeFile(join(dir, name), bytes);
 
+  // Computed from the bytes that were actually stored, never from what the
+  // client claimed they would be.
+  let cid: string | undefined;
+  try {
+    cid = await computeCid(bytes);
+    await appendIndex(cid, join(dir, name), contentType);
+  } catch {
+    // A missing CID degrades addressing, not storage. The episode is on disk
+    // and playable either way.
+  }
+
   return {
     kind,
     uri: `file://${join(dir, name)}`,
     bytes: bytes.byteLength,
+    cid,
     content_type: contentType,
   };
 }
