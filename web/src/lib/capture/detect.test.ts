@@ -63,14 +63,16 @@ describe("detectFrameTiming", () => {
 });
 
 describe("negotiateMimeType", () => {
-  it("picks MP4 on a Safari-like platform", () => {
+  it("picks MP4 on a Safari-like platform, which cannot record WebM", () => {
     const supported = (t: string) => t.startsWith("video/mp4");
     expect(negotiateMimeType(undefined, supported)).toBe("video/mp4;codecs=avc1");
   });
 
-  it("picks WebM where MP4 recording is unavailable", () => {
-    const supported = (t: string) => t.startsWith("video/webm");
-    expect(negotiateMimeType(undefined, supported)).toBe("video/webm;codecs=vp9,opus");
+  it("picks WebM where both are available", () => {
+    // Chromium reports MP4 as supported but writes a fragmented MP4 with a
+    // near-zero duration that will not play back or seek — verified on device.
+    // WebM must win whenever the platform offers it.
+    expect(negotiateMimeType(undefined, () => true)).toBe("video/webm;codecs=vp9,opus");
   });
 
   it("returns null when nothing is supported, so the caller can refuse to record", () => {

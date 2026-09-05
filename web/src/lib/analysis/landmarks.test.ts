@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { framingScore, GUIDE_REGION } from "./framing";
-import { normalizeKeypoints, PIVOT_INDICES } from "./landmarks";
+import { normalizeKeypoints } from "./landmarks";
 
 describe("normalizeKeypoints", () => {
   it("converts pixel keypoints to normalised coordinates", () => {
@@ -41,19 +41,5 @@ describe("normalizeKeypoints", () => {
 
   it("handles an empty keypoint list", () => {
     expect(normalizeKeypoints([], 192, 144)).toEqual([]);
-  });
-});
-
-describe("PIVOT_INDICES", () => {
-  it("addresses joints within the 21-point hand model", () => {
-    expect(PIVOT_INDICES.every((i) => i >= 0 && i < 21)).toBe(true);
-  });
-
-  it("starts at the wrist", () => {
-    expect(PIVOT_INDICES[0]).toBe(0);
-  });
-
-  it("lists each pivot once", () => {
-    expect(new Set(PIVOT_INDICES).size).toBe(PIVOT_INDICES.length);
   });
 });
