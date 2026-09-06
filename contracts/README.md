@@ -1,66 +1,54 @@
-## Foundry
+# World Mod contracts
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+product-spec §11's registries and escrow.
 
-Foundry consists of:
+| Contract | Purpose |
+|---|---|
+| `EntityRegistry` | Individuals and organizations. No PII on-chain. |
+| `AssetRegistry` | Registered sensors and their capability bitmask. |
+| `EpisodeRegistry` | Episode commitments and validation results. |
+| `BountyEscrow` | Demand-first bounties, escrowed in USDC. |
+| `Relayable` | Shared EIP-712 verification for contributor-signed calls. |
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## Contributors never send a transaction
 
-## Documentation
+Every contributor action is signed on the phone and submitted by a relayer,
+attributed to the **recovered signer** rather than to whoever paid the gas.
+Someone with a phone strapped to their head has a key, not a funded account —
+so this removes the paymaster problem from onboarding entirely.
 
-https://book.getfoundry.sh/
+The relayer is untrusted. It can decline to submit, but it cannot alter what
+was signed or claim the result; the tests pin each of those attacks.
 
-## Usage
+## Setup
 
-### Build
-
-```shell
-$ forge build
+```sh
+forge install foundry-rs/forge-std   # not vendored into this repo
+cp .env.example .env                 # then fill in PRIVATE_KEY
 ```
 
-### Test
+## Test
 
-```shell
-$ forge test
+```sh
+forge test                                   # unit tests, offline
+BASE_SEPOLIA_RPC_URL=https://sepolia.base.org forge test   # + escrow against real USDC
 ```
 
-### Format
+Escrow tests run against Circle's real USDC on a Base Sepolia fork rather than
+a mock. That matters: real USDC reverts rather than returning false, and it is
+an upgradeable proxy. The fork tests skip themselves without an RPC so the
+suite still runs offline.
 
-```shell
-$ forge fmt
+## Deploy
+
+Fund the deployer with Base Sepolia ETH first, then:
+
+```sh
+forge script script/Deploy.s.sol --rpc-url base_sepolia --broadcast --verify
 ```
 
-### Gas Snapshots
+No token is deployed. The script points at Circle's real USDC for the target
+chain and refuses to run if that address has no code there.
 
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+The deployer becomes the episode registry's owner and its first validator; add
+the validator service key with `setValidator`.
