@@ -122,6 +122,8 @@ export interface StoredEpisode extends EpisodeSubmission {
     bytes: number;
     /** Content address — the same bytes give this on any IPFS node. */
     cid?: string;
+    /** Whether an IPFS node was asked to hold them. Not a durability claim. */
+    pinned?: boolean;
     content_type?: string;
   }>;
   /**
