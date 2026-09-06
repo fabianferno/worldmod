@@ -11,3 +11,6 @@ web/certificates/
 # that would be cloned by everyone forever.
 web/public/mediapipe/
 web/public/models/
+
+# Local marketplace store
+web/.data/

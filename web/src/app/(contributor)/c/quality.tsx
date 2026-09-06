@@ -60,27 +60,37 @@ function PivotOverlay({ report }: { report: QualityReport }) {
     if (!canvas || !preview) return;
 
     const { image, hands } = preview;
-    canvas.width = image.width;
-    canvas.height = image.height;
+
+    // The analysis frame is small; render it into a larger backing store so the
+    // overlay has pixels to draw into rather than being scaled up by CSS.
+    const scale = 3;
+    const width = image.width * scale;
+    const height = image.height * scale;
+    canvas.width = width;
+    canvas.height = height;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.putImageData(image, 0, 0);
+    const source = document.createElement("canvas");
+    source.width = image.width;
+    source.height = image.height;
+    source.getContext("2d")?.putImageData(image, 0, 0);
+    ctx.drawImage(source, 0, 0, width, height);
 
     // The region the framing score was computed against.
     ctx.strokeStyle = "rgba(52, 211, 153, 0.65)";
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 4]);
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
     ctx.strokeRect(
-      GUIDE_REGION.x0 * image.width,
-      GUIDE_REGION.y0 * image.height,
-      (GUIDE_REGION.x1 - GUIDE_REGION.x0) * image.width,
-      (GUIDE_REGION.y1 - GUIDE_REGION.y0) * image.height,
+      GUIDE_REGION.x0 * width,
+      GUIDE_REGION.y0 * height,
+      (GUIDE_REGION.x1 - GUIDE_REGION.x0) * width,
+      (GUIDE_REGION.y1 - GUIDE_REGION.y0) * height,
     );
     ctx.setLineDash([]);
 
-    for (const hand of hands.hands) drawHand(ctx, hand, image.width, image.height);
+    for (const hand of hands.hands) drawHand(ctx, hand, width, height);
   }, [report]);
 
   if (!report.preview) return null;

@@ -18,6 +18,8 @@ import {
   type CaptureCapabilities,
   type MotionPermission,
 } from "@/lib/capture";
+import { buildEpisodeManifest, toSubmission } from "@/lib/episode/build";
+import type { Bounty, StoredEpisode } from "@/lib/market/types";
 import { LiveOverlay } from "./overlay";
 import { QualityPanel } from "./quality";
 
@@ -26,6 +28,29 @@ const EPISODE_MS = 15_000;
 
 /** Time to get the phone mounted after the one tap the browser requires. */
 const COUNTDOWN_MS = 5_000;
+
+const CLIENT_VERSION = "0.1.0";
+
+/**
+ * A pseudonymous contributor id, kept on the device.
+ *
+ * Stands in for the embedded wallet address until that lands. product-spec
+ * §11 allows individuals to stay pseudonymous, and no PII goes on-chain.
+ */
+function entityId(): string {
+  const key = "worldmod.entity_id";
+  try {
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const bytes = crypto.getRandomValues(new Uint8Array(20));
+    const id = `0x${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
+    localStorage.setItem(key, id);
+    return id;
+  } catch {
+    // Private mode or blocked storage: a session-scoped id still works.
+    return "0x" + "0".repeat(40);
+  }
+}
 
 type Phase = "idle" | "preparing" | "countdown" | "recording" | "done" | "error";
 
@@ -75,6 +100,8 @@ export default function CaptureClient() {
   const [liveHands, setLiveHands] = useState<Landmark[][]>([]);
   const [remainingMs, setRemainingMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [bounty, setBounty] = useState<Bounty | null>(null);
+  const [submitted, setSubmitted] = useState<StoredEpisode | null>(null);
 
   const secure = useSyncExternalStore(noSubscribe, secureSnapshot, secureServerSnapshot);
 
@@ -100,6 +127,13 @@ export default function CaptureClient() {
     const backend = createCaptureBackend();
     backendRef.current = backend;
     backend.probe().then(setCaps).catch(() => setCaps(null));
+
+    fetch("/api/bounties")
+      .then((r) => r.json())
+      .then((data: { bounties: Bounty[] }) => {
+        setBounty(data.bounties.find((b) => b.status === "open") ?? null);
+      })
+      .catch(() => setBounty(null));
 
     const timers = timersRef.current;
     return () => {
@@ -138,25 +172,54 @@ export default function CaptureClient() {
       setCapture(result);
       setImuBytes(encodeImuStream(result.imu.stream).byteLength);
 
-      if (live) {
-        // Everything was measured during the take; this is pure assembly.
-        setQuality(
-          finalizeQuality({
+      // Everything was measured during the take; this is pure assembly.
+      const report = live
+        ? finalizeQuality({
             flow: live.flow,
             hands: live.hands,
             imu: result.imu.stream.samples,
             stats: live.stats,
             preview: live.preview,
-          }),
-        );
-      }
+          })
+        : null;
+      if (report) setQuality(report);
       setPhase("done");
+
+      // Seal and submit. The commitment covers the streams and the scores
+      // together, so a contributor cannot report one number here and another
+      // to the validator.
+      if (bounty) {
+        try {
+          const manifest = await buildEpisodeManifest({
+            capture: result,
+            quality: report,
+            bountyId: bounty.bounty_id,
+            task: bounty.task,
+            entityId: entityId(),
+            assetId: "asset_phone",
+            clientVersion: CLIENT_VERSION,
+          });
+
+          const response = await fetch("/api/episodes", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(toSubmission(manifest, report)),
+          });
+          const data = (await response.json()) as { episode?: StoredEpisode; error?: string };
+
+          if (data.episode) setSubmitted(data.episode);
+          else setError(data.error ?? "Submission failed.");
+        } catch (err) {
+          // A failed submission must not lose a good recording.
+          setError(err instanceof Error ? err.message : String(err));
+        }
+      }
     } catch (err) {
       fail(err);
     } finally {
       releaseWakeLock();
     }
-  }, [clearTimers, fail, releaseWakeLock]);
+  }, [bounty, clearTimers, fail, releaseWakeLock]);
 
   /** Starts the recording itself. Never triggered by a button. */
   const beginRecording = useCallback(async () => {
@@ -190,6 +253,7 @@ export default function CaptureClient() {
     setError(null);
     setQuality(null);
     setCapture(null);
+    setSubmitted(null);
     setPhase("preparing");
 
     try {
@@ -233,6 +297,7 @@ export default function CaptureClient() {
     backendRef.current = createCaptureBackend();
     setCapture(null);
     setQuality(null);
+    setSubmitted(null);
     setLiveHands([]);
     setError(null);
     setPhase("idle");
@@ -249,6 +314,18 @@ export default function CaptureClient() {
           episode on its own.
         </p>
       </header>
+
+      {bounty ? (
+        <section className="mx-5 mb-4 rounded-xl border border-white/10 p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-medium">{bounty.title}</h2>
+            <span className="font-mono text-sm tabular-nums text-emerald-400">
+              ${bounty.per_episode_usdc.toFixed(2)}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-white/55">{bounty.task_spec}</p>
+        </section>
+      ) : null}
 
       {!secure ? (
         <p className="mx-5 mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
@@ -325,6 +402,41 @@ export default function CaptureClient() {
           </p>
         ) : null}
       </div>
+
+      {submitted ? (
+        <section className="mx-5 mb-2">
+          <div
+            className={`rounded-xl border p-4 ${
+              submitted.accepted
+                ? "border-emerald-500/30 bg-emerald-500/10"
+                : "border-red-500/30 bg-red-500/10"
+            }`}
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="font-medium">
+                {submitted.accepted ? "Episode accepted" : "Episode rejected"}
+              </span>
+              {submitted.accepted ? (
+                <span className="font-mono text-lg tabular-nums text-emerald-300">
+                  +${submitted.paid_usdc.toFixed(2)}
+                </span>
+              ) : null}
+            </div>
+
+            {submitted.reasons.length > 0 ? (
+              <ul className="mt-2 space-y-1 text-sm text-red-200/90">
+                {submitted.reasons.map((reason) => (
+                  <li key={reason}>· {reason}</li>
+                ))}
+              </ul>
+            ) : null}
+
+            <p className="mt-2 truncate font-mono text-[10px] text-white/30">
+              {submitted.manifest_hash}
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       {quality ? <QualityPanel report={quality} /> : null}
 
