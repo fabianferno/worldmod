@@ -17,18 +17,24 @@
  *    detector is not.
  *  - Ticks are DROPPED while inference is in flight, never queued. A backlog
  *    would grow without bound and turn a slow device into an unresponsive one.
- *  - **Nothing is read back to the CPU on the hot path.** Frames go from the
- *    video element to the GPU and stay there. The first version pulled every
- *    sampled frame down with getImageData and pushed it back up again, and the
- *    recorded video showed the cost: 24.9fps against a nominal 30, ~114 frames
- *    missing from a 15s take, and one 1330ms gap with no video at all — during
- *    the movement the validator most needs to see.
+ *  - **Nothing is read back to the CPU on the hot path.** The expensive step
+ *    was getImageData, which forces a synchronous GPU-to-CPU readback and
+ *    flushes the pipeline; the recorded video showed the cost as 24.9fps
+ *    against a nominal 30, ~114 frames missing from a 15s take, and one 1330ms
+ *    gap with no video at all — during the movement the validator most needs.
+ *
+ *    Reading the video element directly was tried and reverted. On Android the
+ *    stream is hardware-decoded, and both tf.browser.fromPixels and the hand
+ *    detector can take that texture as empty without raising anything: hand
+ *    tracking simply stopped, silently. Frames are therefore rasterised into a
+ *    small canvas — cheap, and it stays on the GPU — and everything reads from
+ *    that canvas instead.
  *
  * fps_observed in the manifest is what will show the cost honestly.
  */
 
 import * as tf from "@tensorflow/tfjs";
-import { estimateFlow, grayscaleFromVideo } from "./flow";
+import { estimateFlow, grayscaleFromCanvas } from "./flow";
 import type { FlowSample } from "./correlate";
 import type { FrameHands, Landmark } from "./framing";
 import { createHandLandmarker, normalizeKeypoints } from "./landmarks";
@@ -57,6 +63,11 @@ export interface LiveStats {
   sampledFrames: number;
   detections: number;
   droppedTicks: number;
+  /** Ticks that threw. A silent zero here is the difference between
+   *  'no hands in frame' and 'detection is broken', and the two look
+   *  identical to a contributor. */
+  errors: number;
+  lastError: string | null;
   /** Mean wall-clock cost of a detection, milliseconds. */
   meanDetectMs: number;
 }
@@ -100,6 +111,8 @@ export class LiveAnalyzer {
   private detections = 0;
   private dropped = 0;
   private detectMsTotal = 0;
+  private errors = 0;
+  private lastError: string | null = null;
 
   constructor(video: HTMLVideoElement, options: LiveAnalyzerOptions = {}) {
     this.video = video;
@@ -165,18 +178,32 @@ export class LiveAnalyzer {
   };
 
   private async analyzeFrame(t: number): Promise<void> {
+    const ctx = this.ctx;
+    const canvas = this.canvas;
+    if (!ctx || !canvas) return;
+
     this.busy = true;
     try {
       this.sampled++;
       const index = this.tickIndex++;
+
+      // One rasterisation per tick. Everything below reads from this canvas
+      // rather than from the video element, which Android hands over as a
+      // hardware-decoded texture that silently reads empty.
+      ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height);
 
       // The only CPU readback, and only occasionally.
       if (index % this.opts.hashEvery === 0) this.hashFrame(t);
 
       if (index % this.opts.detectEvery === 0) await this.detect(t);
       await this.trackFlow(t);
-    } catch {
-      // A single bad frame must never end the recording.
+    } catch (err) {
+      // A single bad frame must never end the recording — but a run of them is
+      // a broken tracker, and swallowing that silently made it indisting-
+      // uishable from a wearer holding their hands out of frame.
+      this.errors++;
+      this.lastError = err instanceof Error ? err.message : String(err);
+      if (this.errors <= 3) console.error("[LiveAnalyzer] frame failed:", err);
     } finally {
       this.busy = false;
     }
@@ -189,7 +216,6 @@ export class LiveAnalyzer {
     if (!ctx || !canvas) return;
 
     try {
-      ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height);
       const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
       this.frameHashes.push(dHash(image));
       this.lastImage = { image, t };
@@ -202,14 +228,13 @@ export class LiveAnalyzer {
     const detector = await createHandLandmarker();
     const started = performance.now();
 
-    // The video element goes straight to the detector; no readback.
-    const found = await detector.estimateHands(this.video, { flipHorizontal: false });
+    // The canvas, not the video element — see the note at the top of the file.
+    const canvas = this.canvas!;
+    const found = await detector.estimateHands(canvas, { flipHorizontal: false });
     this.detectMsTotal += performance.now() - started;
     this.detections++;
 
-    const width = this.video.videoWidth || 1;
-    const height = this.video.videoHeight || 1;
-    const hands = found.map((h) => normalizeKeypoints(h.keypoints, width, height));
+    const hands = found.map((h) => normalizeKeypoints(h.keypoints, canvas.width, canvas.height));
     const frame: FrameHands = { t, hands };
     this.hands.push(frame);
 
@@ -224,7 +249,7 @@ export class LiveAnalyzer {
   }
 
   private async trackFlow(t: number): Promise<void> {
-    const gray = grayscaleFromVideo(this.video, this.opts.maxEdge);
+    const gray = grayscaleFromCanvas(this.canvas!);
 
     if (this.prevGray && this.prevT !== null) {
       const dtSeconds = (t - this.prevT) / 1000;
@@ -271,6 +296,8 @@ export class LiveAnalyzer {
         sampledFrames: this.sampled,
         detections: this.detections,
         droppedTicks: this.dropped,
+        errors: this.errors,
+        lastError: this.lastError,
         meanDetectMs: this.detections === 0 ? 0 : this.detectMsTotal / this.detections,
       },
     };

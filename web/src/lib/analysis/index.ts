@@ -5,7 +5,7 @@ export type {
   PlausibilityReport,
   PlausibilityVerdict,
 } from "./correlate";
-export { estimateFlow, grayscaleFromVideo, toGrayscale } from "./flow";
+export { estimateFlow, grayscaleFromCanvas, toGrayscale } from "./flow";
 export type { FlowEstimate, FlowOptions } from "./flow";
 export { framingScore, handInsideFraction, isInside, GUIDE_REGION } from "./framing";
 export type {
