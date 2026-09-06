@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CaptureClient from "./capture-client";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Capture — World Mod",
@@ -11,5 +12,9 @@ export const metadata: Metadata = {
  * DeviceMotionEvent, MediaRecorder and WebCrypto are browser-only.
  */
 export default function CapturePage() {
-  return <CaptureClient />;
+  return (
+    <Providers>
+      <CaptureClient />
+    </Providers>
+  );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   GUIDE_REGION,
@@ -19,7 +20,8 @@ import {
   type RawCapture,
 } from "@/lib/capture";
 import { anchorEpisode } from "@/lib/chain/anchor-client";
-import { deviceAddress } from "@/lib/chain/identity";
+import { useSigner } from "@/lib/chain/signer-context";
+import { AccountBar } from "./account";
 import { buildEpisodeManifest, toSubmission, type SelfReport } from "@/lib/episode/build";
 import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/episode/queue";
 import type { Bounty, StoredEpisode } from "@/lib/market/types";
@@ -92,24 +94,6 @@ function forgetAwaiting(): void {
   }
 }
 
-/**
- * The contributor's address, from a key this device actually holds.
- *
- * This used to be twenty random bytes formatted to look like an address. It
- * read as an account and could never be one — nobody held the key, so nothing
- * could be signed with it and every relayed call would have failed signature
- * recovery. product-spec §11's contributor path is built on the phone signing.
- */
-function entityId(): string {
-  try {
-    return deviceAddress();
-  } catch {
-    // Storage refused. Capture still works and still pays into the local
-    // marketplace; only the on-chain commitment is unavailable.
-    return `0x${"0".repeat(40)}`;
-  }
-}
-
 export default function CaptureClient() {
   const backendRef = useRef<CaptureBackend | null>(null);
   const analyzerRef = useRef<LiveAnalyzer | null>(null);
@@ -133,6 +117,19 @@ export default function CaptureClient() {
   const [shareLocation, setShareLocation] = useState(false);
 
   const secure = useSyncExternalStore(noSubscribe, secureSnapshot, secureServerSnapshot);
+
+  /**
+   * The identity this episode is attributed to — a recoverable Privy wallet
+   * where someone has signed in, the device key otherwise. Both sign; only one
+   * survives a lost phone.
+   */
+  const signer = useSigner();
+  // Null until the client mounts. Every caller runs from an event handler or a
+  // post-verdict effect, by which point it is set.
+  const entityId = useCallback(
+    () => (signer ? (signer.address as string) : `0x${"0".repeat(40)}`),
+    [signer],
+  );
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -163,7 +160,7 @@ export default function CaptureClient() {
     return data.episodes
       .filter((e) => e.entity_id === me && e.accepted)
       .reduce((sum, e) => sum + e.paid_usdc, 0);
-  }, []);
+  }, [entityId]);
 
   const refreshEarnings = useCallback(() => {
     // Informational; failing to read a balance must never block a capture.
@@ -232,17 +229,20 @@ export default function CaptureClient() {
       ? `${window.location.origin}/ipfs/${rgb.cid}`
       : (rgb?.uri ?? "");
     try {
+      if (!signer) return;
+
       const result = await anchorEpisode(
         episode.episode_id,
         episode.manifest_hash,
         episode.bounty_id,
         storage,
+        signer,
       );
       if (result) setSubmitted((current) => (current ? { ...current, anchor: result } : current));
     } catch {
       // Anchoring is additive. The episode stands without it.
     }
-  }, []);
+  }, [signer]);
 
   /**
    * Watch for the server's verdict.
@@ -411,7 +411,7 @@ export default function CaptureClient() {
       fail(err);
     }
     },
-    [bounty, caps, fail, watchScoring],
+    [bounty, caps, entityId, fail, watchScoring],
   );
 
   const beginRecording = useCallback(async () => {
@@ -511,10 +511,15 @@ export default function CaptureClient() {
     <main className="relative flex flex-1 flex-col">
       {/* Balance leads. This is an earning app, not an instrument. */}
       <header className="flex items-center justify-between px-5 pt-4">
-        <div>
+        {/* The balance is the way in to the account: it is what a contributor
+            looks for, and the withdraw button used to be reachable only by
+            recording again. */}
+        <Link href="/c/account" className="interactive -m-1 block p-1">
           <p className="text-xs text-subtle">Earned</p>
-          <p className="tabular text-2xl font-semibold tracking-tight">${earned.toFixed(2)}</p>
-        </div>
+          <p className="tabular text-2xl font-semibold tracking-tight underline decoration-white/15 decoration-dotted underline-offset-4">
+            ${earned.toFixed(2)}
+          </p>
+        </Link>
 
         {bounty ? (
           <div className="text-right">
@@ -663,6 +668,10 @@ export default function CaptureClient() {
                 ))}
               </div>
             ) : null}
+
+            <div className="mb-3">
+              <AccountBar />
+            </div>
 
             <button
               onClick={begin}
