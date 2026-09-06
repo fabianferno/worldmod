@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function Home() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6 py-12">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center overflow-y-auto px-6 py-12">
       <h1 className="text-2xl font-semibold tracking-tight">World Mod</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted">
         A permissionless network for physical-world data. Record what you do, get it
