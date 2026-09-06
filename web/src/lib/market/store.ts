@@ -22,7 +22,11 @@ export interface MarketStore {
   getBounty(id: string): Promise<Bounty | null>;
   createBounty(bounty: Bounty): Promise<Bounty>;
   listEpisodes(bountyId?: string): Promise<StoredEpisode[]>;
-  submitEpisode(submission: EpisodeSubmission): Promise<StoredEpisode>;
+  submitEpisode(
+    submission: EpisodeSubmission,
+    validation?: StoredEpisode["validation"],
+    streams?: StoredEpisode["streams"],
+  ): Promise<StoredEpisode>;
 }
 
 interface Snapshot {
@@ -80,7 +84,7 @@ export const fileStore: MarketStore = {
     return bountyId ? episodes.filter((e) => e.bounty_id === bountyId) : episodes;
   },
 
-  async submitEpisode(submission) {
+  async submitEpisode(submission, validation, streams) {
     return enqueue(async () => {
       const snapshot = await read();
       const bounty = snapshot.bounties.find((b) => b.bounty_id === submission.bounty_id);
@@ -91,12 +95,22 @@ export const fileStore: MarketStore = {
       if (existing) return existing;
 
       const decision = evaluateEpisode(bounty, submission);
+
+      // The validator's findings are gates in their own right: an episode that
+      // fails integrity or duplicates prior work is not payable regardless of
+      // how well it scored against the bounty's thresholds.
+      const failures = validation?.failures ?? [];
+      const reasons = [...decision.reasons, ...failures];
+      const accepted = decision.accepted && failures.length === 0;
+
       const stored: StoredEpisode = {
         ...submission,
-        accepted: decision.accepted,
-        reasons: decision.reasons,
-        paid_usdc: decision.paid_usdc,
+        accepted,
+        reasons,
+        paid_usdc: accepted ? decision.paid_usdc : 0,
         received_at: Math.floor(Date.now() / 1000),
+        validation,
+        streams,
       };
 
       snapshot.episodes = [stored, ...snapshot.episodes];

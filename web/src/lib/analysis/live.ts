@@ -26,6 +26,7 @@ import { estimateFlow, toGrayscale } from "./flow";
 import type { FlowSample } from "./correlate";
 import type { FrameHands, Landmark } from "./framing";
 import { createHandLandmarker, normalizeKeypoints } from "./landmarks";
+import { dHash } from "@/lib/validator/phash";
 
 export interface LiveAnalyzerOptions {
   /** Frames per second sampled for optical flow. */
@@ -69,6 +70,14 @@ export class LiveAnalyzer {
 
   private readonly flow: FlowSample[] = [];
   private readonly hands: FrameHands[] = [];
+  /**
+   * Perceptual hash per sampled frame.
+   *
+   * Computed here, on the frames as captured, so the signature is sealed
+   * into the manifest alongside the stream digests. Deriving it server-side
+   * later would leave it outside the commitment and therefore forgeable.
+   */
+  private readonly frameHashes: string[] = [];
 
   /** Most recent frame that actually had hands, kept for the review overlay. */
   private preview: { image: ImageData; hands: FrameHands } | null = null;
@@ -152,6 +161,12 @@ export class LiveAnalyzer {
       const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
       this.sampled++;
 
+      try {
+        this.frameHashes.push(dHash(image));
+      } catch {
+        // A degenerate frame is not worth failing the episode over.
+      }
+
       const shouldDetect = this.tickIndex % this.opts.detectEvery === 0;
       this.tickIndex++;
 
@@ -211,6 +226,7 @@ export class LiveAnalyzer {
     hands: FrameHands[];
     stats: LiveStats;
     preview: { image: ImageData; hands: FrameHands } | null;
+    frameHashes: string[];
   } {
     this.running = false;
     if (this.rafHandle !== null) cancelAnimationFrame(this.rafHandle);
@@ -224,6 +240,7 @@ export class LiveAnalyzer {
       flow: [...this.flow],
       hands: [...this.hands],
       preview: this.preview,
+      frameHashes: [...this.frameHashes],
       stats: {
         sampledFrames: this.sampled,
         detections: this.detections,

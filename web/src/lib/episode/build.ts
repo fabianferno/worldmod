@@ -109,6 +109,9 @@ export async function buildEpisodeManifest(
       plausibility_verdict: quality.plausibility.verdict,
       motion_rms_deg_per_sec: Number(quality.plausibility.motionRmsDegPerSec.toFixed(3)),
       frames_analyzed: quality.framesAnalyzed,
+      // Perceptual signature is sealed with everything else, so a
+      // near-duplicate cannot be disguised by rewriting it in transit.
+      signature: [...quality.signature],
       // The MVP produces heuristic data and says so on every record, per
       // product-spec §6.4. Nothing here is device-attested.
       trust_level: "heuristic",

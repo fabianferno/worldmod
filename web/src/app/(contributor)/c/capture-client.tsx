@@ -19,6 +19,7 @@ import {
   type MotionPermission,
 } from "@/lib/capture";
 import { buildEpisodeManifest, toSubmission } from "@/lib/episode/build";
+import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/episode/queue";
 import type { Bounty, StoredEpisode } from "@/lib/market/types";
 import { LiveOverlay } from "./overlay";
 import { QualityPanel } from "./quality";
@@ -102,6 +103,7 @@ export default function CaptureClient() {
   const [error, setError] = useState<string | null>(null);
   const [bounty, setBounty] = useState<Bounty | null>(null);
   const [submitted, setSubmitted] = useState<StoredEpisode | null>(null);
+  const [pending, setPending] = useState(0);
 
   const secure = useSyncExternalStore(noSubscribe, secureSnapshot, secureServerSnapshot);
 
@@ -127,6 +129,10 @@ export default function CaptureClient() {
     const backend = createCaptureBackend();
     backendRef.current = backend;
     backend.probe().then(setCaps).catch(() => setCaps(null));
+
+    listPending()
+      .then((queued) => setPending(queued.length))
+      .catch(() => setPending(0));
 
     fetch("/api/bounties")
       .then((r) => r.json())
@@ -180,6 +186,7 @@ export default function CaptureClient() {
             imu: result.imu.stream.samples,
             stats: live.stats,
             preview: live.preview,
+            frameHashes: live.frameHashes,
           })
         : null;
       if (report) setQuality(report);
@@ -201,15 +208,33 @@ export default function CaptureClient() {
             uaClass: caps?.uaClass ?? "other",
           });
 
-          const response = await fetch("/api/episodes", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify(toSubmission(manifest, report)),
+          const submission = toSubmission(manifest, report);
+          const imuBlob = new Blob([encodeImuStream(result.imu.stream) as BlobPart], {
+            type: "application/octet-stream",
           });
-          const data = (await response.json()) as { episode?: StoredEpisode; error?: string };
 
-          if (data.episode) setSubmitted(data.episode);
-          else setError(data.error ?? "Submission failed.");
+          // Persisted before any network call: a dropped upload must cost a
+          // retry, not a take the wearer has already performed.
+          const entry = {
+            episode_id: submission.episode_id,
+            manifest,
+            submission,
+            streams: { rgb: result.video.blob, imu: imuBlob },
+          };
+          await enqueueEpisode(entry);
+          setPending((await listPending()).length);
+
+          const outcome = await uploadEpisode({
+            ...entry,
+            queued_at: Date.now(),
+            attempts: 0,
+            last_error: null,
+          });
+
+          if (outcome.ok) setSubmitted(outcome.episode as StoredEpisode);
+          else setError(`${outcome.error ?? "Upload failed."} Saved for retry.`);
+
+          setPending((await listPending()).length);
         } catch (err) {
           // A failed submission must not lose a good recording.
           setError(err instanceof Error ? err.message : String(err));
@@ -289,6 +314,13 @@ export default function CaptureClient() {
       fail(err);
     }
   }, [acquireWakeLock, beginRecording, fail]);
+
+  const retry = useCallback(async () => {
+    setError(null);
+    const { failed } = await flushQueue();
+    setPending((await listPending()).length);
+    if (failed > 0) setError(`${failed} episode(s) still queued.`);
+  }, []);
 
   const again = useCallback(() => {
     clearTimers();
@@ -394,6 +426,15 @@ export default function CaptureClient() {
             className="w-full rounded-xl border border-white/20 px-4 py-3.5 font-semibold"
           >
             Record another
+          </button>
+        ) : null}
+
+        {pending > 0 ? (
+          <button
+            onClick={retry}
+            className="mt-3 w-full rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-200"
+          >
+            {pending} episode{pending === 1 ? "" : "s"} waiting to upload — retry
           </button>
         ) : null}
 
