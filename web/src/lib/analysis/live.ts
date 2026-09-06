@@ -17,12 +17,18 @@
  *    detector is not.
  *  - Ticks are DROPPED while inference is in flight, never queued. A backlog
  *    would grow without bound and turn a slow device into an unresponsive one.
+ *  - **Nothing is read back to the CPU on the hot path.** Frames go from the
+ *    video element to the GPU and stay there. The first version pulled every
+ *    sampled frame down with getImageData and pushed it back up again, and the
+ *    recorded video showed the cost: 24.9fps against a nominal 30, ~114 frames
+ *    missing from a 15s take, and one 1330ms gap with no video at all — during
+ *    the movement the validator most needs to see.
  *
  * fps_observed in the manifest is what will show the cost honestly.
  */
 
 import * as tf from "@tensorflow/tfjs";
-import { estimateFlow, toGrayscale } from "./flow";
+import { estimateFlow, grayscaleFromVideo } from "./flow";
 import type { FlowSample } from "./correlate";
 import type { FrameHands, Landmark } from "./framing";
 import { createHandLandmarker, normalizeKeypoints } from "./landmarks";
@@ -35,11 +41,17 @@ export interface LiveAnalyzerOptions {
   detectEvery?: number;
   /** Longest edge of the analysis canvas. */
   maxEdge?: number;
+  /**
+   * Hash one in every N sampled frames. Perceptual hashing is the only
+   * consumer needing CPU pixels, and a duplicate signature does not need
+   * every frame — so the readback it costs is paid rarely.
+   */
+  hashEvery?: number;
   /** Called whenever a new detection lands, for the overlay. */
   onHands?: (hands: Landmark[][]) => void;
 }
 
-const DEFAULTS = { flowFps: 8, detectEvery: 2, maxEdge: 192 } as const;
+const DEFAULTS = { flowFps: 8, detectEvery: 2, maxEdge: 192, hashEvery: 4 } as const;
 
 export interface LiveStats {
   sampledFrames: number;
@@ -81,6 +93,8 @@ export class LiveAnalyzer {
 
   /** Most recent frame that actually had hands, kept for the review overlay. */
   private preview: { image: ImageData; hands: FrameHands } | null = null;
+  /** Most recent frame pulled to the CPU, reused for the review overlay. */
+  private lastImage: { image: ImageData; t: number } | null = null;
 
   private sampled = 0;
   private detections = 0;
@@ -151,27 +165,16 @@ export class LiveAnalyzer {
   };
 
   private async analyzeFrame(t: number): Promise<void> {
-    const ctx = this.ctx;
-    const canvas = this.canvas;
-    if (!ctx || !canvas) return;
-
     this.busy = true;
     try {
-      ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height);
-      const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
       this.sampled++;
+      const index = this.tickIndex++;
 
-      try {
-        this.frameHashes.push(dHash(image));
-      } catch {
-        // A degenerate frame is not worth failing the episode over.
-      }
+      // The only CPU readback, and only occasionally.
+      if (index % this.opts.hashEvery === 0) this.hashFrame(t);
 
-      const shouldDetect = this.tickIndex % this.opts.detectEvery === 0;
-      this.tickIndex++;
-
-      if (shouldDetect) await this.detect(image, t);
-      await this.trackFlow(image, t);
+      if (index % this.opts.detectEvery === 0) await this.detect(t);
+      await this.trackFlow(t);
     } catch {
       // A single bad frame must never end the recording.
     } finally {
@@ -179,26 +182,49 @@ export class LiveAnalyzer {
     }
   }
 
-  private async detect(image: ImageData, t: number): Promise<void> {
+  /** Perceptual signature for duplicate detection; needs pixels on the CPU. */
+  private hashFrame(t: number): void {
+    const ctx = this.ctx;
+    const canvas = this.canvas;
+    if (!ctx || !canvas) return;
+
+    try {
+      ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height);
+      const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      this.frameHashes.push(dHash(image));
+      this.lastImage = { image, t };
+    } catch {
+      // A degenerate frame is not worth failing the episode over.
+    }
+  }
+
+  private async detect(t: number): Promise<void> {
     const detector = await createHandLandmarker();
     const started = performance.now();
-    const found = await detector.estimateHands(image, { flipHorizontal: false });
+
+    // The video element goes straight to the detector; no readback.
+    const found = await detector.estimateHands(this.video, { flipHorizontal: false });
     this.detectMsTotal += performance.now() - started;
     this.detections++;
 
-    const hands = found.map((h) => normalizeKeypoints(h.keypoints, image.width, image.height));
+    const width = this.video.videoWidth || 1;
+    const height = this.video.videoHeight || 1;
+    const hands = found.map((h) => normalizeKeypoints(h.keypoints, width, height));
     const frame: FrameHands = { t, hands };
     this.hands.push(frame);
 
     // Retaining a frame with hands means the review overlay can show why a
-    // score came out as it did, rather than an arbitrary empty frame.
-    if (hands.some((h) => h.length > 0)) this.preview = { image, hands: frame };
+    // score came out as it did, rather than an arbitrary empty frame. It uses
+    // the most recent hashed frame, since that is the only one on the CPU.
+    if (hands.some((h) => h.length > 0) && this.lastImage) {
+      this.preview = { image: this.lastImage.image, hands: frame };
+    }
 
     this.opts.onHands?.(hands);
   }
 
-  private async trackFlow(image: ImageData, t: number): Promise<void> {
-    const gray = toGrayscale(image);
+  private async trackFlow(t: number): Promise<void> {
+    const gray = grayscaleFromVideo(this.video, this.opts.maxEdge);
 
     if (this.prevGray && this.prevT !== null) {
       const dtSeconds = (t - this.prevT) / 1000;
