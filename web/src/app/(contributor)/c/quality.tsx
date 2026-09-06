@@ -130,9 +130,17 @@ export function QualityPanel({ report }: { report: QualityReport }) {
 
   return (
     <section className="px-5 pb-6">
-      <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-white/40">
-        Data quality
-      </h2>
+      <div className="mb-1 flex items-baseline justify-between gap-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-white/40">
+          Data quality
+        </h2>
+        <span
+          className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/60"
+          title="Scores measure whether a capture is plausible, not whether it is genuine. Nothing here is device-attested."
+        >
+          heuristic
+        </span>
+      </div>
 
       <Meter
         label="Framing"

@@ -95,6 +95,17 @@ export async function buildEpisodeManifest(
       },
     },
     sync: { method: capture.video.frameTiming, measured_skew_ms: capture.measuredSkewMs },
+    orientation: capture.orientation
+      ? { samples: capture.orientation.count, absolute: capture.orientation.absolute }
+      : null,
+    // Coarse by construction — see lib/capture/geo. Null when not opted in.
+    location: capture.location
+      ? {
+          lat: Number(capture.location.lat.toFixed(4)),
+          lon: Number(capture.location.lon.toFixed(4)),
+          grid_km: capture.location.grid_km,
+        }
+      : null,
     outcome: "success",
     self_report: { task_completed: true, notes: "" },
   };

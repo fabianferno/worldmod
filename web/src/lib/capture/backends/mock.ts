@@ -125,6 +125,8 @@ export class MockCapture implements CaptureBackend {
       },
       audio: null,
       imu: syntheticImu(durationMs, imuRateHz),
+      orientation: { count: 120, absolute: false },
+      location: null,
       startedAtEpochMs: 1786550400123,
       durationMs,
       measuredSkewMs: 4.2,

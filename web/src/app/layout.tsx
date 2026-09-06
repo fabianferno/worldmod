@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ServiceWorkerRegistration } from "@/components/service-worker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,6 +16,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "World Mod",
   description: "A permissionless network for physical-world data.",
+  applicationName: "World Mod",
+  appleWebApp: {
+    // iOS ignores the web app manifest and needs its own hints.
+    capable: true,
+    title: "World Mod",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 // Capture runs on a phone strapped to someone's head: fill the viewport,
@@ -33,7 +45,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-neutral-950 text-white">
+        <ServiceWorkerRegistration />
+        {children}
+      </body>
     </html>
   );
 }

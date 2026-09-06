@@ -15,6 +15,7 @@
  */
 
 import { detectFrameTiming, fovFromSettings, negotiateMimeType } from "../detect";
+import { OrientationRecorder, readCoarseLocation } from "../geo";
 import { ImuRecorder } from "../imu";
 import {
   CaptureError,
@@ -34,6 +35,7 @@ export class MediaRecorderCapture implements CaptureBackend {
   protected stream: MediaStream | null = null;
   protected recorder: MediaRecorder | null = null;
   protected imu: ImuRecorder | null = null;
+  protected orientation: OrientationRecorder | null = null;
 
   private chunks: Blob[] = [];
   private mimeType = "";
@@ -41,6 +43,7 @@ export class MediaRecorderCapture implements CaptureBackend {
   private t0 = 0;
   private stopTimer: ReturnType<typeof setTimeout> | null = null;
   private recorderError: Error | null = null;
+  private wantsLocation = false;
   /**
    * Resolves once the recorder has emitted its final data.
    *
@@ -107,6 +110,7 @@ export class MediaRecorderCapture implements CaptureBackend {
       );
     }
     this.mimeType = mimeType;
+    this.wantsLocation = opts.location === true;
 
     // Reuse the viewfinder stream when preview() already acquired one;
     // re-acquiring mid-session costs a visible camera restart.
@@ -128,6 +132,7 @@ export class MediaRecorderCapture implements CaptureBackend {
     };
 
     this.imu = new ImuRecorder();
+    this.orientation = new OrientationRecorder();
 
     // Established before start so it cannot miss the event.
     this.finished = new Promise<void>((resolve) => {
@@ -141,6 +146,7 @@ export class MediaRecorderCapture implements CaptureBackend {
         this.t0 = performance.now();
         this.startedAtEpochMs = Date.now();
         this.imu!.start();
+        this.orientation!.start();
         resolve();
       };
       const failed = () =>
@@ -175,6 +181,12 @@ export class MediaRecorderCapture implements CaptureBackend {
     await this.finished;
 
     const imuRecording = imu.stop();
+    const orientationRecording = this.orientation?.stop() ?? null;
+
+    // Read AFTER the take, never before: a permission prompt during the
+    // countdown would interrupt someone mounting the phone, and the coarse
+    // grid makes a few seconds of drift irrelevant.
+    const location = this.wantsLocation ? await readCoarseLocation() : null;
     const durationMs = performance.now() - this.t0;
     const videoDetail = await this.collectVideoDetail();
     const track = this.stream?.getVideoTracks()[0] ?? null;
@@ -216,6 +228,10 @@ export class MediaRecorderCapture implements CaptureBackend {
       },
       audio: null,
       imu: imuRecording,
+      orientation: orientationRecording
+        ? { count: orientationRecording.count, absolute: orientationRecording.absolute }
+        : null,
+      location,
       startedAtEpochMs: this.startedAtEpochMs,
       durationMs,
       measuredSkewMs: videoDetail.measuredSkewMs,
@@ -233,6 +249,7 @@ export class MediaRecorderCapture implements CaptureBackend {
       // Already torn down; nothing to salvage.
     }
     this.imu?.abort();
+    this.orientation?.stop();
     this.releaseStream();
     this.reset();
   }

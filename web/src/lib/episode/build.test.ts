@@ -41,6 +41,8 @@ function capture(overrides: Partial<RawCapture> = {}): RawCapture {
       screenOrientation: "portrait-primary",
       durationMs: 15_000,
     },
+    orientation: { count: 120, absolute: false },
+    location: null,
     startedAtEpochMs: 1_787_000_000_000,
     durationMs: 15_000,
     measuredSkewMs: 36.1,
