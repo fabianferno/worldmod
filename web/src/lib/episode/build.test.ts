@@ -81,6 +81,7 @@ const input = {
   entityId: "0xA1b2C3d4",
   assetId: "asset_1",
   clientVersion: "0.1.0",
+  uaClass: "android_chrome" as const,
 };
 
 describe("newEpisodeId", () => {
@@ -145,6 +146,17 @@ describe("buildEpisodeManifest", () => {
     const manifest = await buildEpisodeManifest({ capture: capture(), quality: null, ...input });
     expect(manifest.quality).toBeUndefined();
     await expect(verifyManifestHash(manifest)).resolves.toBe(true);
+  });
+});
+
+describe("client platform", () => {
+  it("records the detected platform rather than a placeholder", async () => {
+    // Shipped once with a hardcoded "other": every episode misreported its
+    // platform, poisoning exactly the per-platform analysis the field exists
+    // for. Caught on a real submission from an S24 Ultra.
+    const manifest = await buildEpisodeManifest({ capture: capture(), quality: quality(), ...input });
+    expect((manifest.client as { ua_class: string }).ua_class).toBe("android_chrome");
+    expect(toSubmission(manifest, quality()).ua_class).toBe("android_chrome");
   });
 });
 
