@@ -86,6 +86,37 @@ function readAwaiting(): { episodeId: string; startedAt: number } | null {
   }
 }
 
+/**
+ * An episode that has a verdict but is not yet on-chain.
+ *
+ * Anchoring is four transactions on a first submission and takes half a minute
+ * or more; a page reload part-way through used to lose it, leaving an episode
+ * scored and paid locally with no on-chain record — which is exactly what
+ * happened to the second real take.
+ *
+ * Only written, never read: recovery asks the server which episodes are still
+ * unanchored, because a note in storage cannot describe an episode recorded
+ * before the note existed. The flag remains as the record of an attempt in
+ * flight, and is cleared once the chain has it.
+ */
+const UNANCHORED_KEY = "worldmod.unanchored";
+
+function rememberUnanchored(episodeId: string): void {
+  try {
+    localStorage.setItem(UNANCHORED_KEY, episodeId);
+  } catch {
+    // Anchoring still runs in this page; it just will not survive a reload.
+  }
+}
+
+function forgetUnanchored(): void {
+  try {
+    localStorage.removeItem(UNANCHORED_KEY);
+  } catch {
+    // A stale key is harmless: anchoring is idempotent server-side.
+  }
+}
+
 function forgetAwaiting(): void {
   try {
     localStorage.removeItem(AWAITING_KEY);
@@ -220,6 +251,11 @@ export default function CaptureClient() {
    */
   const anchor = useCallback(async (episode: StoredEpisode) => {
     if (episode.status !== "scored" || episode.anchor) return;
+    if (!signer) return;
+
+    // Recorded before the first transaction, cleared only once the chain has
+    // it. A reload half way through no longer abandons the episode.
+    rememberUnanchored(episode.episode_id);
 
     // The content address in preference to the file path: what goes on-chain
     // should be resolvable by whoever reads it, and `file:///Users/...` is a
@@ -229,8 +265,6 @@ export default function CaptureClient() {
       ? `${window.location.origin}/ipfs/${rgb.cid}`
       : (rgb?.uri ?? "");
     try {
-      if (!signer) return;
-
       const result = await anchorEpisode(
         episode.episode_id,
         episode.manifest_hash,
@@ -238,11 +272,59 @@ export default function CaptureClient() {
         storage,
         signer,
       );
+      if (result?.onchain_episode_id) forgetUnanchored();
       if (result) setSubmitted((current) => (current ? { ...current, anchor: result } : current));
     } catch {
-      // Anchoring is additive. The episode stands without it.
+      // Anchoring is additive. The episode stands without it, and the id stays
+      // in storage so the next mount can try again.
     }
   }, [signer]);
+
+  /**
+   * Finish anchoring anything a previous page gave up on.
+   *
+   * Asks the server which of this contributor's episodes are scored and still
+   * have no on-chain record, rather than trusting a note left in storage. The
+   * note is a hint; the server is the answer — and an episode recorded before
+   * that note existed, or on a page that never got to write it, is exactly the
+   * one that needs recovering.
+   *
+   * Re-anchoring one already committed is refused server-side, so a stale
+   * entry costs a request rather than a duplicate episode.
+   */
+  useEffect(() => {
+    if (!signer) return;
+    const me = signer.address.toLowerCase();
+
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch("/api/episodes");
+        const data = (await response.json()) as { episodes: StoredEpisode[] };
+
+        const stranded = data.episodes.filter(
+          (e) =>
+            e.entity_id.toLowerCase() === me &&
+            e.status === "scored" &&
+            !e.anchor?.onchain_episode_id,
+        );
+
+        if (stranded.length === 0) {
+          forgetUnanchored();
+          return;
+        }
+
+        // Oldest first, and one at a time: each needs its own nonce, and the
+        // next signature is only valid once the previous transaction lands.
+        for (const episode of stranded.sort((a, b) => a.recorded_at - b.recorded_at)) {
+          await anchor(episode);
+        }
+      } catch {
+        // Try again next mount.
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [signer, anchor]);
 
   /**
    * Watch for the server's verdict.
