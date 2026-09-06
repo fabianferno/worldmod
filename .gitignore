@@ -14,3 +14,7 @@ web/public/models/
 
 # Local marketplace store
 web/.data/
+
+# Third-party agent skills — install with:
+#   npx skills add Leonxlnx/taste-skill
+.agents/

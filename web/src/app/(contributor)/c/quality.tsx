@@ -45,7 +45,7 @@ function Meter({
         />
       </div>
 
-      <p className="mt-1.5 text-xs text-white/45">{caption}</p>
+      <p className="mt-1.5 text-xs text-subtle">{caption}</p>
     </div>
   );
 }
@@ -99,9 +99,9 @@ function PivotOverlay({ report }: { report: QualityReport }) {
     <figure className="mt-4">
       <canvas
         ref={canvasRef}
-        className="w-full rounded-lg border border-white/10 bg-black"
+        className="w-full rounded-lg border border-line bg-black"
       />
-      <figcaption className="mt-1.5 text-xs text-white/40">
+      <figcaption className="mt-1.5 text-xs text-subtle">
         Pivot points on the frame used for scoring; dashed box is the region the
         framing score measures against.
       </figcaption>
@@ -131,11 +131,11 @@ export function QualityPanel({ report }: { report: QualityReport }) {
   return (
     <section className="px-5 pb-6">
       <div className="mb-1 flex items-baseline justify-between gap-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-white/40">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-subtle">
           Data quality
         </h2>
         <span
-          className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/60"
+          className="interactive rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted"
           title="Scores measure whether a capture is plausible, not whether it is genuine. Nothing here is device-attested."
         >
           heuristic
@@ -157,7 +157,7 @@ export function QualityPanel({ report }: { report: QualityReport }) {
 
       <PivotOverlay report={report} />
 
-      <p className="mt-3 text-xs text-white/30">
+      <p className="mt-3 text-xs text-subtle">
         {report.framesAnalyzed} frames sampled live, {report.stats.detections} hand
         detections at {report.stats.meanDetectMs.toFixed(0)}ms each on the {report.backend}
         backend
