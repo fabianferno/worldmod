@@ -1,18 +1,15 @@
 "use client";
 
-import type { QualityReport } from "@/lib/analysis";
+import type { OverlayStats } from "@/lib/analysis";
 import type { CaptureCapabilities, MotionPermission, RawCapture } from "@/lib/capture";
+import type { StoredEpisode } from "@/lib/market/types";
 
 /**
  * Capture diagnostics, collapsed.
  *
- * These numbers used to be half the screen — platform, frame timing, container,
- * observed rates, measured skew, stream sizes. They are genuinely useful, and
- * they are why several real bugs were found on device. They are also not what
- * a contributor opened the app for, and leading with them made an earning app
- * read as a test harness.
- *
- * Kept, one tap away, for whoever wants them.
+ * These numbers are why several real bugs were found on device, and they are
+ * kept for whoever wants them. They are not what a contributor opened the app
+ * for, so they sit one tap away.
  */
 
 function Row({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
@@ -30,15 +27,18 @@ export function Details({
   capture,
   caps,
   motion,
-  quality,
+  overlay,
+  submitted,
 }: {
   capture: RawCapture;
   caps: CaptureCapabilities | null;
   motion: MotionPermission | null;
-  quality: QualityReport | null;
+  overlay: OverlayStats | null;
+  submitted: StoredEpisode | null;
 }) {
   const { video, imu } = capture;
   const throttled = video.fpsObserved !== null && video.fpsObserved < video.fpsNominal * 0.8;
+  const checks = submitted?.validation?.checks;
 
   return (
     <details className="mx-auto mt-6 w-full max-w-md">
@@ -57,7 +57,6 @@ export function Details({
         />
         <Row label="Frames" value={String(video.frameCount)} />
         <Row label="Container" value={video.mimeType} />
-        <Row label="Lens" value={video.deviceLabel ?? "unknown"} />
         <Row
           label="IMU rate"
           value={`${imu.rateHzObserved.toFixed(1)} Hz`}
@@ -68,11 +67,7 @@ export function Details({
         <Row label="Orientation samples" value={String(capture.orientation?.count ?? 0)} />
         <Row
           label="Location"
-          value={
-            capture.location
-              ? `~${capture.location.grid_km}km grid`
-              : "not shared"
-          }
+          value={capture.location ? `~${capture.location.grid_km}km grid` : "not shared"}
         />
         <Row
           label="Measured skew"
@@ -82,40 +77,46 @@ export function Details({
         />
         <Row label="Video size" value={`${(video.blob.size / 1_000_000).toFixed(2)} MB`} />
         <Row label="Platform" value={caps?.uaClass ?? "unknown"} />
-        <Row label="Frame timing" value={caps?.frameTiming ?? "unknown"} />
         <Row label="Motion permission" value={motion ?? "unknown"} />
 
-        {quality ? (
+        {overlay ? (
           <>
-            <Row label="Frames analysed" value={String(quality.framesAnalyzed)} />
-            <Row label="Hand detections" value={String(quality.stats.detections)} />
+            <Row label="Overlay detections" value={String(overlay.detections)} />
+            <Row label="Overlay cost" value={`${overlay.meanDetectMs.toFixed(0)} ms`} />
             <Row
-              label="Detection cost"
-              value={`${quality.stats.meanDetectMs.toFixed(0)} ms`}
+              label="Overlay errors"
+              value={String(overlay.errors)}
+              warn={overlay.errors > 0}
             />
-            <Row
-              label="Ticks dropped"
-              value={String(quality.stats.droppedTicks)}
-              warn={quality.stats.droppedTicks > quality.stats.sampledFrames / 2}
-            />
-            <Row
-              label="Analysis errors"
-              value={String(quality.stats.errors)}
-              warn={quality.stats.errors > 0}
-            />
-            {quality.stats.lastError ? (
-              <Row label="Last error" value={quality.stats.lastError} warn />
-            ) : null}
-            <Row label="Backend" value={quality.backend} />
-            <Row label="Trust level" value="heuristic" />
+            {overlay.lastError ? <Row label="Last error" value={overlay.lastError} warn /> : null}
           </>
         ) : null}
+
+        {checks ? (
+          <>
+            {/* Everything below was measured on the server, not here. */}
+            <Row label="Manifest verified" value={checks.manifest_intact ? "yes" : "no"} />
+            <Row label="Streams verified" value={checks.streams_intact ? "yes" : "no"} />
+            <Row
+              label="Motion in the take"
+              value={`${checks.flow_gyro_corr === null ? "—" : (checks.flow_gyro_corr * 100).toFixed(0) + "%"}`}
+            />
+            <Row
+              label="Duplicate of"
+              value={checks.duplicate_of ?? "none"}
+              warn={checks.duplicate_of != null}
+            />
+            <Row label="Validator score" value={String(submitted?.validation?.plausibility_score)} />
+          </>
+        ) : null}
+
+        <Row label="Trust level" value="heuristic" />
       </dl>
 
       <p className="mt-2 px-1 text-xs leading-relaxed text-subtle">
-        Scored on this device before upload. Heuristic means these checks measure
-        whether a capture is plausible, not whether it is genuine — nothing here is
-        attested by the hardware.
+        Scored on the server from the bytes it received. Heuristic means these checks
+        measure whether a capture is plausible, not whether it is genuine — nothing here
+        is attested by the hardware.
       </p>
     </details>
   );

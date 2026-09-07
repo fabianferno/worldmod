@@ -14,6 +14,7 @@ function episode(overrides: Partial<StoredEpisode> = {}): StoredEpisode {
     trust_level: "heuristic",
     ua_class: "android_chrome",
     recorded_at: 1_787_000_000,
+    status: "scored" as const,
     accepted: true,
     reasons: [],
     paid_usdc: 0.6,

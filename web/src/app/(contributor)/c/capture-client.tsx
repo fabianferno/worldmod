@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
-  finalizeQuality,
   GUIDE_REGION,
   LiveAnalyzer,
   type Landmark,
-  type QualityReport,
+  type OverlayStats,
 } from "@/lib/analysis";
 import {
   CaptureError,
@@ -30,7 +29,17 @@ const EPISODE_MS = 15_000;
 const COUNTDOWN_MS = 5_000;
 const CLIENT_VERSION = "0.1.0";
 
-type Phase = "idle" | "preparing" | "countdown" | "recording" | "done" | "error";
+type Phase =
+  | "idle"
+  | "preparing"
+  | "countdown"
+  | "recording"
+  // Bytes on their way; the wearer can put the phone down.
+  | "uploading"
+  // Uploaded and being scored on the server, which takes about a minute.
+  | "scoring"
+  | "done"
+  | "error";
 
 const noSubscribe = () => () => {};
 const secureSnapshot = () => isSecureCaptureContext();
@@ -62,13 +71,13 @@ export default function CaptureClient() {
   const [caps, setCaps] = useState<CaptureCapabilities | null>(null);
   const [motion, setMotion] = useState<MotionPermission | null>(null);
   const [capture, setCapture] = useState<Awaited<ReturnType<CaptureBackend["stop"]>> | null>(null);
-  const [quality, setQuality] = useState<QualityReport | null>(null);
   const [liveHands, setLiveHands] = useState<Landmark[][]>([]);
   const [remainingMs, setRemainingMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [bounties, setBounties] = useState<Bounty[]>([]);
   const [bounty, setBounty] = useState<Bounty | null>(null);
   const [submitted, setSubmitted] = useState<StoredEpisode | null>(null);
+  const [overlay, setOverlay] = useState<OverlayStats | null>(null);
   const [pending, setPending] = useState(0);
   const [earned, setEarned] = useState(0);
   const [shareLocation, setShareLocation] = useState(false);
@@ -151,6 +160,45 @@ export default function CaptureClient() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [acquireWakeLock, phase]);
 
+  /**
+   * Watch for the server's verdict.
+   *
+   * Scoring decodes every sampled frame, detects hands across the take and
+   * solves flow between pairs — over a minute of work, so the upload does not
+   * wait on it and this polls instead.
+   */
+  const watchScoring = useCallback(
+    (episodeId: string) => {
+      const deadline = Date.now() + 5 * 60_000;
+
+      const poll = async () => {
+        try {
+          const response = await fetch(`/api/episodes/${episodeId}`);
+          const data = (await response.json()) as { episode?: StoredEpisode };
+
+          if (data.episode && data.episode.status !== "scoring") {
+            setSubmitted(data.episode);
+            setPhase("done");
+            refreshEarnings();
+            return;
+          }
+        } catch {
+          // Keep waiting; a dropped poll is not a failed episode.
+        }
+
+        if (Date.now() < deadline) {
+          timersRef.current.push(setTimeout(() => void poll(), 3000));
+        } else {
+          setError("Still scoring. It will appear on the bounty page when it finishes.");
+          setPhase("done");
+        }
+      };
+
+      timersRef.current.push(setTimeout(() => void poll(), 2000));
+    },
+    [refreshEarnings],
+  );
+
   const fail = useCallback((err: unknown) => {
     setError(err instanceof CaptureError || err instanceof Error ? err.message : String(err));
     setPhase("error");
@@ -158,78 +206,64 @@ export default function CaptureClient() {
 
   const finish = useCallback(async () => {
     clearTimers();
-    const live = analyzerRef.current?.stop() ?? null;
+    setOverlay(analyzerRef.current?.stop() ?? null);
 
     try {
       const result = await backendRef.current!.stop();
       setCapture(result);
+      setPhase("uploading");
 
-      const report = live
-        ? finalizeQuality({
-            flow: live.flow,
-            hands: live.hands,
-            imu: result.imu.stream.samples,
-            stats: live.stats,
-            preview: live.preview,
-            frameHashes: live.frameHashes,
-          })
-        : null;
-      if (report) setQuality(report);
-      setPhase("done");
+      if (!bounty) return;
 
-      if (bounty) {
-        try {
-          const manifest = await buildEpisodeManifest({
-            capture: result,
-            quality: report,
-            bountyId: bounty.bounty_id,
-            task: bounty.task,
-            entityId: entityId(),
-            assetId: "asset_phone",
-            clientVersion: CLIENT_VERSION,
-            uaClass: caps?.uaClass ?? "other",
-          });
+      const manifest = await buildEpisodeManifest({
+        capture: result,
+        bountyId: bounty.bounty_id,
+        task: bounty.task,
+        entityId: entityId(),
+        assetId: "asset_phone",
+        clientVersion: CLIENT_VERSION,
+        uaClass: caps?.uaClass ?? "other",
+      });
 
-          const submission = toSubmission(manifest, report);
-          const imuBlob = new Blob([encodeImuStream(result.imu.stream) as BlobPart], {
-            type: "application/octet-stream",
-          });
-          const entry = {
-            episode_id: submission.episode_id,
-            manifest,
-            submission,
-            streams: { rgb: result.video.blob, imu: imuBlob },
-          };
+      const submission = toSubmission(manifest);
+      const imuBlob = new Blob([encodeImuStream(result.imu.stream) as BlobPart], {
+        type: "application/octet-stream",
+      });
+      const entry = {
+        episode_id: submission.episode_id,
+        manifest,
+        submission,
+        streams: { rgb: result.video.blob, imu: imuBlob },
+      };
 
-          // Saved before the network is involved: a dropped upload costs a
-          // retry, never a take that has already been performed.
-          await enqueueEpisode(entry);
-          setPending((await listPending()).length);
+      // Saved before the network is involved: a dropped upload costs a retry,
+      // never a take that has already been performed.
+      await enqueueEpisode(entry);
+      setPending((await listPending()).length);
 
-          const outcome = await uploadEpisode({
-            ...entry,
-            queued_at: Date.now(),
-            attempts: 0,
-            last_error: null,
-          });
+      const outcome = await uploadEpisode({
+        ...entry,
+        queued_at: Date.now(),
+        attempts: 0,
+        last_error: null,
+      });
+      setPending((await listPending()).length);
 
-          if (outcome.ok) {
-            setSubmitted(outcome.episode as StoredEpisode);
-            refreshEarnings();
-          } else {
-            setError(`${outcome.error ?? "Upload failed."} Saved — it will retry.`);
-          }
-          setPending((await listPending()).length);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : String(err));
-        }
+      if (!outcome.ok) {
+        setError(`${outcome.error ?? "Upload failed."} Saved — it will retry.`);
+        setPhase("done");
+        return;
       }
+
+      setSubmitted(outcome.episode as StoredEpisode);
+      setPhase("scoring");
+      watchScoring(submission.episode_id);
     } catch (err) {
       fail(err);
     } finally {
       releaseWakeLock();
     }
-  }, [bounty, caps, clearTimers, fail, refreshEarnings, releaseWakeLock]);
+  }, [bounty, caps, clearTimers, fail, releaseWakeLock, watchScoring]);
 
   const beginRecording = useCallback(async () => {
     try {
@@ -258,7 +292,6 @@ export default function CaptureClient() {
   /** The only tap in the flow — iOS refuses motion permission without a gesture. */
   const begin = useCallback(async () => {
     setError(null);
-    setQuality(null);
     setCapture(null);
     setSubmitted(null);
     setPhase("preparing");
@@ -302,8 +335,8 @@ export default function CaptureClient() {
     backendRef.current?.abort();
     backendRef.current = createCaptureBackend();
     setCapture(null);
-    setQuality(null);
     setSubmitted(null);
+    setOverlay(null);
     setLiveHands([]);
     setError(null);
     setPhase("idle");
@@ -395,11 +428,31 @@ export default function CaptureClient() {
           </>
         ) : null}
 
+        {phase === "uploading" || phase === "scoring" ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/95 p-6 text-center backdrop-blur">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-accent" />
+            <p className="text-base font-medium">
+              {phase === "uploading" ? "Sending your episode" : "Scoring on the server"}
+            </p>
+            <p className="max-w-xs text-sm leading-relaxed text-muted">
+              {phase === "uploading"
+                ? "Saved on your phone already — this can retry if it drops."
+                : "Every frame is being checked, which takes about a minute. You can put the phone down."}
+            </p>
+          </div>
+        ) : null}
+
         {phase === "done" || phase === "error" ? (
           <div className="absolute inset-0 overflow-y-auto bg-background/97 p-5 backdrop-blur">
-            <Result submitted={submitted} quality={quality} error={error} onAgain={again} />
+            <Result submitted={submitted} error={error} onAgain={again} />
             {capture ? (
-              <Details capture={capture} caps={caps} motion={motion} quality={quality} />
+              <Details
+                capture={capture}
+                caps={caps}
+                motion={motion}
+                overlay={overlay}
+                submitted={submitted}
+              />
             ) : null}
           </div>
         ) : null}
@@ -449,6 +502,12 @@ export default function CaptureClient() {
         {live || phase === "preparing" ? (
           <p className="py-4 text-center text-sm text-subtle">
             {phase === "recording" ? "Stops on its own" : "Starting automatically"}
+          </p>
+        ) : null}
+
+        {phase === "uploading" || phase === "scoring" ? (
+          <p className="py-4 text-center text-sm text-subtle">
+            {phase === "uploading" ? "Uploading" : "Waiting for the validator"}
           </p>
         ) : null}
 
