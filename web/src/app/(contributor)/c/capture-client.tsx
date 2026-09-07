@@ -24,6 +24,7 @@ import type { Bounty, StoredEpisode } from "@/lib/market/types";
 import { Details } from "./details";
 import { LiveOverlay } from "./overlay";
 import { Result } from "./result";
+import { useMotionCue } from "./use-motion-cue";
 
 const EPISODE_MS = 15_000;
 const COUNTDOWN_MS = 5_000;
@@ -315,6 +316,11 @@ export default function CaptureClient() {
     refreshEarnings();
   }, [refreshEarnings]);
 
+  // Only meaningful for bounties that require motion evidence.
+  const { weak: weakMotion } = useMotionCue(
+    phase === "recording" && bounty?.motion_policy === "require",
+  );
+
   const live = phase === "countdown" || phase === "recording";
   const seconds = Math.ceil(remainingMs / 1000);
 
@@ -380,6 +386,10 @@ export default function CaptureClient() {
             {liveHands.length === 0 ? (
               <p className="absolute inset-x-0 bottom-5 text-center text-sm font-medium text-caution">
                 Tilt down — hands out of view
+              </p>
+            ) : weakMotion ? (
+              <p className="absolute inset-x-0 bottom-5 text-center text-sm font-medium text-caution">
+                Move around more — look where you are going
               </p>
             ) : null}
           </>
