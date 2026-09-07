@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { plausibility, type FlowSample } from "./correlate";
 import { estimateFlow, toGrayscale } from "./flow";
 import { decodeImuStream, type ImuSample } from "@/lib/capture/imu-codec";
+import { resolveStreamPath } from "@/lib/market/blobs";
 
 /**
  * Is the moving hand corrupting the flow estimate?
@@ -124,11 +125,11 @@ describe.skipIf(!runnable)("hand contamination of the flow estimate", () => {
 
     const dirs = readdirSync(EPISODES_DIR)
       .map((n) => join(EPISODES_DIR, n))
-      .filter((d) => existsSync(join(d, "rgb.webm")) && existsSync(join(d, "imu.bin")));
+      .filter((d) => resolveStreamPath(d, "rgb") !== null && existsSync(join(d, "imu.bin")));
 
     for (const dir of dirs) {
       const id = dir.split("/").pop()!.slice(3, 11);
-      const frames = extract(join(dir, "rgb.webm"), 0.38);
+      const frames = extract(resolveStreamPath(dir, "rgb")!, 0.38);
       const imu: ImuSample[] = decodeImuStream(
         new Uint8Array(readFileSync(join(dir, "imu.bin"))),
       ).samples;
