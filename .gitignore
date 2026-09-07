@@ -18,3 +18,7 @@ web/.data/
 # Third-party agent skills — install with:
 #   npx skills add Leonxlnx/taste-skill
 .agents/
+
+# Trainer output — regenerate with trainer/run.py
+web/public/model-results.json
+trainer/.venv/
