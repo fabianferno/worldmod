@@ -755,13 +755,26 @@ export default function CaptureClient() {
               <AccountBar />
             </div>
 
+            {/* Held until the identity is settled. Recording first and
+                resolving the signer afterwards is how three takes from one
+                Google account ended up on three different addresses. */}
             <button
               onClick={begin}
-              disabled={!secure}
+              disabled={!secure || !signer}
               className="interactive w-full rounded-2xl bg-foreground py-4 text-base font-semibold text-background disabled:opacity-40"
             >
-              Start · {EPISODE_MS / 1000}s
+              {signer ? `Start · ${EPISODE_MS / 1000}s` : "Getting your account…"}
             </button>
+
+            {signer ? (
+              <p className="mt-2 text-center text-xs text-subtle">
+                Paid to{" "}
+                <span className="tabular font-mono">
+                  {signer.address.slice(0, 6)}…{signer.address.slice(-4)}
+                </span>
+                {signer.recoverable ? "" : " · this phone only"}
+              </p>
+            ) : null}
 
             <label className="mt-3 flex items-center justify-center gap-2 text-xs text-subtle">
               <input
