@@ -77,6 +77,16 @@ export interface EpisodeSubmission {
   recorded_at: number;
   /** Perceptual signature, sealed in the manifest, for duplicate detection. */
   signature?: string[];
+  /**
+   * Diagnostics the server can read without anyone reciting numbers off a
+   * phone. `framing` alone cannot distinguish hands that were never
+   * detected from hands detected in the wrong coordinate space — both read
+   * as 0%, and the fixes are entirely different.
+   */
+  hands_visible_percent?: number | null;
+  detections?: number;
+  analysis_errors?: number;
+  analysis_error?: string | null;
 }
 
 export interface StoredEpisode extends EpisodeSubmission {
