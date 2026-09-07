@@ -8,14 +8,15 @@
  *
  *   - verify INTEGRITY, by recomputing every hash from the bytes that arrived
  *     rather than trusting what the client claimed;
- *   - measure PLAUSIBILITY, from the cross-modal agreement the client
- *     computed and the completeness of what was delivered;
+ *   - measure PLAUSIBILITY, from cross-modal agreement and the completeness
+ *     of what was delivered;
  *   - detect NEAR-DUPLICATES, which is what defends the economics.
  *
- * The client scores its own episode so the wearer gets feedback during the
- * take. That score is advisory. The server recomputes what it can and never
- * takes the client's numbers on trust — a contributor controls their own
- * device, so a self-reported score is a claim, not evidence.
+ * Scores arrive as an explicit argument and are never read out of the
+ * manifest. That distinction is the whole point: a contributor seals their own
+ * commitment, so a manifest declaring 100% cross-modal agreement is internally
+ * consistent, hashes correctly, and means nothing. Only numbers this server
+ * measured from the uploaded bytes are allowed to reach a check.
  */
 
 import { canonicalize, sha256Hex, type Manifest } from "@/lib/manifest";
@@ -51,6 +52,18 @@ export interface ValidationResult {
   failures: string[];
 }
 
+/**
+ * Scores measured by the server, in percent.
+ *
+ * Null where a score could not be computed — a capture with too little motion
+ * has no cross-modal agreement to measure, and that is different from scoring
+ * zero on it.
+ */
+export interface MeasuredScores {
+  framingPercent: number | null;
+  plausibilityPercent: number | null;
+}
+
 export interface StreamBytes {
   kind: string;
   sha256: string;
@@ -61,6 +74,11 @@ export interface ValidateInput {
   manifest: Manifest;
   /** Bytes actually received, if any. Integrity is unverifiable without them. */
   streams?: StreamBytes[];
+  /**
+   * What the server measured. Omitted on the integrity pre-check that runs
+   * before anything is stored, where no frame has been decoded yet.
+   */
+  scores?: MeasuredScores;
   requiredModalities: readonly string[];
   durationRangeS: readonly [number, number];
   fingerprint?: EpisodeFingerprint;
@@ -141,9 +159,9 @@ export async function validateEpisode(input: ValidateInput): Promise<ValidationR
     failures.push(`IMU arrived at ${imuRate.toFixed(1)}Hz; too sparse to support motion checks.`);
   }
 
-  const quality = manifest.quality as Record<string, unknown> | undefined;
-  const flow_gyro_corr = quality ? toFraction(num(quality.plausibility_percent)) : null;
-  const framing = quality ? toFraction(num(quality.framing_percent)) : null;
+  // Deliberately not manifest.quality. See the note at the top of this file.
+  const flow_gyro_corr = toFraction(num(input.scores?.plausibilityPercent));
+  const framing = toFraction(num(input.scores?.framingPercent));
 
   let duplicate: DuplicateMatch | null = null;
   if (input.fingerprint && input.priorFingerprints?.length) {

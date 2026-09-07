@@ -68,25 +68,17 @@ async function scoreInBackground(
         signature: e.signature ?? [],
       }));
 
-    // The manifest carries the client's advisory scores; the validator is given
-    // the server's, so what it checks is what the server measured.
-    const scored: Manifest = {
-      ...manifest,
-      quality: {
-        framing_percent: scores.framing.percent,
-        framing_verdict: scores.framing.verdict,
-        plausibility_percent: scores.plausibility.percent,
-        plausibility_verdict: scores.plausibility.verdict,
-        motion_rms_deg_per_sec: scores.plausibility.motionRmsDegPerSec,
-        frames_analyzed: scores.framesAnalyzed,
-        signature: scores.signature,
-        trust_level: "heuristic",
-      },
-    };
-
+    // The manifest goes in exactly as the phone sealed it, and the measured
+    // scores go in beside it. Injecting them into the manifest instead would
+    // change the bytes the hash covers, and the integrity check would fail on
+    // every honest episode — which is precisely what it used to do.
     const validation = await validateEpisode({
-      manifest: scored,
+      manifest,
       streams,
+      scores: {
+        framingPercent: scores.framing.percent,
+        plausibilityPercent: scores.plausibility.percent,
+      },
       requiredModalities,
       durationRangeS: durationRange,
       fingerprint: {
@@ -96,17 +88,6 @@ async function scoreInBackground(
       },
       priorFingerprints: prior,
     });
-
-    // The manifest hash covers the CLIENT's manifest, so re-verify against that
-    // one rather than the copy carrying server scores.
-    validation.checks.manifest_intact = (
-      await validateEpisode({
-        manifest,
-        streams,
-        requiredModalities,
-        durationRangeS: durationRange,
-      })
-    ).checks.manifest_intact;
 
     await fileStore.completeScoring(
       episodeId,

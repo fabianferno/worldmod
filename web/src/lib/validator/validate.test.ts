@@ -19,7 +19,9 @@ async function manifest(overrides: Record<string, unknown> = {}): Promise<Manife
       rgb: { sha256: await sha256Hex(RGB_BYTES), bytes: RGB_BYTES.length },
       imu: { sha256: await sha256Hex(IMU_BYTES), bytes: IMU_BYTES.length },
     },
-    quality: { plausibility_percent: 83, framing_percent: 97 },
+    // Kept deliberately: a client CAN put this in a sealed manifest, and one
+    // test below proves the validator pays no attention to it.
+    quality: { plausibility_percent: 100, framing_percent: 100 },
     ...overrides,
   };
   return sealManifest(base);
@@ -35,6 +37,7 @@ async function streams() {
 const base = {
   requiredModalities: ["rgb", "imu"] as const,
   durationRangeS: [8, 30] as const,
+  scores: { plausibilityPercent: 83, framingPercent: 97 },
 };
 
 describe("verifyManifestIntegrity", () => {
@@ -165,7 +168,7 @@ describe("validateEpisode", () => {
     expect(result.failures.join(" ")).toMatch(/matches episode ep_old/i);
   });
 
-  it("carries the client's cross-modal score through as a check", async () => {
+  it("carries the server's measured scores through as checks", async () => {
     const result = await validateEpisode({
       manifest: await manifest(),
       streams: await streams(),
@@ -174,6 +177,39 @@ describe("validateEpisode", () => {
 
     expect(result.checks.flow_gyro_corr).toBeCloseTo(0.83, 6);
     expect(result.checks.framing).toBeCloseTo(0.97, 6);
+  });
+
+  it("ignores scores a client wrote into its own manifest", async () => {
+    // The fixture's manifest declares 100% on both, sealed and hashing
+    // correctly — a contributor computes their own commitment, so nothing
+    // stops them. Passing no measured scores must leave both unknown rather
+    // than believing the manifest.
+    const result = await validateEpisode({
+      manifest: await manifest(),
+      streams: await streams(),
+      requiredModalities: base.requiredModalities,
+      durationRangeS: base.durationRangeS,
+    });
+
+    expect(result.checks.manifest_intact).toBe(true);
+    expect(result.checks.flow_gyro_corr).toBeNull();
+    expect(result.checks.framing).toBeNull();
+  });
+
+  it("does not fail integrity on an episode carrying measured scores", async () => {
+    // The regression this file exists to prevent. Scores used to be injected
+    // into the manifest before validation, which changed the bytes the hash
+    // covered; every genuine episode came back both intact and mismatched, and
+    // was gated to zero.
+    const result = await validateEpisode({
+      manifest: await manifest(),
+      streams: await streams(),
+      ...base,
+    });
+
+    expect(result.checks.manifest_intact).toBe(true);
+    expect(result.failures).toEqual([]);
+    expect(result.plausibility_score).toBeGreaterThan(0);
   });
 });
 
