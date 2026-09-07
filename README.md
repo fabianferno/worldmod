@@ -86,10 +86,13 @@ the model does not rescue it. The scaling curve falls steeply enough that it
 should cross the baseline somewhere near 8–12 episodes, but that is an
 extrapolation and it is labelled as one.
 
-**Not built.** `DatasetRegistry` and `FederatedRound` contracts. The subgraph.
-The app does not call the contracts at all: escrow is a JSON file, so no USDC
-moves. Utility scoring needs two contributors and every episode so far came from
-one device.
+**Deployed, and not yet connected.** The four core contracts are live on
+Ethereum Sepolia (see [`contracts/deployments.json`](contracts/deployments.json))
+pointing at Circle's real testnet USDC. The web app does not call them — escrow
+is still a JSON file, so no USDC moves.
+
+**Not built.** `DatasetRegistry` and `FederatedRound`. The subgraph. Utility
+scoring needs two contributors and every episode so far came from one device.
 
 **Not provable, by construction.** Nothing here attests that pixels came from a
 real camera at a real time. A browser has no App Attest, no Play Integrity, no
