@@ -8,6 +8,7 @@ import {
   type Landmark,
   type OverlayStats,
 } from "@/lib/analysis";
+import { LivePredictor, type LivePrediction } from "@/lib/analysis/live-predictor";
 import {
   CaptureError,
   createCaptureBackend,
@@ -27,6 +28,7 @@ import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/ep
 import type { Bounty, StoredEpisode } from "@/lib/market/types";
 import { Details } from "./details";
 import { LiveOverlay } from "./overlay";
+import { PredictionPanel } from "./prediction-panel";
 import { Result } from "./result";
 import { useMotionCue } from "./use-motion-cue";
 
@@ -128,6 +130,7 @@ function forgetAwaiting(): void {
 export default function CaptureClient() {
   const backendRef = useRef<CaptureBackend | null>(null);
   const analyzerRef = useRef<LiveAnalyzer | null>(null);
+  const predictorRef = useRef<LivePredictor | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -137,6 +140,7 @@ export default function CaptureClient() {
   const [motion, setMotion] = useState<MotionPermission | null>(null);
   const [capture, setCapture] = useState<Awaited<ReturnType<CaptureBackend["stop"]>> | null>(null);
   const [liveHands, setLiveHands] = useState<Landmark[][]>([]);
+  const [livePrediction, setLivePrediction] = useState<LivePrediction | null>(null);
   const [remainingMs, setRemainingMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [bounties, setBounties] = useState<Bounty[]>([]);
@@ -223,6 +227,7 @@ export default function CaptureClient() {
     return () => {
       backend.abort();
       analyzerRef.current?.dispose();
+      predictorRef.current?.dispose();
       timers.forEach(clearTimeout);
       wakeLockRef.current?.release().catch(() => {});
     };
@@ -420,6 +425,7 @@ export default function CaptureClient() {
   const finish = useCallback(async () => {
     clearTimers();
     setOverlay(analyzerRef.current?.stop() ?? null);
+    predictorRef.current?.stop();
     releaseWakeLock();
 
     try {
@@ -504,6 +510,7 @@ export default function CaptureClient() {
         location: shareLocation,
       });
       analyzerRef.current?.start();
+      predictorRef.current?.start();
       setPhase("recording");
       setRemainingMs(EPISODE_MS);
 
@@ -541,7 +548,19 @@ export default function CaptureClient() {
 
       const analyzer = new LiveAnalyzer(videoRef.current!, { onHands: setLiveHands });
       analyzerRef.current = analyzer;
-      await analyzer.warmUp();
+
+      // A random per-take key for the server's in-memory session — not the
+      // episode id, which does not exist yet at this point in the flow (it is
+      // minted when the manifest is built, after recording stops). Purely a
+      // scratch handle the live prediction endpoint uses to carry the GRU's
+      // hidden state and frame bank between requests.
+      const predictor = new LivePredictor(videoRef.current!, crypto.randomUUID(), {
+        onPrediction: setLivePrediction,
+        onUnavailable: () => setLivePrediction(null),
+      });
+      predictorRef.current = predictor;
+
+      await Promise.all([analyzer.warmUp(), predictor.warmUp()]);
 
       setPhase("countdown");
       setRemainingMs(COUNTDOWN_MS);
@@ -564,6 +583,9 @@ export default function CaptureClient() {
     forgetAwaiting();
     analyzerRef.current?.dispose();
     analyzerRef.current = null;
+    predictorRef.current?.dispose();
+    predictorRef.current = null;
+    setLivePrediction(null);
     backendRef.current?.abort();
     backendRef.current = createCaptureBackend();
     setCapture(null);
@@ -623,6 +645,7 @@ export default function CaptureClient() {
       <section className="relative mt-4 flex-1 overflow-hidden bg-black">
         <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
         <LiveOverlay hands={liveHands} guide={GUIDE_REGION} showGuide={live} />
+        {phase === "recording" ? <PredictionPanel prediction={livePrediction} /> : null}
 
         {phase === "idle" && bounty ? (
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-5 pt-20">

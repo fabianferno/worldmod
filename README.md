@@ -43,6 +43,10 @@ cd contracts && forge install foundry-rs/forge-std && forge test
 cd trainer && python3 -m venv --system-site-packages .venv
 .venv/bin/pip install torchvision
 .venv/bin/python run.py --data ../web/.data
+
+# Export the live-capture model — /c has no world-model overlay without this
+.venv/bin/pip install onnx onnxruntime
+.venv/bin/python export_live.py --data ../web/.data --out ../web/public/models/world
 ```
 
 ## How an episode moves through the system
@@ -83,30 +87,32 @@ client polls.
 ## What works, and what is honestly not there yet
 
 **Working, verified on a device.** Capture on Android Chrome with a live hand
-skeleton. Sealed manifests, verified server-side from the uploaded bytes.
-Server-side scoring across every frame, with near-duplicate detection.
-Marketplace with bounties, acceptance reasons and licensed download. Four
-contracts with 45 tests, including relayed submission so a contributor never
-needs gas. A world model and federated rounds over the real episodes.
+skeleton and a live world-model overlay (below). Sealed manifests, verified
+server-side from the uploaded bytes. Server-side scoring across every frame,
+with near-duplicate detection. Marketplace with bounties, acceptance reasons
+and licensed download. Real USDC moving on Ethereum Sepolia: a bounty escrows
+its budget before it is listed, acceptance releases the per-episode rate, and
+a contributor withdraws with their own signature. All six §11 contracts are
+live (see [`contracts/deployments.json`](contracts/deployments.json)),
+including relayed submission so a contributor never needs gas of their own.
+Every episode gets a real IPFS content address, pinned to a local node. A
+subgraph indexes all six contracts, built and ready to deploy. A world model
+and federated rounds over the real episodes, with a working account page for
+a contributor to see their own history and collect their own balance.
 
 **Measured and not good enough yet.** The world model does not beat a
-"predict no change" baseline (0.85 against 0.67), and federated rounds do not
-improve across rounds. Both are the same cause — six episodes — and shrinking
-the model does not rescue it. The scaling curve falls steeply enough that it
-should cross the baseline somewhere near 8–12 episodes, but that is an
-extrapolation and it is labelled as one.
+"predict no change" baseline. Five episodes across three contributors now,
+which is enough for the scaling curve to show a real trend and for utility
+scoring to compute something for the first time — but still far short of
+being enough data for the model to actually work. The curve falls steeply
+enough that it should cross the baseline somewhere near 8–12 episodes, and
+that is an extrapolation labelled as one, not a promise.
 
-**On-chain.** All six contracts of §11 are live on Ethereum Sepolia (see
-[`contracts/deployments.json`](contracts/deployments.json)) against Circle's
-real testnet USDC, and the app calls them: an episode's manifest hash and its
-validation are committed as the contributor's own signature, with a relayer
-paying the gas, so the wearer never needs a funded account.
+**Not deployed.** The subgraph — built, compiles, needs a Graph Studio key.
 
-**Not moving yet.** USDC. The relayer holds none, so no bounty is escrowed
-on-chain and payment is still the local ledger's.
-
-**Not built.** The subgraph. Utility scoring needs two contributors and every
-episode so far came from one device.
+**Not durable.** IPFS pinning runs on one local node. The content addresses
+are real and independently verified against kubo's own output; nothing
+guarantees they resolve once that node stops.
 
 **Not provable, by construction.** Nothing here attests that pixels came from a
 real camera at a real time. A browser has no App Attest, no Play Integrity, no
@@ -132,6 +138,39 @@ points, so this is evidence the check works, not proof it is hard to beat.
 Finding it required fixing a real bug: the frame and IMU clocks are offset, and
 correlating them at zero lag scored a genuine capture *below* a spoof. The
 validator now estimates the lag, which took that episode from 5.2% to 59.6%.
+
+## The world model, live during capture
+
+§8.2's secondary demo item — feed the model a frame and a motion sequence,
+decode the nearest-neighbour frame from its prediction, show the wearer's own
+device what it thinks happens next — runs live now, during the take, instead
+of once over a finished episode.
+
+The phone streams a centre-cropped frame and the current motion sample to the
+server roughly twice a second; the server runs the trained encoder and
+dynamics head one step at a time, keeping the GRU's hidden state in memory
+between requests, and returns the frame — from earlier in *this same take* —
+closest to where the model expects the wearer is heading. That "closest to"
+is the honest claim: a live prediction can only point at a frame that has
+already been captured, never a genuinely future one, so the panel says
+"model's guess," not "next frame."
+
+Nothing was ported approximately. The exported ONNX graph is checked against
+the PyTorch model it came from over an eight-step recurrent sequence with the
+hidden state carried forward — worst-case difference `2.5e-5`, floating-point
+noise, not drift — and the server's own crop-and-normalise pipeline is checked
+against the trainer's on a real captured frame, matching to `4.4e-6`. Both are
+scripts in `trainer/`, not assertions in a comment.
+
+What it will not do is look impressive. With five episodes the model does not
+beat its own baseline (above), and a live guess drawn from an undertrained
+head mostly returns whichever frame was least different, which most of the
+time is just the most recent one. Building it before there is enough data to
+make it good was deliberate: getting the plumbing — the export, the
+per-session recurrent state, the nearest-neighbour bank, the honest framing of
+what a live guess is — right now means every additional recorded episode
+improves what is already live, rather than what a plausible mock would have
+been asserting.
 
 ## Departures from the specification
 

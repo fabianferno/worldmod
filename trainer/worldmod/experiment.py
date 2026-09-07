@@ -27,6 +27,25 @@ from .model import LatentDynamics, baseline_error
 
 
 @dataclass
+class TrainedModel:
+    """A trained dynamics head plus everything needed to run it outside training.
+
+    The model alone is not enough to reproduce a prediction: it was trained on
+    STANDARDISED latents (see `_standardise`), so anything using it later —
+    export_live.py, in particular — has to apply that exact same mean and std
+    to a freshly encoded frame before feeding it in, or the input distribution
+    will not match what the model learned.
+    """
+
+    model: LatentDynamics
+    latent_mean: torch.Tensor  # (D,)
+    latent_std: torch.Tensor  # (D,)
+    latent_dim: int
+    hidden: int
+    horizon: int
+
+
+@dataclass
 class EncodedEpisode:
     episode_id: str
     entity_id: str
@@ -97,11 +116,16 @@ def encode_episodes(
 
 def _standardise(
     train: list[EncodedEpisode], held: list[EncodedEpisode]
-) -> tuple[list[EncodedEpisode], list[EncodedEpisode]]:
+) -> tuple[list[EncodedEpisode], list[EncodedEpisode], torch.Tensor, torch.Tensor]:
     """Centre and scale latents using TRAINING statistics only.
 
     Computing them over everything would leak the held-out set into training and
     quietly flatter every number below.
+
+    Returns mean and std alongside the standardised episodes: live inference
+    (export_live.py) needs the exact same statistics to normalise a frame
+    encoded outside of training, and recomputing them from a different set of
+    episodes later would silently normalise against the wrong distribution.
     """
     stacked = torch.cat([e.latents for e in train])
     mean = stacked.mean(0, keepdim=True)
@@ -113,7 +137,7 @@ def _standardise(
             for e in items
         ]
 
-    return apply(train), apply(held)
+    return apply(train), apply(held), mean, std
 
 
 def train_once(
@@ -124,12 +148,20 @@ def train_once(
     epochs: int = 120,
     device: torch.device | None = None,
     hidden: int = 256,
-) -> tuple[float, float, int]:
-    """Train on `train`, return (model error, baseline error, parameters)."""
+    return_model: bool = False,
+) -> tuple[float, float, int] | tuple[float, float, int, TrainedModel]:
+    """Train on `train`, return (model error, baseline error, parameters).
+
+    `return_model=True` appends a fourth element carrying the trained model and
+    the exact latent normalisation it was trained against — everything
+    export_live.py needs to reproduce this run's predictions outside of
+    training. Every existing caller unpacks a 3-tuple or indexes `[0]`, both of
+    which are unaffected by an element that only appears when asked for.
+    """
     device = device or pick_device()
     torch.manual_seed(seed)
 
-    train, held = _standardise(train, held)
+    train, held, latent_mean, latent_std = _standardise(train, held)
     latent_dim = train[0].latents.shape[1]
 
     model = LatentDynamics(latent_dim, hidden=hidden).to(device)
@@ -165,10 +197,21 @@ def train_once(
             errors.append(F.mse_loss(predicted, latents[:, horizon:]).item())
             baselines.append(baseline_error(latents, horizon).item())
 
-    if not errors:
-        return float("nan"), float("nan"), model.parameter_count
+    result_error = float(np.mean(errors)) if errors else float("nan")
+    result_baseline = float(np.mean(baselines)) if baselines else float("nan")
 
-    return float(np.mean(errors)), float(np.mean(baselines)), model.parameter_count
+    if not return_model:
+        return result_error, result_baseline, model.parameter_count
+
+    trained = TrainedModel(
+        model=model,
+        latent_mean=latent_mean.squeeze(0).detach().cpu(),
+        latent_std=latent_std.squeeze(0).detach().cpu(),
+        latent_dim=latent_dim,
+        hidden=hidden,
+        horizon=horizon,
+    )
+    return result_error, result_baseline, model.parameter_count, trained
 
 
 def split_by_contributor(

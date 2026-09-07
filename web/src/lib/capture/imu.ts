@@ -45,7 +45,7 @@ export interface ImuRecorderOptions {
 }
 
 /** Minimal structural view of DeviceMotionEvent — avoids a DOM lib dependency. */
-interface MotionLike {
+export interface MotionLike {
   acceleration?: { x: number | null; y: number | null; z: number | null } | null;
   accelerationIncludingGravity?: { x: number | null; y: number | null; z: number | null } | null;
   rotationRate?: { alpha: number | null; beta: number | null; gamma: number | null } | null;
@@ -59,6 +59,48 @@ function hasAnyComponent(
   v: { x: number | null; y: number | null; z: number | null } | null | undefined,
 ): boolean {
   return !!v && (v.x !== null || v.y !== null || v.z !== null);
+}
+
+/**
+ * One DeviceMotionEvent, reduced to the 6-number tuple the trainer's
+ * `motion_tokens()` reads directly out of the recorded stream — same field
+ * order, same fallback, same axis labels. Exported so a second reader (the
+ * live world-model predictor, which needs "the current motion" without
+ * recording a whole episode) cannot drift from what ImuRecorder actually
+ * writes to disk; a second hand-written copy of this mapping would be exactly
+ * the kind of thing that quietly stops matching after one of them changes.
+ */
+export function motionTupleFrom(event: MotionLike): {
+  ax: number;
+  ay: number;
+  az: number;
+  rx: number;
+  ry: number;
+  rz: number;
+  accelSource: AccelSource;
+} {
+  let accelSource: AccelSource = "absent";
+  let accel: { x: number | null; y: number | null; z: number | null } | null | undefined;
+
+  if (hasAnyComponent(event.acceleration)) {
+    accelSource = "linear";
+    accel = event.acceleration;
+  } else if (hasAnyComponent(event.accelerationIncludingGravity)) {
+    accelSource = "including_gravity";
+    accel = event.accelerationIncludingGravity;
+  }
+
+  const r = event.rotationRate;
+  return {
+    ax: num(accel?.x),
+    ay: num(accel?.y),
+    az: num(accel?.z),
+    // Declared convention: alpha=z, beta=x, gamma=y, degrees per second.
+    rx: num(r?.beta),
+    ry: num(r?.gamma),
+    rz: num(r?.alpha),
+    accelSource,
+  };
 }
 
 function defaultOrientation(): string {
@@ -109,35 +151,13 @@ export class ImuRecorder {
   private readonly onMotion = (event: Event): void => {
     if (!this.recording) return;
 
-    const e = event as unknown as MotionLike;
-
-    let source: AccelSource = "absent";
-    let accel: { x: number | null; y: number | null; z: number | null } | null | undefined;
-
-    if (hasAnyComponent(e.acceleration)) {
-      source = "linear";
-      accel = e.acceleration;
-    } else if (hasAnyComponent(e.accelerationIncludingGravity)) {
-      source = "including_gravity";
-      accel = e.accelerationIncludingGravity;
-    }
+    const { accelSource, ...values } = motionTupleFrom(event as unknown as MotionLike);
 
     // Record the first source we actually see and keep it for the episode; a
     // mid-episode switch would make the stream self-inconsistent.
-    if (this.accelSource === "absent") this.accelSource = source;
+    if (this.accelSource === "absent") this.accelSource = accelSource;
 
-    const r = e.rotationRate;
-
-    this.samples.push({
-      t: this.now() - this.t0,
-      ax: num(accel?.x),
-      ay: num(accel?.y),
-      az: num(accel?.z),
-      // Declared convention: alpha=z, beta=x, gamma=y, degrees per second.
-      rx: num(r?.beta),
-      ry: num(r?.gamma),
-      rz: num(r?.alpha),
-    });
+    this.samples.push({ t: this.now() - this.t0, ...values });
   };
 
   get isRecording(): boolean {
