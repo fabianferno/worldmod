@@ -10,13 +10,16 @@ chance of the chart and the run disagreeing.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
 
 from worldmod.data import load_episodes
 from worldmod.encoder import FrozenEncoder, pick_device
+from worldmod.federated import run_rounds
 from worldmod.experiment import (
     Results,
     encode_episodes,
@@ -38,6 +41,11 @@ def main() -> int:
     parser.add_argument("--epochs", type=int, default=120)
     parser.add_argument("--hidden", type=int, default=256)
     parser.add_argument("--accepted-only", action="store_true")
+    parser.add_argument("--rounds", type=int, default=5, help="federated rounds")
+    parser.add_argument("--local-epochs", type=int, default=5)
+    parser.add_argument(
+        "--federated-out", type=Path, default=Path("../web/public/federated-results.json")
+    )
     args = parser.parse_args()
 
     episodes = load_episodes(args.data)
@@ -111,6 +119,27 @@ def main() -> int:
     )
     write_results(results, args.out)
     print(f"\nwrote {args.out}")
+
+    # §9: the same dynamics head, trained across simulated organisations that
+    # never exchange data. One artefact, two demos.
+    print("\nfederated rounds")
+    federated = run_rounds(train, held, horizon=args.horizon, rounds=args.rounds,
+                              local_epochs=args.local_epochs)
+
+    for record in federated.rounds:
+        who = " ".join(
+            f"{p.org_id}({p.episodes}ep {p.update_hash[2:8]})" for p in record.participants
+        )
+        print(f"  round {record.round_id}: {who} -> global {record.global_hash[2:8]} "
+              f"err {record.global_error:.5f}")
+
+    if not federated.rounds:
+        for note in federated.notes:
+            print(f"  {note}")
+
+    args.federated_out.parent.mkdir(parents=True, exist_ok=True)
+    args.federated_out.write_text(json.dumps(asdict(federated), indent=2) + "\n")
+    print(f"wrote {args.federated_out}")
     return 0
 
 

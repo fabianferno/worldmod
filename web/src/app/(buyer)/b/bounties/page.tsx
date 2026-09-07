@@ -34,6 +34,22 @@ export default async function BountiesPage() {
         </Link>
       </header>
 
+      <nav className="mt-5 flex flex-wrap gap-2" aria-label="Buyer views">
+        {[
+          { href: "/b/model", label: "World model" },
+          { href: "/b/federated", label: "Federated rounds" },
+          { href: "/b/contributors", label: "Contributors" },
+        ].map(({ href, label }) => (
+          <Link
+            key={href}
+            href={href}
+            className="interactive rounded-full border border-line px-3.5 py-1.5 text-sm text-muted hover:border-white/25 hover:text-foreground"
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
+
       {bounties.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-line p-10 text-center">
           <p className="text-sm font-medium">No bounties yet</p>

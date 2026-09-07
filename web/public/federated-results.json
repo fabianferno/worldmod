@@ -1,0 +1,126 @@
+{
+  "rounds": [
+    {
+      "round_id": 1,
+      "participants": [
+        {
+          "org_id": "org_a",
+          "episodes": 2,
+          "frames": 121,
+          "update_hash": "0xd53138597c53791836d0ae3f5e5f2d2813ddcf37574f17b67a645ca8dfdd977f",
+          "local_error": 0.36625055968761444
+        },
+        {
+          "org_id": "org_b",
+          "episodes": 2,
+          "frames": 120,
+          "update_hash": "0x020b0ac85eb3bb2ce3d2aff1b618d79e025ba63d23fe173990f3406faeb75787",
+          "local_error": 0.5405267179012299
+        }
+      ],
+      "global_hash": "0x304c695f10ddf17b22a788c8fdd2701e46e40278ca68eef388086869b66f0422",
+      "global_error": 0.6814950406551361,
+      "baseline_error": 0.674592137336731
+    },
+    {
+      "round_id": 2,
+      "participants": [
+        {
+          "org_id": "org_a",
+          "episodes": 2,
+          "frames": 121,
+          "update_hash": "0x71f95aac640f268582b0bb943aec742f49fe24cccb9d86078f3d8d68d4c9cfa4",
+          "local_error": 0.3241611570119858
+        },
+        {
+          "org_id": "org_b",
+          "episodes": 2,
+          "frames": 120,
+          "update_hash": "0xdfc9bae44f58fed75c8e637bb668d0b0aa32fee311d4b5ce67a6570c1ce20267",
+          "local_error": 0.41744522750377655
+        }
+      ],
+      "global_hash": "0xe19e633822161832eac8dd7c8f62c7aa6707c777346ec4b336c015c529c9c1e1",
+      "global_error": 0.6912718713283539,
+      "baseline_error": 0.674592137336731
+    },
+    {
+      "round_id": 3,
+      "participants": [
+        {
+          "org_id": "org_a",
+          "episodes": 2,
+          "frames": 121,
+          "update_hash": "0xcaab8a60a94bd95b4090674eb4f4901ec4e1a82528de4de04c842688d85e160f",
+          "local_error": 0.28919680416584015
+        },
+        {
+          "org_id": "org_b",
+          "episodes": 2,
+          "frames": 120,
+          "update_hash": "0x2f5983837a83bb41eb976a48335b7f7512a87bc0d5e5c4c92071fe72718db36e",
+          "local_error": 0.34690412878990173
+        }
+      ],
+      "global_hash": "0x770b93a5a4b028cec3ac39fba2d894b95ea7c45bcf181e38459801b14ebc1730",
+      "global_error": 0.7036709487438202,
+      "baseline_error": 0.674592137336731
+    },
+    {
+      "round_id": 4,
+      "participants": [
+        {
+          "org_id": "org_a",
+          "episodes": 2,
+          "frames": 121,
+          "update_hash": "0x734a4bfe7790275b534ecfdae6cf1ee04a6f687247beea2deff170db3fa5ddf8",
+          "local_error": 0.25563814491033554
+        },
+        {
+          "org_id": "org_b",
+          "episodes": 2,
+          "frames": 120,
+          "update_hash": "0xaa77bb02b601ac118b118ef2f31030838864278c3b9d4710482c8154defde475",
+          "local_error": 0.28637057542800903
+        }
+      ],
+      "global_hash": "0x462006b05802d6e96c9c69853a9e6f0852ae40f52881cb8b6397c1140ffaee96",
+      "global_error": 0.7252797186374664,
+      "baseline_error": 0.674592137336731
+    },
+    {
+      "round_id": 5,
+      "participants": [
+        {
+          "org_id": "org_a",
+          "episodes": 2,
+          "frames": 121,
+          "update_hash": "0xf3967b703a3e3e3224b965eebe0a6ce06311e8e42f1acd792df7ab6002a24f68",
+          "local_error": 0.23665885627269745
+        },
+        {
+          "org_id": "org_b",
+          "episodes": 2,
+          "frames": 120,
+          "update_hash": "0xb14bd797eb3bfaec49dca805e6a2e49f296a5da140cb61b0d5a85cd4add144d6",
+          "local_error": 0.235235795378685
+        }
+      ],
+      "global_hash": "0x5e04af2049613c8882b23e16afc27b982bc5834d8ffe5c958dbd61fa9f387320",
+      "global_error": 0.7296667993068695,
+      "baseline_error": 0.674592137336731
+    }
+  ],
+  "orgs": [
+    "org_a",
+    "org_b"
+  ],
+  "parameters": 692544,
+  "horizon": 2,
+  "heldout_episodes": 2,
+  "notes": [
+    "FedAvg alone provides no privacy guarantee. Gradient inversion against shared updates is a published attack and is most effective with few clients, as here. This shows federated coordination, not private federated learning.",
+    "Both organisations are simulated on one machine over partitions of the same corpus. Nothing here proves data would stay put across a real trust boundary; it shows the protocol that would govern it.",
+    "Held-out error does not improve across rounds at this corpus size \u2014 it rises. With two episodes per organisation the local models overfit their partitions faster than averaging can help, which matches the centralised result where the model also fails to beat the no-change baseline. The coordination is sound; the data is too little for federating to pay off yet."
+  ]
+}
