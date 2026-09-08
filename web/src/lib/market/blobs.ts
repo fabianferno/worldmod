@@ -20,6 +20,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { computeCid } from "@/lib/storage/cid";
+import { daemonUp, pinBytes } from "@/lib/storage/pin";
 
 /**
  * CID to file, so the gateway can serve an address without knowing which
@@ -85,6 +86,15 @@ export interface StoredStream {
   bytes: number;
   /** Content address. The same bytes always produce this, on any IPFS node. */
   cid?: string;
+  /**
+   * Whether an IPFS node was asked to hold these bytes.
+   *
+   * Distinct from having a CID. An unpinned CID is a correct address that only
+   * this server can resolve; a pinned one is on a node that announces it to the
+   * network. Neither is a durability guarantee, and the field exists so the
+   * difference is visible rather than assumed.
+   */
+  pinned?: boolean;
   /**
    * The container the bytes are actually in, taken from the sealed manifest.
    * An iPhone records MP4 and an Android WebM, so this cannot be assumed from
@@ -160,9 +170,18 @@ export async function storeStream(
   // Computed from the bytes that were actually stored, never from what the
   // client claimed they would be.
   let cid: string | undefined;
+  let pinned = false;
   try {
     cid = await computeCid(bytes);
     await appendIndex(cid, join(dir, name), contentType);
+
+    // Best effort, and never on the upload's critical path for correctness:
+    // an episode that is addressed but unpinned is the state the system is
+    // already in, and a missing daemon must not fail a capture.
+    if (await daemonUp()) {
+      const result = await pinBytes(bytes, name, cid);
+      pinned = result.ok;
+    }
   } catch {
     // A missing CID degrades addressing, not storage. The episode is on disk
     // and playable either way.
@@ -173,6 +192,7 @@ export async function storeStream(
     uri: `file://${join(dir, name)}`,
     bytes: bytes.byteLength,
     cid,
+    pinned,
     content_type: contentType,
   };
 }
