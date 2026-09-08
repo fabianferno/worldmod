@@ -95,13 +95,17 @@ the model does not rescue it. The scaling curve falls steeply enough that it
 should cross the baseline somewhere near 8–12 episodes, but that is an
 extrapolation and it is labelled as one.
 
-**Deployed, and not yet connected.** The four core contracts are live on
-Ethereum Sepolia (see [`contracts/deployments.json`](contracts/deployments.json))
-pointing at Circle's real testnet USDC. The web app does not call them — escrow
-is still a JSON file, so no USDC moves.
+**On-chain.** All six contracts of §11 are live on Ethereum Sepolia (see
+[`contracts/deployments.json`](contracts/deployments.json)) against Circle's
+real testnet USDC, and the app calls them: an episode's manifest hash and its
+validation are committed as the contributor's own signature, with a relayer
+paying the gas, so the wearer never needs a funded account.
 
-**Not built.** `DatasetRegistry` and `FederatedRound`. The subgraph. Utility
-scoring needs two contributors and every episode so far came from one device.
+**Not moving yet.** USDC. The relayer holds none, so no bounty is escrowed
+on-chain and payment is still the local ledger's.
+
+**Not built.** The subgraph. Utility scoring needs two contributors and every
+episode so far came from one device.
 
 **Not provable, by construction.** Nothing here attests that pixels came from a
 real camera at a real time. A browser has no App Attest, no Play Integrity, no

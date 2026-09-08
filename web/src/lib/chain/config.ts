@@ -20,6 +20,8 @@ export interface ChainAddresses {
   assetRegistry: `0x${string}`;
   episodeRegistry: `0x${string}`;
   bountyEscrow: `0x${string}`;
+  datasetRegistry: `0x${string}`;
+  federatedRound: `0x${string}`;
   usdc: `0x${string}`;
 }
 
@@ -29,6 +31,8 @@ export const ADDRESSES: ChainAddresses = {
   assetRegistry: "0xd167a52404E546FF1342faf91f6c097568039708",
   episodeRegistry: "0xA5dB7Ad4BcCA2E2a189c257606c4B96AD32b563F",
   bountyEscrow: "0x0Be163d4795D77dC8CdB2cAedF08e213ADef27D6",
+  datasetRegistry: "0x1df8feDf50394A9e0f78cb0EF8F187D587812cbB",
+  federatedRound: "0x65297C410B96C3604b0A41921e355B24E6cf782e",
   usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
 };
 
