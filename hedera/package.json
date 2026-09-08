@@ -1,0 +1,14 @@
+{
+  "name": "worldmod-hedera",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "spike": "node --env-file=.env spike-issue-bond.mjs"
+  },
+  "dependencies": {
+    "@hashgraph/asset-tokenization-contracts": "4.2.0",
+    "@hashgraph/asset-tokenization-sdk": "4.2.0",
+    "@hiero-ledger/sdk": "^2.87.0"
+  }
+}
