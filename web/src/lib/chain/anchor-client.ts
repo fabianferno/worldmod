@@ -16,12 +16,8 @@
  */
 
 import type { EpisodeAnchor } from "@/lib/market/types";
-import {
-  deviceAddress,
-  signRegisterAsset,
-  signRegisterEntity,
-  signSubmitEpisode,
-} from "./identity";
+import type { Signer } from "./signer";
+import { deviceSigner } from "./signer";
 
 /** AssetRegistry's capability bits. A phone declares what it can actually emit. */
 export const MODALITY_RGB = 1 << 0;
@@ -53,8 +49,9 @@ export async function anchorEpisode(
   manifestHash: string,
   bountyId: string,
   storageURI: string,
+  signer: Signer = deviceSigner(),
 ): Promise<EpisodeAnchor | null> {
-  const contributor = deviceAddress();
+  const contributor = signer.address;
 
   const prepared = (await (
     await fetch(`/api/chain/prepare?address=${contributor}`)
@@ -78,7 +75,7 @@ export async function anchorEpisode(
       registration.entity = {
         entityType: INDIVIDUAL,
         metadataURI: "",
-        signature: await signRegisterEntity(INDIVIDUAL, "", BigInt(prepared.nonces.entity)),
+        signature: await signer.signRegisterEntity(INDIVIDUAL, "", BigInt(prepared.nonces.entity)),
       };
     }
     if (!assetId) {
@@ -86,7 +83,7 @@ export async function anchorEpisode(
         assetType: "phone",
         capabilities: PHONE_CAPABILITIES,
         metadataURI: "",
-        signature: await signRegisterAsset(
+        signature: await signer.signRegisterAsset(
           "phone",
           PHONE_CAPABILITIES,
           "",
@@ -115,7 +112,7 @@ export async function anchorEpisode(
       bountyId: bountyIdBytes,
       manifestHash,
       storageURI,
-      signature: await signSubmitEpisode(
+      signature: await signer.signSubmitEpisode(
         BigInt(assetId),
         bountyIdBytes,
         manifestHash as `0x${string}`,
