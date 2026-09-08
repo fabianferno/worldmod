@@ -108,6 +108,55 @@ describe("client platform", () => {
   });
 });
 
+describe("audio", () => {
+  it("declares a hashed audio stream when the device recorded one", async () => {
+    // product-spec §3.1 marks audio [MVP] and §5 gives it its own stream. It
+    // was inside the video container all along, but muxed bytes cannot be
+    // hashed or licensed separately, so the modality did not exist as far as
+    // the manifest was concerned.
+    const withAudio = capture({
+      audio: { blob: new Blob([new Uint8Array(512)], { type: "audio/webm" }), mimeType: "audio/webm;codecs=opus" },
+    });
+    const manifest = await buildEpisodeManifest({ capture: withAudio, ...input });
+    const streams = manifest.streams as Record<string, { sha256: string; bytes: number }>;
+
+    expect(streams.audio.sha256).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(streams.audio.bytes).toBe(512);
+    await expect(verifyManifestHash(manifest)).resolves.toBe(true);
+  });
+
+  it("declares no audio stream when the device produced none", async () => {
+    // A declared stream with no bytes behind it fails the server's own
+    // integrity check, which is worse than an absent modality.
+    const manifest = await buildEpisodeManifest({ capture: capture({ audio: null }), ...input });
+    expect(manifest.streams).not.toHaveProperty("audio");
+    expect((manifest.capture as { audio: unknown }).audio).toBeNull();
+  });
+});
+
+describe("self report", () => {
+  it("records what the contributor said", async () => {
+    const manifest = await buildEpisodeManifest({
+      capture: capture(),
+      selfReport: { taskCompleted: false, notes: "dropped it" },
+      ...input,
+    });
+
+    expect(manifest.outcome).toBe("failure");
+    expect(manifest.self_report).toEqual({ task_completed: false, notes: "dropped it" });
+  });
+
+  it("says unknown rather than assuming success when nobody was asked", async () => {
+    // Shipped once hardcoded to task_completed: true — a self-report nobody
+    // reported, sealed inside a signed commitment, which a buyer filtering on
+    // that field would have read as a claim.
+    const manifest = await buildEpisodeManifest({ capture: capture(), ...input });
+
+    expect(manifest.outcome).toBe("unknown");
+    expect(manifest.self_report).toBeNull();
+  });
+});
+
 describe("toSubmission", () => {
   it("carries no scores — the server measures them", async () => {
     // A contributor owns their phone, so a self-reported score is a claim.

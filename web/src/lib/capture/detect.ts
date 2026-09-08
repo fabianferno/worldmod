@@ -65,6 +65,28 @@ export const MIME_CANDIDATES = [
   "video/mp4",
 ] as const;
 
+/**
+ * Audio-only containers, for the separate audio stream.
+ *
+ * Ordered the same way and for the same reason as the video list: Chromium
+ * records WebM/Opus, Safari records MP4/AAC, and neither reads the other's.
+ * A device that supports none records no audio stream at all rather than
+ * declaring one it cannot produce.
+ */
+export const AUDIO_MIME_CANDIDATES = [
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/mp4;codecs=mp4a.40.2",
+  "audio/mp4",
+] as const;
+
+export function negotiateAudioMimeType(
+  candidates: readonly string[] = AUDIO_MIME_CANDIDATES,
+  isSupported?: (type: string) => boolean,
+): string | null {
+  return negotiateMimeType(candidates, isSupported);
+}
+
 export function negotiateMimeType(
   candidates: readonly string[] = MIME_CANDIDATES,
   isSupported?: (type: string) => boolean,

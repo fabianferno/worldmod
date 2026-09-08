@@ -58,6 +58,12 @@ export type VideoCapture = {
   fov_deg: number | null;
 }
 
+/** Present only when the device recorded audio as its own stream. */
+export type AudioCapture = {
+  codec: string;
+  bytes: number;
+};
+
 export type ImuCapture = {
   rate_hz_observed: number;
   samples: number;
@@ -83,11 +89,17 @@ export type EpisodeManifest = {
   duration_s: number;
   recorded_at: number;
   client: { type: "pwa"; version: string; ua_class: UaClass };
-  capture: { video: VideoCapture; imu: ImuCapture };
+  capture: { video: VideoCapture; imu: ImuCapture; audio?: AudioCapture | null };
   streams: Partial<Record<StreamKind, StreamDigest>>;
   sync: { method: FrameTiming; measured_skew_ms: number | null };
-  outcome: "success" | "failure" | "aborted";
-  self_report: { task_completed: boolean; notes: string };
+  /**
+   * "unknown" where the contributor was never asked.
+   *
+   * The alternative is a default, and a default here is a claim about a take
+   * nobody made — which is exactly what this field exists to record.
+   */
+  outcome: "success" | "failure" | "aborted" | "unknown";
+  self_report: { task_completed: boolean; notes: string } | null;
 }
 
 export type SealedEpisodeManifest = EpisodeManifest & { manifest_hash: string };

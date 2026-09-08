@@ -209,3 +209,17 @@ export async function anchorEpisode(
     return { ok: false, txs, error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+/**
+ * The address that records validations, when one is configured.
+ *
+ * Derived from the relayer key rather than stored separately: the relayer is
+ * the registry's validator in the MVP, and a second copy of the same fact is a
+ * second thing to get out of step. Lives here rather than in config because
+ * config is imported by client components, and viem/accounts has no business
+ * in a phone's bundle.
+ */
+export function validatorAddress(): string | null {
+  const key = relayerKey();
+  return key ? privateKeyToAccount(key).address : null;
+}

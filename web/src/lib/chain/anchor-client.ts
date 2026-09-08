@@ -26,12 +26,14 @@ import {
 /** AssetRegistry's capability bits. A phone declares what it can actually emit. */
 export const MODALITY_RGB = 1 << 0;
 export const MODALITY_IMU = 1 << 1;
+export const MODALITY_AUDIO = 1 << 2;
 export const MODALITY_ORIENTATION = 1 << 4;
 
 /** EntityRegistry.EntityType.Individual */
 const INDIVIDUAL = 0;
 
-const PHONE_CAPABILITIES = MODALITY_RGB | MODALITY_IMU | MODALITY_ORIENTATION;
+const PHONE_CAPABILITIES =
+  MODALITY_RGB | MODALITY_IMU | MODALITY_AUDIO | MODALITY_ORIENTATION;
 
 interface Prepared {
   enabled: boolean;

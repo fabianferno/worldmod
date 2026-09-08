@@ -16,10 +16,11 @@ import {
   type CaptureBackend,
   type CaptureCapabilities,
   type MotionPermission,
+  type RawCapture,
 } from "@/lib/capture";
 import { anchorEpisode } from "@/lib/chain/anchor-client";
 import { deviceAddress } from "@/lib/chain/identity";
-import { buildEpisodeManifest, toSubmission } from "@/lib/episode/build";
+import { buildEpisodeManifest, toSubmission, type SelfReport } from "@/lib/episode/build";
 import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/episode/queue";
 import type { Bounty, StoredEpisode } from "@/lib/market/types";
 import { Details } from "./details";
@@ -36,6 +37,8 @@ type Phase =
   | "preparing"
   | "countdown"
   | "recording"
+  // Stopped, and asking the contributor the one thing only they know.
+  | "reviewing"
   // Bytes on their way; the wearer can put the phone down.
   | "uploading"
   // Uploaded and being scored on the server, which takes about a minute.
@@ -317,19 +320,39 @@ export default function CaptureClient() {
     setPhase("error");
   }, []);
 
+  /**
+   * Stop, then ask the one question the device cannot answer.
+   *
+   * §5's manifest carries `outcome` and `self_report`, and they are inside the
+   * signed commitment — so the answer has to exist before the manifest is
+   * sealed, which is why this sits between the take and the upload rather than
+   * next to the result. It is one tap, and skipping it records "unknown"
+   * rather than inventing a success.
+   */
   const finish = useCallback(async () => {
     clearTimers();
     setOverlay(analyzerRef.current?.stop() ?? null);
+    releaseWakeLock();
 
     try {
       const result = await backendRef.current!.stop();
       setCapture(result);
-      setPhase("uploading");
+      setPhase("reviewing");
+    } catch (err) {
+      fail(err);
+    }
+  }, [clearTimers, fail, releaseWakeLock]);
 
+  const submitEpisode = useCallback(
+    async (result: RawCapture, selfReport: SelfReport | undefined) => {
+    setPhase("uploading");
+
+    try {
       if (!bounty) return;
 
       const manifest = await buildEpisodeManifest({
         capture: result,
+        selfReport,
         bountyId: bounty.bounty_id,
         task: bounty.task,
         entityId: entityId(),
@@ -346,7 +369,13 @@ export default function CaptureClient() {
         episode_id: submission.episode_id,
         manifest,
         submission,
-        streams: { rgb: result.video.blob, imu: imuBlob },
+        streams: {
+          rgb: result.video.blob,
+          imu: imuBlob,
+          // Uploaded only when the device produced one; the manifest declares
+          // an audio stream on exactly the same condition.
+          ...(result.audio ? { audio: result.audio.blob } : {}),
+        },
       };
 
       // Saved before the network is involved: a dropped upload costs a retry,
@@ -374,10 +403,10 @@ export default function CaptureClient() {
       watchScoring(submission.episode_id, Date.now());
     } catch (err) {
       fail(err);
-    } finally {
-      releaseWakeLock();
     }
-  }, [bounty, caps, clearTimers, fail, releaseWakeLock, watchScoring]);
+    },
+    [bounty, caps, fail, watchScoring],
+  );
 
   const beginRecording = useCallback(async () => {
     try {
@@ -541,6 +570,40 @@ export default function CaptureClient() {
               </p>
             ) : null}
           </>
+        ) : null}
+
+        {phase === "reviewing" && capture ? (
+          <div className="absolute inset-0 flex flex-col justify-end bg-background/95 p-5 backdrop-blur">
+            <div className="mx-auto w-full max-w-md">
+              <p className="text-center text-lg font-semibold">Did you finish the task?</p>
+              <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-relaxed text-muted">
+                Only you know this, so we ask rather than assume. Either answer is
+                worth uploading — a failed attempt is still data.
+              </p>
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => void submitEpisode(capture, { taskCompleted: false, notes: "" })}
+                  className="interactive rounded-2xl border border-line py-4 text-base font-medium"
+                >
+                  No
+                </button>
+                <button
+                  onClick={() => void submitEpisode(capture, { taskCompleted: true, notes: "" })}
+                  className="interactive rounded-2xl bg-foreground py-4 text-base font-semibold text-background"
+                >
+                  Yes
+                </button>
+              </div>
+
+              <button
+                onClick={() => void submitEpisode(capture, undefined)}
+                className="interactive mt-3 w-full py-3 text-sm text-subtle"
+              >
+                Skip — record it as unknown
+              </button>
+            </div>
+          </div>
         ) : null}
 
         {phase === "uploading" || phase === "scoring" ? (

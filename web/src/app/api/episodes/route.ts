@@ -20,6 +20,7 @@ import { storeStream } from "@/lib/market/blobs";
 import { fileStore } from "@/lib/market/store";
 import type { EpisodeSubmission } from "@/lib/market/types";
 import type { Manifest } from "@/lib/manifest";
+import { validatorAddress } from "@/lib/chain/relay";
 import { scoreEpisode } from "@/lib/validator/score";
 import { validateEpisode, type StreamBytes } from "@/lib/validator/validate";
 import type { EpisodeFingerprint } from "@/lib/validator/duplicate";
@@ -81,6 +82,7 @@ async function scoreInBackground(
       },
       requiredModalities,
       durationRangeS: durationRange,
+      validator: validatorAddress(),
       fingerprint: {
         episode_id: episodeId,
         entity_id: submission.entity_id,
