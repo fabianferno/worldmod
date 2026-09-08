@@ -21,7 +21,7 @@
  */
 
 import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
-import { useWallets } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { privyConfigured } from "./privy-config";
 import { deviceSigner, privySigner, type Signer } from "./signer";
 
@@ -42,16 +42,36 @@ function useMounted(): boolean {
 }
 
 function PrivyBacked({ children }: { children: React.ReactNode }) {
+  const { ready, authenticated } = usePrivy();
   const { wallets } = useWallets();
   const mounted = useMounted();
 
   const signer = useMemo(() => {
-    if (!mounted) return null;
+    if (!mounted || !ready) return null;
+
     // Privy's own embedded wallet, not an injected one a contributor happened
     // to have — §3's flow assumes no existing wallet.
     const embedded = wallets.find((w) => w.walletClientType === "privy");
-    return embedded ? privySigner(embedded) : deviceSigner();
-  }, [mounted, wallets]);
+    if (embedded) return privySigner(embedded);
+
+    /**
+     * Signed in, but the wallet has not arrived yet.
+     *
+     * Falling through to the device key here is what produced three different
+     * addresses across three takes from one Google account: the wallet list is
+     * empty for a moment after login, and a contributor who tapped Start in
+     * that moment signed with a local key instead of the account they had just
+     * signed into. Their earnings then sat on an address the account cannot
+     * reach.
+     *
+     * Null instead, which holds capture until the identity is known.
+     */
+    if (authenticated) return null;
+
+    // Genuinely not signed in: the device key is the whole identity, and the
+    // UI says so.
+    return deviceSigner();
+  }, [mounted, ready, authenticated, wallets]);
 
   return <SignerContext.Provider value={signer}>{children}</SignerContext.Provider>;
 }
