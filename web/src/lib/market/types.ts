@@ -60,6 +60,14 @@ export interface Bounty {
   deadline: number;
   created_at: number;
   status: "open" | "closed";
+  /**
+   * The on-chain escrow, when the budget was actually locked up.
+   *
+   * Absent means the bounty exists only in this marketplace's ledger. That is
+   * a real state and not a failure — a bounty is postable without a funded
+   * chain, and §13's split is enforced here either way.
+   */
+  escrow?: BountyEscrowRecord;
 }
 
 /** What a contributor submits after their episode is scored on-device. */
@@ -118,6 +126,25 @@ export interface StoredEpisode extends EpisodeSubmission {
    * once the hash is there, not about the chain being on the critical path.
    */
   anchor?: EpisodeAnchor;
+  /**
+   * The on-chain USDC release, when it happened.
+   *
+   * Independent of `accepted`: an episode is accepted by the validator's
+   * findings against the bounty's thresholds, and that verdict does not become
+   * provisional because an RPC was unreachable.
+   */
+  payment?: EpisodePayment;
+}
+
+/** The USDC release for an accepted episode. */
+export interface EpisodePayment {
+  chain_id: number;
+  contributor: string;
+  amount_usdc: number;
+  tx: string;
+  paid_at: number;
+  /** Set when the release was attempted and failed; the episode still stands. */
+  error?: string;
 }
 
 export interface EpisodeAnchor {
@@ -138,6 +165,17 @@ export interface EpisodeAnchor {
  * treasury that §13 allocates 5% each. One of the two is wrong; this makes the
  * inconsistency impossible to commit.
  */
+/** The on-chain escrow backing a bounty, when one was created. */
+export interface BountyEscrowRecord {
+  chain_id: number;
+  /** keccak256 of the bounty id — what the contract is keyed by. */
+  bounty_key: string;
+  buyer: string;
+  txs: Array<{ step: string; hash: string }>;
+  escrowed_at: number;
+  error?: string;
+}
+
 export function budgetBreakdown(bounty: Bounty): {
   episodes: number;
   allocated: number;

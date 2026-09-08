@@ -121,6 +121,122 @@ export const episodeRegistryAbi = [
   },
 ] as const;
 
+export const erc20Abi = [
+  {
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "allowance",
+    stateMutability: "view",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+
+export const bountyEscrowAbi = [
+  {
+    type: "function",
+    name: "createBounty",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "bountyId", type: "bytes32" },
+      { name: "budget", type: "uint96" },
+      { name: "perEpisode", type: "uint96" },
+      { name: "maxEpisodes", type: "uint32" },
+      { name: "utilityPool", type: "uint96" },
+      { name: "validatorFee", type: "uint96" },
+      { name: "treasuryFee", type: "uint96" },
+      { name: "deadline", type: "uint64" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "acceptEpisode",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "bountyId", type: "bytes32" },
+      { name: "episodeId", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "settleUtility",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "bountyId", type: "bytes32" },
+      { name: "contributors", type: "address[]" },
+      { name: "sharesBps", type: "uint32[]" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "withdraw",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "episodePaid",
+    stateMutability: "view",
+    inputs: [{ name: "episodeId", type: "uint256" }],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "getBounty",
+    stateMutability: "view",
+    inputs: [{ name: "bountyId", type: "bytes32" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "buyer", type: "address" },
+          { name: "perEpisode", type: "uint96" },
+          { name: "utilityPool", type: "uint96" },
+          { name: "validatorFee", type: "uint96" },
+          { name: "treasuryFee", type: "uint96" },
+          { name: "budget", type: "uint96" },
+          { name: "spent", type: "uint96" },
+          { name: "maxEpisodes", type: "uint32" },
+          { name: "accepted", type: "uint32" },
+          { name: "deadline", type: "uint64" },
+          { name: "closed", type: "bool" },
+          { name: "utilitySettled", type: "bool" },
+        ],
+      },
+    ],
+  },
+] as const;
+
 /**
  * EIP-712 types, matching the typehash strings in Relayable's subclasses.
  *

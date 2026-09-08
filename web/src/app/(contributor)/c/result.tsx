@@ -1,7 +1,82 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import { explorerTx } from "@/lib/chain/config";
+import { pendingWithdrawal, withdrawEarnings } from "@/lib/chain/withdraw-client";
 import type { StoredEpisode } from "@/lib/market/types";
+
+/**
+ * Collecting real USDC.
+ *
+ * §14 scene 4 ends with the money landing in the contributor's wallet, and the
+ * transaction that moves it is signed by them — the escrow credits a balance
+ * and the holder pulls it, so nobody else can redirect the payment. The relayer
+ * only supplies the gas that makes the call possible.
+ */
+function Withdraw() {
+  const [balance, setBalance] = useState(0);
+  const [state, setState] = useState<"idle" | "sending" | "done">("idle");
+  const [hash, setHash] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(() => {
+    pendingWithdrawal()
+      .then(setBalance)
+      .catch(() => setBalance(0));
+  }, []);
+
+  useEffect(refresh, [refresh]);
+
+  const collect = useCallback(async () => {
+    setState("sending");
+    setError(null);
+    const result = await withdrawEarnings();
+    if (result.ok) {
+      setHash(result.hash ?? null);
+      setState("done");
+      refresh();
+    } else {
+      setError(result.error ?? "Could not withdraw.");
+      setState("idle");
+    }
+  }, [refresh]);
+
+  if (state === "done") {
+    return (
+      <div className="mt-6 rounded-2xl border border-positive/30 bg-positive/10 p-4 text-center">
+        <p className="text-sm font-medium text-positive">USDC is in your wallet</p>
+        {hash ? (
+          <a
+            href={explorerTx(hash)}
+            target="_blank"
+            rel="noreferrer"
+            className="interactive tabular mt-1 inline-block font-mono text-xs text-accent underline decoration-dotted"
+          >
+            {hash.slice(0, 14)}…
+          </a>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (balance <= 0) return null;
+
+  return (
+    <div className="mt-6">
+      <button
+        onClick={() => void collect()}
+        disabled={state === "sending"}
+        className="interactive w-full rounded-2xl bg-positive py-4 text-base font-semibold text-background disabled:opacity-60"
+      >
+        {state === "sending" ? "Collecting…" : `Withdraw $${balance.toFixed(2)} USDC`}
+      </button>
+      {error ? <p className="mt-2 text-xs leading-relaxed text-caution">{error}</p> : null}
+      <p className="mt-2 text-center text-xs text-subtle">
+        Signed by your device, not by us. Gas is covered.
+      </p>
+    </div>
+  );
+}
 
 /**
  * What the contributor sees when a take ends.
@@ -116,6 +191,31 @@ export function Result({
           />
         </div>
       ) : null}
+
+      {submitted?.payment?.tx ? (
+        <div className="mt-6 rounded-2xl border border-line bg-surface p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-sm font-medium">Paid on-chain</span>
+            <a
+              href={explorerTx(submitted.payment.tx)}
+              target="_blank"
+              rel="noreferrer"
+              className="interactive tabular font-mono text-xs text-accent underline decoration-dotted"
+            >
+              {submitted.payment.tx.slice(0, 10)}…
+            </a>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-subtle">
+            Real USDC, credited to your key. Collect it whenever you like.
+          </p>
+        </div>
+      ) : submitted?.payment?.error ? (
+        <p className="mt-6 rounded-2xl border border-caution/40 bg-caution/10 p-4 text-xs leading-relaxed text-caution">
+          Accepted, but the on-chain release did not go through: {submitted.payment.error}
+        </p>
+      ) : null}
+
+      <Withdraw />
 
       {submitted?.anchor?.txs?.length ? (
         <div className="mt-6 rounded-2xl border border-line bg-surface p-4">
