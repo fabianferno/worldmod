@@ -1,5 +1,6 @@
 "use client";
 
+import { explorerTx } from "@/lib/chain/config";
 import type { StoredEpisode } from "@/lib/market/types";
 
 /**
@@ -113,6 +114,31 @@ export function Result({
                   : "Whether what the camera saw matches how the phone moved."
             }
           />
+        </div>
+      ) : null}
+
+      {submitted?.anchor?.txs?.length ? (
+        <div className="mt-6 rounded-2xl border border-line bg-surface p-4">
+          <p className="text-sm font-medium">On the chain</p>
+          <p className="mt-1 text-xs leading-relaxed text-subtle">
+            Your phone signed it; the relayer paid the gas. The episode is attributed
+            to your key, not to whoever paid.
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {submitted.anchor.txs.map((tx) => (
+              <li key={tx.hash} className="flex items-baseline justify-between gap-3">
+                <span className="text-xs text-muted">{tx.step}</span>
+                <a
+                  href={explorerTx(tx.hash)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="interactive tabular font-mono text-xs text-accent underline decoration-dotted"
+                >
+                  {tx.hash.slice(0, 10)}…
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 

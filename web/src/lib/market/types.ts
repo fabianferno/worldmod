@@ -109,6 +109,25 @@ export interface StoredEpisode extends EpisodeSubmission {
   validation?: import("@/lib/validator/validate").ValidationResult;
   /** Where the verified bytes landed. Empty when none were uploaded. */
   streams?: Array<{ kind: string; uri: string; bytes: number; content_type?: string }>;
+  /**
+   * The on-chain commitment, when one was made.
+   *
+   * Absent is normal and not a failure: anchoring runs after an episode is
+   * already scored and stored, so a flaky RPC costs a transaction hash rather
+   * than an episode. product-spec §6.1's claim is about what the chain proves
+   * once the hash is there, not about the chain being on the critical path.
+   */
+  anchor?: EpisodeAnchor;
+}
+
+export interface EpisodeAnchor {
+  chain_id: number;
+  /** The registry's own episode id, which is not the manifest's episode_id. */
+  onchain_episode_id?: string;
+  contributor: string;
+  txs: Array<{ step: string; hash: string }>;
+  anchored_at: number;
+  error?: string;
 }
 
 /**
