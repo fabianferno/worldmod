@@ -45,6 +45,48 @@ const noSubscribe = () => () => {};
 const secureSnapshot = () => isSecureCaptureContext();
 const secureServerSnapshot = () => true;
 
+/**
+ * The episode this device is waiting on a verdict for.
+ *
+ * Scoring takes about a minute, and a phone does not reliably stay on one page
+ * for a minute — the screen locks, a notification steals focus, the browser
+ * reclaims a backgrounded tab. The first real episode through this path was
+ * scored correctly on the server and never shown, because the page reloaded
+ * and the poll it depended on died with the component.
+ *
+ * The id outlives the page so the next mount can go and collect the result.
+ */
+const AWAITING_KEY = "worldmod.awaiting_verdict";
+
+function rememberAwaiting(episodeId: string, startedAt: number): void {
+  try {
+    localStorage.setItem(AWAITING_KEY, JSON.stringify({ episodeId, startedAt }));
+  } catch {
+    // Private mode or a full quota: the in-page poll still works, and a
+    // reload simply loses the verdict as it did before.
+  }
+}
+
+function readAwaiting(): { episodeId: string; startedAt: number } | null {
+  try {
+    const raw = localStorage.getItem(AWAITING_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { episodeId?: unknown; startedAt?: unknown };
+    if (typeof parsed.episodeId !== "string" || typeof parsed.startedAt !== "number") return null;
+    return { episodeId: parsed.episodeId, startedAt: parsed.startedAt };
+  } catch {
+    return null;
+  }
+}
+
+function forgetAwaiting(): void {
+  try {
+    localStorage.removeItem(AWAITING_KEY);
+  } catch {
+    // Nothing to do; a stale key is cleared on the next successful write.
+  }
+}
+
 /** Pseudonymous, device-held. Stands in for the embedded wallet address. */
 function entityId(): string {
   const key = "worldmod.entity_id";
@@ -86,7 +128,10 @@ export default function CaptureClient() {
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
+    // Emptied in place rather than reassigned: the unmount cleanup captures
+    // this array once, and swapping it for a new one leaves that cleanup
+    // holding a reference to timers nobody will ever cancel.
+    timersRef.current.length = 0;
   }, []);
 
   const releaseWakeLock = useCallback(() => {
@@ -168,8 +213,10 @@ export default function CaptureClient() {
    * wait on it and this polls instead.
    */
   const watchScoring = useCallback(
-    (episodeId: string) => {
-      const deadline = Date.now() + 5 * 60_000;
+    (episodeId: string, startedAt: number, resumed = false) => {
+      // Anchored to the upload, not to this call: resuming after a reload
+      // must not hand the episode another five minutes.
+      const deadline = startedAt + 5 * 60_000;
 
       const poll = async () => {
         try {
@@ -177,6 +224,7 @@ export default function CaptureClient() {
           const data = (await response.json()) as { episode?: StoredEpisode };
 
           if (data.episode && data.episode.status !== "scoring") {
+            forgetAwaiting();
             setSubmitted(data.episode);
             setPhase("done");
             refreshEarnings();
@@ -189,15 +237,49 @@ export default function CaptureClient() {
         if (Date.now() < deadline) {
           timersRef.current.push(setTimeout(() => void poll(), 3000));
         } else {
+          forgetAwaiting();
           setError("Still scoring. It will appear on the bounty page when it finishes.");
           setPhase("done");
         }
       };
 
-      timersRef.current.push(setTimeout(() => void poll(), 2000));
+      // A resumed watch asks straight away — the verdict is often already
+      // waiting, and making someone stare at a spinner for a result the server
+      // finished minutes ago is the bug this whole path exists to avoid.
+      timersRef.current.push(setTimeout(() => void poll(), resumed ? 0 : 2000));
     },
     [refreshEarnings],
   );
+
+  /**
+   * Collect a verdict this device is still owed.
+   *
+   * Runs once on mount, after watchScoring exists. The page may have reloaded,
+   * been backgrounded and reclaimed, or been closed outright while the server
+   * was scoring — none of which should cost the wearer a result they earned.
+   */
+  useEffect(() => {
+    const awaiting = readAwaiting();
+    if (!awaiting) return;
+
+    if (Date.now() - awaiting.startedAt > 5 * 60_000) {
+      // Older than the watch would ever have waited. It is not lost — it is on
+      // the bounty page — but this screen should not sit on a stale spinner.
+      forgetAwaiting();
+      return;
+    }
+
+    // Deferred a tick rather than set synchronously: this is a subscription to
+    // state held outside React, and nothing races it — the capture flow starts
+    // on a tap, never on its own.
+    const timer = setTimeout(() => {
+      setPhase("scoring");
+      watchScoring(awaiting.episodeId, awaiting.startedAt, true);
+    }, 0);
+    timersRef.current.push(timer);
+
+    return () => clearTimeout(timer);
+  }, [watchScoring]);
 
   const fail = useCallback((err: unknown) => {
     setError(err instanceof CaptureError || err instanceof Error ? err.message : String(err));
@@ -257,7 +339,8 @@ export default function CaptureClient() {
 
       setSubmitted(outcome.episode as StoredEpisode);
       setPhase("scoring");
-      watchScoring(submission.episode_id);
+      rememberAwaiting(submission.episode_id, Date.now());
+      watchScoring(submission.episode_id, Date.now());
     } catch (err) {
       fail(err);
     } finally {
@@ -330,6 +413,7 @@ export default function CaptureClient() {
 
   const again = useCallback(() => {
     clearTimers();
+    forgetAwaiting();
     analyzerRef.current?.dispose();
     analyzerRef.current = null;
     backendRef.current?.abort();
