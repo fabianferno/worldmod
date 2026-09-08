@@ -44,6 +44,9 @@ interface Prepared {
 
 /**
  * @param bountyId the marketplace's string id, hashed to bytes32 for the chain.
+ * @param storageURI where the episode's video can be fetched. A content
+ *   address if one was computed, because a path on one laptop commits the
+ *   chain to something only that laptop can resolve.
  */
 export async function anchorEpisode(
   episodeId: string,
