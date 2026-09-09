@@ -42,6 +42,30 @@ class LatentDynamics(nn.Module):
         hidden, _ = self.gru(x)
         return latents + self.head(hidden)
 
+    def step(
+        self, latent: torch.Tensor, motion: torch.Tensor, hidden: torch.Tensor | None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """One timestep with an explicit, carried GRU state.
+
+        `forward` takes a whole episode at once, which is right for training and
+        offline evaluation but not for live capture: a phone streams one frame
+        at a time and the recurrent state has to live somewhere between calls
+        rather than being recomputed from scratch on every one.
+
+        This is mathematically the same recurrence as `forward` — nn.GRU
+        applied one step at a time with the running hidden state fed back in is
+        identical to applying it to the whole sequence at once, since a GRU is
+        causal by construction. model_test.py checks that equivalence directly
+        rather than assuming it, because ONNX export (see export_live.py) trusts
+        this method to be right.
+
+        (B, D) latent, (B, M) motion, (1, B, H) hidden or None for the first
+        call → (predicted (B, D), next hidden (1, B, H)).
+        """
+        x = self.input_proj(torch.cat([latent, motion], dim=-1)).unsqueeze(1)
+        out, hidden_next = self.gru(x, hidden)
+        return latent + self.head(out.squeeze(1)), hidden_next
+
     @property
     def parameter_count(self) -> int:
         return sum(p.numel() for p in self.parameters())

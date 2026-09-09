@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { ImuRecorder, observedRate, requestMotionPermission } from "./imu";
+import { ImuRecorder, motionTupleFrom, observedRate, requestMotionPermission } from "./imu";
 
 /** A synthetic DeviceMotionEvent, shaped the way a real device delivers one. */
 function motionEvent(init: {
@@ -261,5 +261,37 @@ describe("requestMotionPermission", () => {
     });
     await expect(requestMotionPermission()).resolves.toBe("denied");
     restore();
+  });
+});
+
+describe("motionTupleFrom", () => {
+  it("labels axes the way ImuRecorder writes them to disk", () => {
+    // The one invariant live-predictor.ts depends on entirely: this function
+    // and ImuRecorder.onMotion must agree, because a model trained on samples
+    // ImuRecorder wrote is being fed live samples through this instead.
+    const sample = motionTupleFrom({
+      acceleration: { x: 1, y: 2, z: 3 },
+      rotationRate: { alpha: 40, beta: 10, gamma: 20 },
+    });
+
+    expect(sample).toMatchObject({
+      ax: 1, ay: 2, az: 3,
+      rx: 10, ry: 20, rz: 40, // beta, gamma, alpha
+      accelSource: "linear",
+    });
+  });
+
+  it("falls back to gravity-inclusive acceleration and says so", () => {
+    const sample = motionTupleFrom({
+      accelerationIncludingGravity: { x: 0, y: 0, z: 9.8 },
+      rotationRate: null,
+    });
+    expect(sample.accelSource).toBe("including_gravity");
+    expect(sample.az).toBeCloseTo(9.8);
+  });
+
+  it("reads zero rather than null or undefined for anything absent", () => {
+    const sample = motionTupleFrom({});
+    expect(sample).toEqual({ ax: 0, ay: 0, az: 0, rx: 0, ry: 0, rz: 0, accelSource: "absent" });
   });
 });

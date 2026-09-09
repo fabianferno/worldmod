@@ -26,6 +26,23 @@ It writes into the web app's public directory on purpose: the buyer dashboard
 renders `/b/model` straight from that file, so the chart and the run cannot
 disagree.
 
+## Live prediction during capture
+
+```sh
+.venv/bin/pip install onnx onnxruntime
+.venv/bin/python export_live.py --data ../web/.data --out ../web/public/models/world
+```
+
+Trains the same model `run.py`'s headline number comes from and exports it as
+one ONNX graph — encoder and dynamics head fused together, so the Node server
+behind `/c` can step through it one streamed frame at a time while a
+contributor is recording. `verify_export.py` is not part of that pipeline; it
+is what checked the export actually agrees with PyTorch before this was wired
+into the app — worth rerunning after touching `model.py` or `export_live.py`,
+not on every train.
+
+## What is faithful to the spec, and what is not
+
 ## What is faithful to the spec, and what is not
 
 **Faithful.** The encoder is frozen and only the small head trains — §8.1 is
