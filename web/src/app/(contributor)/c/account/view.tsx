@@ -18,6 +18,7 @@ import { pendingWithdrawal, withdrawEarnings } from "@/lib/chain/withdraw-client
 import { reputationFor, type Reputation } from "@/lib/market/reputation";
 import type { StoredEpisode } from "@/lib/market/types";
 import { Identity } from "./identity";
+import { SelfieCheck } from "./selfie-check";
 
 function short(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -151,6 +152,9 @@ export function AccountView() {
       </header>
 
       <Identity />
+      <div className="mt-3">
+        <SelfieCheck />
+      </div>
 
       {/* Money first: it is why someone strapped a phone to their head. */}
       <div className="mt-4 rounded-2xl border border-line bg-surface p-5 text-center">

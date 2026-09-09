@@ -4,13 +4,21 @@
  * Which identity the capture flow signs with.
  *
  * Split into two providers because hooks cannot be called conditionally, and
- * Privy's hooks throw outside a PrivyProvider — which is absent whenever no app
- * id is configured. One component calls them, the other never does, and the
- * page picks between the two at the top of the tree.
+ * `useMiniKit` only reports a real `isInstalled` value inside a
+ * `MiniKitProvider` — present unconditionally now that the whole app is a
+ * World mini app, but `isInstalled` is still `false` (not an error) whenever
+ * this loads outside World App, e.g. plain mobile-web Safari/Chrome.
  *
- * The device key is the default rather than an error state. Someone who has not
- * logged in yet, or cannot, still records and still gets paid; what they do not
- * get is an address they can reach from another phone.
+ * The device key is the default rather than an error state. Someone who has
+ * not connected World App, or cannot, still records and still gets paid; what
+ * they do not get is an address they can reach from another phone.
+ *
+ * Unlike Privy's silent embedded wallet, `MiniKit.walletAuth` always shows
+ * World App's own confirmation prompt — there is no custodial wallet to
+ * create quietly. Capture must never surprise a head-mounted contributor with
+ * a prompt they cannot see, so connecting is never automatic here: it only
+ * happens when something the contributor tapped calls `connect()` from
+ * `useWorldAppAuth()`, same as Privy's login button did.
  *
  * Nothing here touches localStorage until the client has mounted. The device
  * key lives there, which does not exist on the server — reading it while
@@ -20,16 +28,41 @@
  * during render. Consumers get null until then.
  */
 
-import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { privyConfigured } from "./privy-config";
-import { deviceSigner, privySigner, type Signer } from "./signer";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { MiniKit } from "@worldcoin/minikit-js";
+import { useMiniKit } from "@worldcoin/minikit-js/minikit-provider";
+import { deviceSigner, worldAppSigner, type Signer } from "./signer";
 
 const SignerContext = createContext<Signer | null>(null);
 
 /** Null until the client has mounted and an identity exists. */
 export function useSigner(): Signer | null {
   return useContext(SignerContext);
+}
+
+interface WorldAppAuthState {
+  address: `0x${string}` | null;
+  connecting: boolean;
+  /** No-op wherever World App isn't installed — check `useMiniKit().isInstalled` first. */
+  connect: () => void;
+}
+
+const WorldAppAuthContext = createContext<WorldAppAuthState>({
+  address: null,
+  connecting: false,
+  connect: () => {},
+});
+
+/** Drives the "sign in with World App" button — see the file header. */
+export function useWorldAppAuth(): WorldAppAuthState {
+  return useContext(WorldAppAuthContext);
 }
 
 const noSubscribe = () => () => {};
@@ -41,39 +74,41 @@ function useMounted(): boolean {
   return useSyncExternalStore(noSubscribe, onClient, onServer);
 }
 
-function PrivyBacked({ children }: { children: React.ReactNode }) {
-  const { ready, authenticated } = usePrivy();
-  const { wallets } = useWallets();
+function WorldAppBacked({ children }: { children: React.ReactNode }) {
   const mounted = useMounted();
+  const [address, setAddress] = useState<`0x${string}` | null>(null);
+  const [connecting, setConnecting] = useState(false);
+
+  // `walletAuth` needs a fresh, single-use nonce. No server session sits
+  // behind it here — the trust boundary is the EIP-712 signature each
+  // registry contract itself checks, same as it was with Privy — so a
+  // client-generated one is enough to satisfy the command's own replay
+  // protection rather than to anchor a login session.
+  const connect = useCallback(() => {
+    if (connecting || address) return;
+    setConnecting(true);
+    MiniKit.walletAuth({ nonce: crypto.randomUUID().replace(/-/g, "") })
+      .then((result) => {
+        if ("address" in result.data) setAddress(result.data.address as `0x${string}`);
+      })
+      .catch(() => {
+        // Declined or failed — stays on the device key below.
+      })
+      .finally(() => setConnecting(false));
+  }, [connecting, address]);
 
   const signer = useMemo(() => {
-    if (!mounted || !ready) return null;
+    if (!mounted) return null;
+    return address ? worldAppSigner(address) : deviceSigner();
+  }, [mounted, address]);
 
-    // Privy's own embedded wallet, not an injected one a contributor happened
-    // to have — §3's flow assumes no existing wallet.
-    const embedded = wallets.find((w) => w.walletClientType === "privy");
-    if (embedded) return privySigner(embedded);
+  const authState = useMemo(() => ({ address, connecting, connect }), [address, connecting, connect]);
 
-    /**
-     * Signed in, but the wallet has not arrived yet.
-     *
-     * Falling through to the device key here is what produced three different
-     * addresses across three takes from one Google account: the wallet list is
-     * empty for a moment after login, and a contributor who tapped Start in
-     * that moment signed with a local key instead of the account they had just
-     * signed into. Their earnings then sat on an address the account cannot
-     * reach.
-     *
-     * Null instead, which holds capture until the identity is known.
-     */
-    if (authenticated) return null;
-
-    // Genuinely not signed in: the device key is the whole identity, and the
-    // UI says so.
-    return deviceSigner();
-  }, [mounted, ready, authenticated, wallets]);
-
-  return <SignerContext.Provider value={signer}>{children}</SignerContext.Provider>;
+  return (
+    <WorldAppAuthContext.Provider value={authState}>
+      <SignerContext.Provider value={signer}>{children}</SignerContext.Provider>
+    </WorldAppAuthContext.Provider>
+  );
 }
 
 function DeviceBacked({ children }: { children: React.ReactNode }) {
@@ -83,8 +118,9 @@ function DeviceBacked({ children }: { children: React.ReactNode }) {
 }
 
 export function SignerProvider({ children }: { children: React.ReactNode }) {
-  return privyConfigured() ? (
-    <PrivyBacked>{children}</PrivyBacked>
+  const { isInstalled } = useMiniKit();
+  return isInstalled ? (
+    <WorldAppBacked>{children}</WorldAppBacked>
   ) : (
     <DeviceBacked>{children}</DeviceBacked>
   );

@@ -237,6 +237,43 @@ export const bountyEscrowAbi = [
   },
 ] as const;
 
+export const datasetRegistryAbi = [
+  {
+    type: "function",
+    name: "datasetCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "getDataset",
+    stateMutability: "view",
+    inputs: [{ name: "datasetId", type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "creator", type: "address" },
+          { name: "priceUsdc", type: "uint96" },
+          { name: "episodesRoot", type: "bytes32" },
+          { name: "episodeCount", type: "uint32" },
+          { name: "mintedAt", type: "uint64" },
+          { name: "license", type: "string" },
+          { name: "metadataURI", type: "string" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "membersOf",
+    stateMutability: "view",
+    inputs: [{ name: "datasetId", type: "uint256" }],
+    outputs: [{ type: "uint256[]" }],
+  },
+] as const;
+
 /**
  * EIP-712 types, matching the typehash strings in Relayable's subclasses.
  *

@@ -6,6 +6,75 @@ credentials in it) for the full plan. Short version: tokenize licensed
 dataset / bounty-receivable cashflows as ATS assets on Hedera testnet,
 alongside World Mod's existing Sepolia DePIN loop rather than replacing it.
 
+> World Mod tokenizes licensed physical-world datasets as compliant ATS
+> assets on Hedera: KYC-gated transfer of commercial training rights, with
+> on-chain issuance and license-fee distribution tied to real episode
+> provenance.
+
+## Architecture
+
+Two chains, one dataset. Sepolia is where World Mod's DePIN loop already
+lives (capture → validate → mint → escrow); Hedera is where that same
+dataset becomes a compliant, KYC-gated, coupon-bearing security token. The
+bridge is one function — `readSepoliaDataset` → `datasetToBondRequest` →
+`Bond.create` — reading one chain live and writing the other, not two
+features that happen to agree on some numbers.
+
+```mermaid
+flowchart LR
+    subgraph Sepolia["Ethereum Sepolia — existing DePIN loop"]
+        A[Contributor captures episode] --> B["EpisodeRegistry\n(flow-vs-gyro validation)"]
+        B --> C["DatasetRegistry.mintDataset\nprice · license · episodesRoot · metadataURI"]
+        C --> D["BountyEscrow\nUSDC payouts"]
+    end
+
+    subgraph Bridge["dataset-to-bond.ts"]
+        E["readSepoliaDataset()\nlive read, no stored copy"]
+        F["datasetToBondRequest()\nBond mapping — not Equity"]
+    end
+
+    subgraph Hedera["Hedera Testnet — Asset Tokenization Studio"]
+        G["Bond.create\nATS diamond-proxy issuance"]
+        H["KYC: grant / check / revoke"]
+        I["setCoupon\nlicence-fee distribution"]
+    end
+
+    UI["World Mod app: /b/datasets\n'Issue as Hedera Bond'"] --> E
+    C --> E --> F --> G --> H
+    G --> I
+    C -. "metadataURI" .-> IPFS[("IPFS: pinned dataset metadata")]
+    G -. "info field cites registry\naddress + datasetId + episodesRoot" .-> IPFS
+```
+
+## For judges: verify this in under 5 minutes
+
+Every line below is a link to real testnet state, not a claim to take on
+faith — the same mirror-node/Sourcify checks used to build this, not a
+demo-only path.
+
+1. **The dataset is real, on Sepolia.** `DatasetRegistry` dataset #1:
+   [0x1df8feDf50394A9e0f78cb0EF8F187D587812cbB](https://sepolia.etherscan.io/address/0x1df8feDf50394A9e0f78cb0EF8F187D587812cbB) —
+   6 episodes, all independently flow-vs-gyro validated, `$6.00`,
+   `commercial_ai_training`, metadata pinned at
+   [ipfs://bafkreihusmtjgfjz4xrjrfwsfujz5cf6krtenchrftetuz3rzhsfsw4oyy](https://ipfs.io/ipfs/bafkreihusmtjgfjz4xrjrfwsfujz5cf6krtenchrftetuz3rzhsfsw4oyy).
+2. **The same dataset is a real ATS Bond on Hedera testnet**, issued from
+   World Mod's own `/b/datasets` page, not a hand-run script:
+   [HashScan: 0x3cb31106a89e77e582b6a9ad08f9829399cef271](https://hashscan.io/testnet/contract/0x3cb31106a89e77e582b6a9ad08f9829399cef271)
+   (`0.0.10418207`) — source verified, see the T6 table below.
+3. **Compliance is real, not a flag left off.** `kyc-exercise.mjs` granted,
+   checked (`GRANTED`), and revoked (`NOT_GRANTED`) KYC on that Bond against
+   a freshly generated account — [grant tx](https://hashscan.io/testnet/transaction/0x95c8f03cacdfb3145977a564db36a329a7c31cdd0521b47ff5f4e031501a4ae3),
+   [revoke tx](https://hashscan.io/testnet/transaction/0xb3ba02ea890166d5fa1486bd61f9818e9386053f18e81e105265d64c09b925d6).
+4. **A lifecycle op beyond issuance is real.** `set-coupon.mjs` fixed a 5%
+   licence-fee coupon on that Bond and read it back —
+   [set tx](https://hashscan.io/testnet/transaction/0x3c87b5a7dec48a9dd8af95514dbdb63a9e9f849c0cfb9c2535574e52af2f7d83).
+5. **The contract itself is verified**, not just linked — see the T6 table:
+   [Sourcify, Hedera testnet chain 296](https://repo.sourcify.dev/296/0x3cb31106a89e77e582b6a9ad08f9829399cef271/).
+
+The T1–T6 sections below go deeper into each of these, including the real
+bugs found and fixed along the way — not written after the fact, but kept
+as the actual record of what building this took.
+
 ## Status
 
 **T1 — done, verified, reproducible.** `spike-issue-bond.mjs` issues a real
@@ -59,12 +128,181 @@ this project's own relayer account — not a derivation from the real creator.
 Whoever owns the Sepolia dataset does not yet own the Hedera Bond that
 represents it. That identity bridge is unbuilt.
 
+**T3 — done, verified from the app itself, not a script run by hand.**
+A buyer viewing `/b/datasets` in World Mod's own app sees every dataset
+minted on Sepolia, live, and an "Issue as Hedera Bond" button next to each
+one. The button calls `POST /api/hedera/issue-bond`, which reads the dataset
+off Sepolia, maps it through `dataset-to-bond.ts`, and issues it — the exact
+mapping T2 proved, now reachable by a buyer instead of only by whoever can
+run a script:
+
+```
+0.0.10418044   0x86f97fa2e1cd84bd90a51ef491d10589d5b080d5
+https://hashscan.io/testnet/contract/0x86f97fa2e1cd84bd90a51ef491d10589d5b080d5
+```
+
+Mirror-node confirmed after a real UI-triggered call: `result: SUCCESS`,
+`status: 0x1`, `gas_used: 1451012`, `created_contract_ids: ['0.0.10418044']`.
+
+This needed one more fix beyond T2's mapping: the ATS SDK's `window` stub
+(root cause 1 above) cannot run inside Next.js's own long-lived server
+process — doing so once, in-process, left the *entire app* 500ing on every
+route a moment later, because React and Next.js check `typeof window`
+throughout their own internals to decide server-vs-client behaviour, and a
+faked one satisfies those checks too. The fix is isolation, not a narrower
+stub: `web/src/lib/hedera/issue.ts` spawns the SDK connection+issuance flow
+in a short-lived child process (`web/hedera` package, via
+`hedera/scripts/issue-bond-json.mjs`) that starts, issues one Bond, prints
+one line of JSON, and exits — never inside the process serving the rest of
+the app. Verified by hitting the route and immediately re-checking `/c`,
+`/b/bounties`, `/c/account` and `/b/datasets` all still returned 200, not
+just that a later restart happened to mask the problem.
+
+**T4 — done, verified, and it surfaced a real credential bug on the way.**
+`kyc-exercise.mjs` grants, checks, and revokes KYC on a real Bond against a
+freshly generated account — not just the `internalKycActivated: true` flag
+every Bond carries, which only turns the check on and had never actually
+been exercised:
+
+```
+Bond:      0x16f48be31bb63785ec609f1a57f6f2ae26a45784   (0.0.10418177)
+Target:    0x60F5466d6dA310b01D6Cd032f7F1eEf95b809ADa   (freshly generated, never funded)
+Grant tx:  0x95c8f03cacdfb3145977a564db36a329a7c31cdd0521b47ff5f4e031501a4ae3
+Revoke tx: 0xb3ba02ea890166d5fa1486bd61f9818e9386053f18e81e105265d64c09b925d6
+```
+
+Mirror-node confirmed on both: `result: SUCCESS`, `status: 0x1`
+(`gas_used` 264293 and 79427). `getKycStatusFor` read `GRANTED` after the
+grant and `NOT_GRANTED` after the revoke — read from the chain, not asserted
+from the SDK's own return value.
+
+**What it took**, beyond the mapping: `internalKycActivated: true` only
+turns KYC checking on for a Bond. Nothing about issuance grants anyone the
+roles needed to *administer* it — confirmed by reading the SDK's own
+`Kyc.test.js`, where even the diamond's own creator grants itself
+`_SSI_MANAGER_ROLE` and `_KYC_ROLE` before it can call `grantKyc`. And
+`grantKyc` itself needs a real Verifiable Credential — the ATS SDK's own
+`grantKyc` command handler imports `@terminal3/verify_vc` and calls it
+unconditionally, so this issues one for real (Terminal3's ECDSA VC format,
+self-signed, `@terminal3/ecdsa_vc` — already a transitive dependency of the
+SDK, not something added for this). `createEcdsaCredential`'s revocation-
+registry wiring is skipped on purpose: `grantKyc` calls `verifyVc(vc)` with
+no `options`, and reading `@terminal3/verify_vc_core` shows the revocation
+check only runs when `options.revocationRegistryAddress` is present — so
+building a VC without it isn't a shortcut around a real check, it's what the
+production path actually checks.
+
+**The bug it found**: granting a role to "self" reverted the first time,
+decoded via the mirror node to `AccountNotAssignedToRole` — this project's
+own account had no admin rights on the Bond it had supposedly issued.
+Comparing `hedera/.env`'s `HEDERA_ACCOUNT_ID` (`0.0.10413607`) against what
+the mirror node says that private key actually controls
+(`GET /accounts/{evmAddressFromKey}`) turned up two different Hedera
+accounts: `HEDERA_PRIVATE_KEY` signs as `0.0.7290316`
+(`0xe8289a12ee0b460c51936b0a7782b69840104236`), not `0.0.10413607`
+(`0x3a79b2e529505b737e2f81fbf67947583875d8c9`) — a mismatched
+account-id/private-key pair, present from how the credentials first arrived.
+Issuance never surfaced this: deploying a Bond only needs a funded caller,
+and `diamondOwnerAccount` is just a constructor argument naming who *should*
+receive the owner role — nothing checks it matches the caller. Every T1–T3
+Bond above was quietly issued with an owner account this project cannot
+actually administer. `.env` (both `hedera/` and `web/`) now names the
+account the key really controls; `kyc-exercise.mjs` above ran against a
+Bond reissued after that fix, which is why role-granting worked.
+
+**T5 — done, verified.** `set-coupon.mjs` fixes a real licence-fee coupon on
+a real Bond and reads every field back from the chain:
+
+```
+Bond:      0x3cb31106a89e77e582b6a9ad08f9829399cef271   (0.0.10418207)
+Coupon id: 1
+Set tx:    0x3c87b5a7dec48a9dd8af95514dbdb63a9e9f849c0cfb9c2535574e52af2f7d83
+period:    2026-09-08 → 2026-10-08 (one licence term)
+rate:      5%
+```
+
+Mirror-node confirmed: `result: SUCCESS`, `status: 0x1`, `gas_used: 595818`
+— genuinely the largest single transaction in this whole project, consistent
+with `setCoupon` writing a full coupon record plus a holder snapshot, not a
+trivial state flip. `getCoupon`, `getAllCoupons`, and `getCouponFor` all read
+the same record back afterward, independent of the write's own return value.
+
+**Two more real bugs, found the way T4's was — by trying it and reading the
+decoded revert, not by reading docs that don't cover this:**
+
+1. `_CORPORATEACTIONS_ROLE` is required to call `setCoupon`, and — like T4's
+   `_KYC_ROLE`/`_SSI_MANAGER_ROLE` — the diamond owner does not hold it
+   automatically. The SDK's own `Bond.test.js` calls `setCoupon` once
+   *without* granting this role first and it passes; copying that at face
+   value would have looked like proof the owner gets it for free. It
+   doesn't — that test fixture's account evidently already held the role
+   from outside the test. A real, freshly issued Bond starts with none of
+   the delegable roles pre-granted, T5's owner included.
+2. Every timestamp `setCoupon` takes must be strictly in the future **at the
+   moment the transaction mines**, not when the request is built —
+   `ScheduledTasksCommon.onlyValidTimestamp` reverts with `WrongTimestamp`
+   otherwise. A `fixingTimestamp` set to exactly `Date.now()` looked
+   correct when the script built the request, then had already become the
+   past by the time the transaction reached the chain a few seconds later.
+   Fixed with a small forward buffer, not a retry loop.
+
+**What T5 does not attempt**: turning the 5% rate into an actual payout
+amount. `getCouponAmountFor` returns a numerator/denominator the ATS
+contract derives from a holder's balance at the snapshot, not a currency
+figure — and this Bond's balances are all zero regardless, because
+`numberOfUnits` at issuance is a supply *cap*, not an initial mint; nobody
+holds a unit of this Bond yet. Wiring a coupon's payout to Sepolia's own
+USDC flow is a further step, left open same as the identity bridge below.
+
+**T6 — done: three real Bond contracts verified on Sourcify (the registry
+HashScan's own "Verified" badge reads from), not just linked as raw
+addresses.**
+
+| Bond | Hedera ID | HashScan | Sourcify |
+|---|---|---|---|
+| T4/T5's Bond | 0.0.10418207 | [hashscan.io/testnet/contract/0x3cb31106...](https://hashscan.io/testnet/contract/0x3cb31106a89e77e582b6a9ad08f9829399cef271) | [repo.sourcify.dev/296/0x3cb31106...](https://repo.sourcify.dev/296/0x3cb31106a89e77e582b6a9ad08f9829399cef271/) |
+| T4's first bond | 0.0.10418177 | [hashscan.io/testnet/contract/0x16f48be3...](https://hashscan.io/testnet/contract/0x16f48be31bb63785ec609f1a57f6f2ae26a45784) | [repo.sourcify.dev/296/0x16f48be3...](https://repo.sourcify.dev/296/0x16f48be31bb63785ec609f1a57f6f2ae26a45784/) |
+| T3's app-issued bond | 0.0.10418044 | [hashscan.io/testnet/contract/0x86f97fa2...](https://hashscan.io/testnet/contract/0x86f97fa2e1cd84bd90a51ef491d10589d5b080d5) | [repo.sourcify.dev/296/0x86f97fa2...](https://repo.sourcify.dev/296/0x86f97fa2e1cd84bd90a51ef491d10589d5b080d5/) |
+| T2's bond | 0.0.10417623 | [hashscan.io/testnet/contract/0x5220521e...](https://hashscan.io/testnet/contract/0x5220521e6048c849460d1a32b120897ca74d25a7) | [repo.sourcify.dev/296/0x5220521e...](https://repo.sourcify.dev/296/0x5220521e6048c849460d1a32b120897ca74d25a7/) (runtime match only — its creation transaction is a nested `CREATE` under the Factory's own call, and Sourcify's automatic creation-bytecode fetch doesn't reach those on Hedera testnet) |
+
+Each confirmed via Sourcify's own API on an independent re-query (not just
+the submission's own response): `runtimeMatch: "match"`,
+`creationMatch: "match"`.
+
+What "verify" means here and what it took: the deployed contract is
+`ResolverProxy.sol` — Hedera's own shared ATS diamond-proxy implementation
+(`@hashgraph/asset-tokenization-contracts`), not code this project wrote.
+Nobody had verified it on this network before: `sourcify.dev`'s own
+`check-by-addresses` returned `match: null` for all three addresses before
+this. The npm package ships the contract sources but — being a published
+package, not the original monorepo — none of the `hardhat.config`,
+`build-info`, or a pinned solc binary; only the on-chain bytecode itself
+says which compiler and settings were actually used. Recovered the same way
+T1's config ID and ISIN checksum were: read what's actually there. The
+deployed bytecode's own trailing metadata CBOR encodes the exact compiler
+tag (`solc 0.8.28`) and, from opcode usage (`PUSH0`, EIP-3855), a Shanghai-
+or-later EVM target. Compiled the full resolved import tree (153 source
+files, gathered by walking every `import` from `ResolverProxy.sol`, pulling
+`@openzeppelin/contracts@4.9.6`, `@onchain-id/solidity@2.2.1`, and
+`@tokenysolutions/t-rex@4.1.6` in separately since the published package
+lists them as devDependencies it doesn't ship) with `solc 0.8.28`, default
+optimizer settings (`enabled: true, runs: 200`), `evmVersion: "shanghai"` —
+and the resulting bytecode matched the real on-chain runtime bytecode
+exactly, byte for byte outside the metadata hash, on the first attempt.
+Submitted that same standard-JSON input to Sourcify's `POST
+/v2/verify/{chainId}/{address}` (Hedera testnet is chain id `296`) for each
+address, with the real transaction hash that created it — genuinely
+verified, not merely "looks right locally."
+
 ## Running it
 
 ```sh
 cd hedera && npm install
 npm run spike                       # T1: a standalone Bond, proves the SDK path works at all
 node --env-file=.env issue-dataset-bond.mjs <datasetId>   # T2: issue against a real Sepolia dataset
+node --env-file=.env kyc-exercise.mjs <bondEvmAddress>    # T4: grant, check, revoke KYC for real
+node --env-file=.env set-coupon.mjs <bondEvmAddress>       # T5: set and read back a real coupon
+node verify-contract.mjs <bondEvmAddress> [creationTxHash]  # T6: verify on Sourcify/HashScan
 node --test src/*.test.mjs          # the pure mapping and checksum logic, no network needed
 ```
 
@@ -142,13 +380,7 @@ a number anyone has validated against how these deals actually get priced.
 
 ## Next
 
-- T3: issue from World Mod's own app (a buyer-side action calling this
-  mapping), not a standalone script invoked by hand.
-- T4: KYC / compliance — `internalKycActivated: true` is set on every Bond
-  above; nothing has exercised granting or checking it against a real second
-  account yet.
-- T5: a lifecycle op beyond issuance — `setCoupon`, the licence-fee
-  distribution `numberOfUnits`'s design note above sets up.
-- T6/T7: HashScan verification, public repo section.
+- T7: make this repo public (currently private — a decision for whoever
+  owns it, not this script).
 - The identity bridge (Sepolia creator → Hedera issuing account) named above
   and left open.

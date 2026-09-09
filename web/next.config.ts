@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /**
+   * Selfie Check needs a real device camera and World App, so testing it
+   * means tunnelling the dev server (ngrok) and opening that URL on a phone
+   * — a different origin than localhost. Without this, Next's dev server
+   * silently blocks every /_next/static/* chunk request from that origin:
+   * the page's initial HTML still loads, but no JS ever runs, which looks
+   * like a broken app rather than a blocked one. Wildcarded because ngrok's
+   * free tier assigns a new subdomain on every restart.
+   */
+  allowedDevOrigins: ["*.ngrok-free.dev", "*.ngrok-free.app", "*.ngrok.io", "*.ngrok.app"],
   turbopack: {
     resolveAlias: {
       /**
@@ -15,15 +25,6 @@ const nextConfig: NextConfig = {
        * an optional peer dependency and is deliberately not installed.
        */
       "@mediapipe/hands": "./src/lib/analysis/stubs/mediapipe-hands.ts",
-
-      /**
-       * Privy imports @stripe/crypto for a fiat on-ramp — buying crypto with a
-       * card. A contributor here is paid in USDC and never buys any, so the
-       * screen is unreachable. Privy leaves the package optional and does not
-       * install it, and without this alias the capture route 500s on a module
-       * it can never load.
-       */
-      "@stripe/crypto": "./src/lib/chain/stubs/stripe-crypto.ts",
     },
   },
 };

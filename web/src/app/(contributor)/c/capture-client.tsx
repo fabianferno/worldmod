@@ -154,8 +154,8 @@ export default function CaptureClient() {
   const secure = useSyncExternalStore(noSubscribe, secureSnapshot, secureServerSnapshot);
 
   /**
-   * The identity this episode is attributed to — a recoverable Privy wallet
-   * where someone has signed in, the device key otherwise. Both sign; only one
+   * The identity this episode is attributed to — the World App wallet where
+   * someone has connected, the device key otherwise. Both sign; only one
    * survives a lost phone.
    */
   const signer = useSigner();

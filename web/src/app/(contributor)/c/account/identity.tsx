@@ -3,35 +3,34 @@
 /**
  * Who this account is, and whether it can be recovered.
  *
- * The distinction is the whole reason §10.3 asks for social login. Both
- * identities sign episodes and both get paid; only one survives a lost phone.
- * Saying "wallet connected" for either would hide the difference that matters.
+ * The distinction is the whole reason §10.3 asks for a recoverable identity.
+ * Both identities sign episodes and both get paid; only one survives a lost
+ * phone. Saying "wallet connected" for either would hide the difference that
+ * matters.
  */
 
-import { usePrivy } from "@privy-io/react-auth";
-import { privyConfigured } from "@/lib/chain/privy-config";
-import { useSigner } from "@/lib/chain/signer-context";
+import { useMiniKit } from "@worldcoin/minikit-js/minikit-provider";
+import { useSigner, useWorldAppAuth } from "@/lib/chain/signer-context";
+
+function short(address: string): string {
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
 
 function Inner() {
-  const { ready, authenticated, user, login, logout } = usePrivy();
+  const { address, connecting, connect } = useWorldAppAuth();
   const signer = useSigner();
 
-  if (!ready) return null;
-
-  if (authenticated) {
-    const label = user?.email?.address ?? user?.google?.email ?? "Signed in";
+  if (address) {
     return (
       <div className="rounded-2xl border border-positive/25 bg-positive/5 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{label}</p>
+            <p className="truncate text-sm font-medium">World App — {short(address)}</p>
             <p className="mt-0.5 text-xs text-positive/80">
-              Recoverable — sign in on another phone and this account comes back.
+              Recoverable — connect World App on another phone and this account
+              comes back.
             </p>
           </div>
-          <button onClick={() => void logout()} className="interactive shrink-0 text-xs text-muted">
-            Sign out
-          </button>
         </div>
       </div>
     );
@@ -48,10 +47,11 @@ function Inner() {
           </p>
         </div>
         <button
-          onClick={() => login()}
-          className="interactive shrink-0 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background"
+          onClick={connect}
+          disabled={connecting}
+          className="interactive shrink-0 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background disabled:opacity-40"
         >
-          Sign in
+          {connecting ? "Connecting…" : "Sign in"}
         </button>
       </div>
       {signer ? null : <p className="mt-2 text-xs text-subtle">Loading your key…</p>}
@@ -60,8 +60,9 @@ function Inner() {
 }
 
 export function Identity() {
-  // Without an app id there is no provider and no choice to present — the
-  // device key is the only identity, and the capture screen already says so.
-  if (!privyConfigured()) return null;
+  // Outside World App there is no wallet to connect to — the device key is
+  // the only identity, and the capture screen already says so.
+  const { isInstalled } = useMiniKit();
+  if (!isInstalled) return null;
   return <Inner />;
 }
