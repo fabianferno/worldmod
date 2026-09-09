@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PredictiveArcHero } from "./_components/PredictiveArcHero";
 
 export const metadata = {
   title: "World Mod",
@@ -28,6 +29,9 @@ function ArrowIcon() {
 export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center overflow-y-auto px-4 py-10">
+      <div className="settle settle-1 mb-8">
+        <PredictiveArcHero />
+      </div>
       <h1 className="settle settle-1 text-[38px] font-semibold leading-[1.05] tracking-[-0.03em]">
         Get paid for
         <br />

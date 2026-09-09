@@ -268,3 +268,18 @@ p {
     animation: none;
   }
 }
+
+/*
+ * The ThreeUI Data Pixel Arc lives in a framed panel in the hero — a dark
+ * emerald horizon set into the bone surface, sized so the arc has room to
+ * breathe. The canvas fills the frame; the frame owns the rounding and the clip.
+ */
+.shader-frame {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: var(--r-panel);
+  background: #030304;
+  box-shadow: var(--lift);
+}

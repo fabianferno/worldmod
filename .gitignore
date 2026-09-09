@@ -34,3 +34,4 @@ hedera/.env
 
 # Same pattern for World — credentials tend to get pasted into this one too
 world.md
+.gstack/
