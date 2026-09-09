@@ -22,11 +22,11 @@ function Inner() {
 
   if (address) {
     return (
-      <div className="rounded-2xl border border-positive/25 bg-positive/5 px-4 py-3">
+      <div className="rounded-card bg-mint px-4 py-3.5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium">World App — {short(address)}</p>
-            <p className="mt-0.5 text-xs text-positive/80">
+            <p className="truncate text-sm font-semibold text-mint-ink">World App — {short(address)}</p>
+            <p className="mt-1 text-xs leading-relaxed text-mint-ink">
               Recoverable — connect World App on another phone and this account
               comes back.
             </p>
@@ -37,11 +37,11 @@ function Inner() {
   }
 
   return (
-    <div className="rounded-2xl border border-caution/30 bg-caution/5 px-4 py-3">
+    <div className="rounded-card bg-butter px-4 py-3.5">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium">This phone only</p>
-          <p className="mt-0.5 text-xs leading-relaxed text-caution/90">
+          <p className="text-sm font-semibold text-butter-ink">This phone only</p>
+          <p className="mt-1 text-xs leading-relaxed text-butter-ink">
             Your key lives in this browser. Clearing its data loses it, and anything
             owed to it goes with it.
           </p>
@@ -49,12 +49,12 @@ function Inner() {
         <button
           onClick={connect}
           disabled={connecting}
-          className="interactive shrink-0 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background disabled:opacity-40"
+          className="interactive shrink-0 rounded-full bg-ink px-4 py-2.5 text-xs font-semibold text-on-ink disabled:opacity-40"
         >
           {connecting ? "Connecting…" : "Sign in"}
         </button>
       </div>
-      {signer ? null : <p className="mt-2 text-xs text-subtle">Loading your key…</p>}
+      {signer ? null : <p className="mt-2 text-xs text-butter-ink">Loading your key…</p>}
     </div>
   );
 }

@@ -612,76 +612,107 @@ export default function CaptureClient() {
   const seconds = Math.ceil(remainingMs / 1000);
 
   return (
-    <main className="relative flex flex-1 flex-col">
-      {/* Balance leads. This is an earning app, not an instrument. */}
-      <header className="flex items-center justify-between px-5 pt-4">
-        {/* The balance is the way in to the account: it is what a contributor
-            looks for, and the withdraw button used to be reachable only by
-            recording again. */}
-        <Link href="/c/account" className="interactive -m-1 block p-1">
-          <p className="text-xs text-subtle">Earned</p>
-          <p className="tabular text-2xl font-semibold tracking-tight underline decoration-white/15 decoration-dotted underline-offset-4">
-            ${earned.toFixed(2)}
+    <main className="relative flex flex-1 flex-col overflow-hidden px-4 pt-3">
+      {/*
+        Money leads. Someone opened this to earn, and the two figures that
+        decide whether they bother — what they have, and what this take adds —
+        face each other across the top before anything else loads.
+      */}
+      <header className="settle settle-1 flex items-start justify-between gap-3 pb-3">
+        <Link
+          href="/c/account"
+          className="interactive -m-1.5 block rounded-inner p-1.5"
+          aria-label="Your account and earnings"
+        >
+          <p className="tag">Earned</p>
+          <p className="figure mt-1 text-[34px]">
+            ${earned.toFixed(2).split(".")[0]}
+            <span className="cents">.{earned.toFixed(2).split(".")[1]}</span>
           </p>
         </Link>
 
         {bounty ? (
-          <div className="text-right">
-            <p className="text-xs text-subtle">This task pays</p>
-            <p className="tabular text-2xl font-semibold tracking-tight text-positive">
+          <div className="rounded-full bg-mint px-4 py-2.5 text-right">
+            <p className="text-[11px] font-medium leading-none text-mint-ink">
+              This take pays
+            </p>
+            <p className="figure mt-1.5 text-[19px] text-mint-ink">
               ${bounty.per_episode_usdc.toFixed(2)}
+              <span className="unit">USDC</span>
             </p>
           </div>
         ) : null}
       </header>
 
       {!secure ? (
-        <p className="mx-5 mt-4 rounded-2xl border border-caution/25 bg-caution/10 p-3 text-sm text-caution">
+        <p className="mb-3 rounded-card bg-butter px-4 py-3 text-sm leading-relaxed text-butter-ink">
           Camera and motion need a secure connection. Open this over https.
         </p>
       ) : null}
 
-      {/* The viewfinder is the screen, not a card sitting on a page. */}
-      <section className="relative mt-4 flex-1 overflow-hidden bg-black">
+      {/*
+        The viewfinder is the ink card of this world, not a video element with
+        a border around it. Everything the take needs to say is said inside it.
+      */}
+      <section className="relative flex-1 overflow-hidden rounded-panel bg-ink shadow-lift settle settle-2">
         <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
         <LiveOverlay hands={liveHands} guide={GUIDE_REGION} showGuide={live} />
         {phase === "recording" ? <PredictionPanel prediction={livePrediction} /> : null}
 
+        {phase === "idle" ? (
+          <div className="on-ink absolute inset-x-0 top-0 flex flex-col items-center gap-3 px-8 pt-[28%] text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/8 text-on-ink-muted">
+              <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden>
+                <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.6" />
+                <circle cx="12" cy="12" r="3.4" stroke="currentColor" strokeWidth="1.6" />
+              </svg>
+            </span>
+            <p className="text-sm leading-relaxed text-on-ink-muted">
+              Your camera opens when you start. Nothing is recorded until then.
+            </p>
+          </div>
+        ) : null}
+
         {phase === "idle" && bounty ? (
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-5 pt-20">
-            <h1 className="text-xl font-semibold">{bounty.title}</h1>
-            <p className="mt-1 max-w-prose text-sm leading-relaxed text-white/70">
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink via-ink/80 to-transparent px-5 pb-5 pt-24">
+            <h1 className="text-[19px] font-semibold text-on-ink">{bounty.title}</h1>
+            <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-on-ink-muted">
               {bounty.task_spec}
             </p>
           </div>
         ) : null}
 
         {phase === "preparing" ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70">
-            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
-            <p className="text-sm text-white/70">Getting the tracker ready</p>
+          <div className="on-ink absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/75">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-mint" />
+            <p className="text-sm text-on-ink-muted">Getting the tracker ready</p>
           </div>
         ) : null}
 
         {phase === "countdown" ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55">
-            <span className="tabular text-7xl font-semibold">{seconds}</span>
-            <p className="mt-2 text-sm text-white/75">Get the phone on</p>
+          <div className="on-ink absolute inset-0 flex flex-col items-center justify-center bg-ink/60">
+            <p className="tag text-on-ink-muted">Starting in</p>
+            <p className="figure mt-2 text-[76px] text-on-ink">{seconds}</p>
+            <p className="mt-3 text-sm text-on-ink-muted">Get the phone on</p>
           </div>
         ) : null}
 
         {phase === "recording" ? (
           <>
-            <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-negative" />
-              <span className="tabular font-mono text-sm">{seconds}s</span>
+            {/* The take's clock, quoted the way every other figure here is. */}
+            <div className="absolute left-4 top-4 flex items-center gap-2.5 rounded-full bg-paper/95 py-2 pl-3 pr-4 backdrop-blur">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-negative" />
+              <span className="figure text-[17px] text-foreground">
+                {seconds}
+                <span className="unit">sec left</span>
+              </span>
             </div>
             {liveHands.length === 0 ? (
-              <p className="absolute inset-x-0 bottom-5 text-center text-sm font-medium text-caution">
+              <p className="absolute inset-x-4 bottom-5 mx-auto w-fit rounded-full bg-butter px-4 py-2.5 text-center text-sm font-medium text-butter-ink">
                 Tilt down — hands out of view
               </p>
             ) : weakMotion ? (
-              <p className="absolute inset-x-0 bottom-5 text-center text-sm font-medium text-caution">
+              <p className="absolute inset-x-4 bottom-5 mx-auto w-fit rounded-full bg-butter px-4 py-2.5 text-center text-sm font-medium text-butter-ink">
                 Move around more — look where you are going
               </p>
             ) : null}
@@ -689,24 +720,26 @@ export default function CaptureClient() {
         ) : null}
 
         {phase === "reviewing" && capture ? (
-          <div className="absolute inset-0 flex flex-col justify-end bg-background/95 p-5 backdrop-blur">
+          <div className="on-ink absolute inset-0 flex flex-col justify-end bg-ink/95 p-5 backdrop-blur">
             <div className="mx-auto w-full max-w-md">
-              <p className="text-center text-lg font-semibold">Did you finish the task?</p>
-              <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-relaxed text-muted">
+              <p className="text-center text-lg font-semibold text-on-ink">
+                Did you finish the task?
+              </p>
+              <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-relaxed text-on-ink-muted">
                 Only you know this, so we ask rather than assume. Either answer is
                 worth uploading — a failed attempt is still data.
               </p>
 
-              <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="mt-7 grid grid-cols-2 gap-3">
                 <button
                   onClick={() => void submitEpisode(capture, { taskCompleted: false, notes: "" })}
-                  className="interactive rounded-2xl border border-line py-4 text-base font-medium"
+                  className="interactive rounded-full border-2 border-white/45 py-4 text-base font-semibold text-on-ink"
                 >
                   No
                 </button>
                 <button
                   onClick={() => void submitEpisode(capture, { taskCompleted: true, notes: "" })}
-                  className="interactive rounded-2xl bg-foreground py-4 text-base font-semibold text-background"
+                  className="interactive rounded-full bg-mint py-4 text-base font-semibold text-mint-ink"
                 >
                   Yes
                 </button>
@@ -714,7 +747,7 @@ export default function CaptureClient() {
 
               <button
                 onClick={() => void submitEpisode(capture, undefined)}
-                className="interactive mt-3 w-full py-3 text-sm text-subtle"
+                className="interactive mt-3 w-full rounded-full py-3 text-sm text-on-ink-muted"
               >
                 Skip — record it as unknown
               </button>
@@ -723,12 +756,12 @@ export default function CaptureClient() {
         ) : null}
 
         {phase === "uploading" || phase === "scoring" ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/95 p-6 text-center backdrop-blur">
-            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-accent" />
-            <p className="text-base font-medium">
+          <div className="on-ink absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/95 p-6 text-center backdrop-blur">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-lilac" />
+            <p className="text-base font-semibold text-on-ink">
               {phase === "uploading" ? "Sending your episode" : "Scoring on the server"}
             </p>
-            <p className="max-w-xs text-sm leading-relaxed text-muted">
+            <p className="max-w-xs text-sm leading-relaxed text-on-ink-muted">
               {phase === "uploading"
                 ? "Saved on your phone already — this can retry if it drops."
                 : "Every frame is being checked, which takes about a minute. You can put the phone down."}
@@ -736,8 +769,10 @@ export default function CaptureClient() {
           </div>
         ) : null}
 
+        {/* The verdict leaves the ink card and returns to the bone ground:
+            the take is over, and this is the ledger talking, not the camera. */}
         {phase === "done" || phase === "error" ? (
-          <div className="absolute inset-0 overflow-y-auto bg-background/97 p-5 backdrop-blur">
+          <div className="absolute inset-0 overflow-y-auto bg-bone px-4 pb-4">
             <Result submitted={submitted} error={error} onAgain={again} />
             {capture ? (
               <Details
@@ -752,20 +787,21 @@ export default function CaptureClient() {
         ) : null}
       </section>
 
-      {/* Primary action sits in the thumb zone, above the tab bar. */}
-      <div className="px-5 pb-4 pt-4">
+      {/* Primary action sits in the thumb zone, above the dock. */}
+      <div className="settle settle-3 pb-3 pt-3">
         {phase === "idle" ? (
           <>
             {bounties.length > 1 ? (
-              <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+              <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1">
                 {bounties.map((option) => (
                   <button
                     key={option.bounty_id}
                     onClick={() => setBounty(option)}
-                    className={`interactive shrink-0 rounded-full border px-3.5 py-2 text-sm font-medium ${
+                    aria-pressed={option.bounty_id === bounty?.bounty_id}
+                    className={`interactive shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold ${
                       option.bounty_id === bounty?.bounty_id
-                        ? "border-white/35 bg-white/10"
-                        : "border-line text-muted"
+                        ? "bg-lilac text-lilac-ink"
+                        : "bg-paper text-muted"
                     }`}
                   >
                     {option.title}
@@ -784,13 +820,20 @@ export default function CaptureClient() {
             <button
               onClick={begin}
               disabled={!secure || !signer}
-              className="interactive w-full rounded-2xl bg-foreground py-4 text-base font-semibold text-background disabled:opacity-40"
+              className="interactive on-ink flex w-full items-center gap-3 rounded-full bg-ink p-1.5 text-on-ink disabled:opacity-40"
             >
-              {signer ? `Start · ${EPISODE_MS / 1000}s` : "Getting your account…"}
+              <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-mint text-mint-ink">
+                <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
+                  <circle cx="12" cy="12" r="6.5" fill="currentColor" />
+                </svg>
+              </span>
+              <span className="flex-1 pr-[52px] text-center text-base font-semibold">
+                {signer ? `Start recording · ${EPISODE_MS / 1000}s` : "Getting your account…"}
+              </span>
             </button>
 
             {signer ? (
-              <p className="mt-2 text-center text-xs text-subtle">
+              <p className="mt-2.5 text-center text-xs text-subtle">
                 Paid to{" "}
                 <span className="tabular font-mono">
                   {signer.address.slice(0, 6)}…{signer.address.slice(-4)}
@@ -799,12 +842,35 @@ export default function CaptureClient() {
               </p>
             ) : null}
 
-            <label className="mt-3 flex items-center justify-center gap-2 text-xs text-subtle">
+            <label
+              className={`interactive mt-2.5 flex cursor-pointer items-center justify-center gap-2.5 rounded-full py-2.5 text-xs font-medium ${
+                shareLocation ? "bg-lilac text-lilac-ink" : "text-subtle"
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={shareLocation}
                 onChange={(e) => setShareLocation(e.target.checked)}
+                className="sr-only"
               />
+              <span
+                aria-hidden
+                className={`flex h-[18px] w-[18px] items-center justify-center rounded-full ${
+                  shareLocation ? "bg-lilac-ink text-lilac" : "bg-paper-sunk"
+                }`}
+              >
+                {shareLocation ? (
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
+                    <path
+                      d="M5.5 12.5l4 4 9-9"
+                      stroke="currentColor"
+                      strokeWidth="2.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : null}
+              </span>
               Include a coarse location, rounded to ~10km
             </label>
           </>
@@ -825,7 +891,7 @@ export default function CaptureClient() {
         {pending > 0 ? (
           <button
             onClick={retry}
-            className="interactive mt-3 w-full rounded-2xl border border-caution/40 bg-caution/10 py-3 text-sm font-medium text-caution"
+            className="interactive mt-3 w-full rounded-full bg-butter py-3.5 text-sm font-semibold text-butter-ink"
           >
             {pending} waiting to upload — retry
           </button>

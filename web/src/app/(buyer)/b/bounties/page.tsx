@@ -28,7 +28,7 @@ export default async function BountiesPage() {
 
         <Link
           href="/b/bounties/new"
-          className="interactive shrink-0 rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background hover:bg-white"
+          className="interactive shrink-0 rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background hover:opacity-90"
         >
           Post a bounty
         </Link>
@@ -44,7 +44,7 @@ export default async function BountiesPage() {
           <Link
             key={href}
             href={href}
-            className="interactive rounded-full border border-line px-3.5 py-1.5 text-sm text-muted hover:border-white/25 hover:text-foreground"
+            className="interactive rounded-full border border-line px-3.5 py-1.5 text-sm text-muted hover:border-line-strong hover:text-foreground"
           >
             {label}
           </Link>
@@ -60,7 +60,7 @@ export default async function BountiesPage() {
           </p>
           <Link
             href="/b/bounties/new"
-            className="interactive mt-5 inline-block rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background hover:bg-white"
+            className="interactive mt-5 inline-block rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background hover:opacity-90"
           >
             Post the first one
           </Link>
@@ -77,7 +77,7 @@ export default async function BountiesPage() {
               <li key={bounty.bounty_id}>
                 <Link
                   href={`/b/bounties/${bounty.bounty_id}`}
-                  className="interactive block rounded-2xl border border-line bg-surface p-5 hover:border-white/25"
+                  className="interactive block rounded-2xl border border-line bg-surface p-5 hover:border-line-strong"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                     <h2 className="text-base font-medium">{bounty.title}</h2>
@@ -92,7 +92,7 @@ export default async function BountiesPage() {
                   </p>
 
                   <div className="mt-4 flex items-center gap-3">
-                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-paper-sunk">
                       <div
                         className="h-full rounded-full bg-accent"
                         style={{ width: `${progress * 100}%` }}
@@ -104,7 +104,7 @@ export default async function BountiesPage() {
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                    <span className="rounded-md bg-white/5 px-2 py-0.5 text-subtle">
+                    <span className="rounded-md bg-paper-sunk px-2 py-0.5 text-subtle">
                       {bounty.required_modalities.join(" + ")}
                     </span>
 

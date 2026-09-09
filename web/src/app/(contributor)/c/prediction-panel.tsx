@@ -31,9 +31,9 @@ export function PredictionPanel({ prediction }: { prediction: LivePrediction | n
   if (!prediction) return null;
 
   return (
-    <div className="pointer-events-none absolute right-3 top-3 w-20 overflow-hidden rounded-xl border border-white/25 bg-black/40 backdrop-blur-sm">
-      <canvas ref={canvasRef} className="block h-20 w-20 object-cover" />
-      <p className="px-1.5 py-1 text-center text-[9px] leading-tight text-white/70">
+    <div className="pointer-events-none absolute right-4 top-4 w-[84px] overflow-hidden rounded-inner bg-lilac p-1 shadow-lift-high">
+      <canvas ref={canvasRef} className="block h-[76px] w-[76px] rounded-[12px] object-cover" />
+      <p className="px-1 pb-0.5 pt-1 text-center text-[9px] font-medium leading-tight text-lilac-ink/80">
         {prediction.warming ? "learning your take…" : "model's guess"}
       </p>
     </div>

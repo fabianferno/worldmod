@@ -31,8 +31,8 @@ function Field({
 }
 
 const input =
-  "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm outline-none " +
-  "focus:border-white/40";
+  "w-full rounded-lg border border-line bg-paper-sunk px-3 py-2 text-sm outline-none " +
+  "focus:border-line-strong";
 
 export function NewBountyForm() {
   const router = useRouter();
@@ -169,7 +169,7 @@ export function NewBountyForm() {
                 className={`rounded-full border px-3 py-1.5 text-xs ${
                   modalities.includes(id)
                     ? "border-emerald-400/50 bg-emerald-500/15 text-emerald-200"
-                    : "border-white/15 text-muted"
+                    : "border-line text-muted"
                 }`}
               >
                 {label}
@@ -243,7 +243,7 @@ export function NewBountyForm() {
                 type="button"
                 onClick={() => setMotionPolicy(option.value)}
                 className={`block w-full rounded-lg border p-3 text-left ${
-                  motionPolicy === option.value ? "border-white/40 bg-white/5" : "border-line"
+                  motionPolicy === option.value ? "border-line-strong bg-paper-sunk" : "border-line"
                 }`}
               >
                 <span className="text-sm font-medium">{option.label}</span>
@@ -328,7 +328,7 @@ export function NewBountyForm() {
           </Field>
         </div>
 
-        <div className="mt-2 rounded-xl border border-white/15 p-4">
+        <div className="mt-2 rounded-xl border border-line p-4">
           <div className="flex items-baseline justify-between">
             <span className="text-sm font-medium">Total to escrow</span>
             <span className="font-mono text-xl tabular-nums">${budget.toFixed(2)}</span>
@@ -350,7 +350,7 @@ export function NewBountyForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="interactive mt-5 w-full rounded-xl bg-white px-4 py-3.5 font-semibold text-neutral-950 disabled:opacity-40"
+        className="interactive mt-5 w-full rounded-xl bg-ink px-4 py-3.5 font-semibold text-on-ink disabled:opacity-40"
       >
         {submitting ? "Posting…" : `Post bounty and escrow $${budget.toFixed(2)}`}
       </button>

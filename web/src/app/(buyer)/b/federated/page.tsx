@@ -96,7 +96,7 @@ export default async function FederatedPage() {
                   <span className="tabular font-mono text-sm">
                     {round.global_error.toFixed(4)}
                     {isBest ? (
-                      <span className="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-muted">
+                      <span className="ml-2 rounded bg-paper-sunk px-1.5 py-0.5 text-[10px] text-muted">
                         best
                       </span>
                     ) : null}
