@@ -16,11 +16,11 @@ export function PredictiveArcHero() {
   return (
     <div className="shader-frame">
       <DataPixelArcCanvas
-        mode="dark"
+        mode="light"
         speed={1.0}
         hue={0}
         saturation={1.0}
-        brightness={1.0}
+        brightness={1.35}
       />
     </div>
   );
