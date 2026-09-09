@@ -9,6 +9,7 @@
   "dependencies": {
     "@hashgraph/asset-tokenization-contracts": "4.2.0",
     "@hashgraph/asset-tokenization-sdk": "4.2.0",
-    "@hiero-ledger/sdk": "^2.87.0"
+    "@hiero-ledger/sdk": "^2.87.0",
+    "ethers": "^6.17.0"
   }
 }
