@@ -90,14 +90,16 @@ describe("evaluateEpisode", () => {
     expect(decision.paid_usdc).toBe(0);
   });
 
-  it("rejects poor framing with a reason a contributor can act on", () => {
+  it("rejects poor framing with a reason that doesn't leak the confidential bar", () => {
     const decision = evaluateEpisode(bounty(), episode({ framing: 0.32 }));
-    expect(decision.reasons.join(" ")).toMatch(/32% of frames.*needs 70%/);
+    expect(decision.reasons.join(" ")).toMatch(/framed/i);
+    expect(decision.reasons.join(" ")).not.toMatch(/32%|70%/);
   });
 
-  it("rejects an episode whose motion match is too low", () => {
+  it("rejects an episode whose motion match is too low, without leaking the confidential bar", () => {
     const decision = evaluateEpisode(bounty(), episode({ plausibility: 0.11 }));
-    expect(decision.reasons.join(" ")).toMatch(/11%.*needs 70%/);
+    expect(decision.reasons.join(" ")).toMatch(/motion match/i);
+    expect(decision.reasons.join(" ")).not.toMatch(/11%|70%/);
   });
 
   it("accepts an unscorable-motion episode when the bounty allows static tasks", () => {

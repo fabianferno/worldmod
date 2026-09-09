@@ -201,3 +201,19 @@ export function budgetBreakdown(bounty: Bounty): {
     balanced: Math.abs(allocated - bounty.budget_usdc) < 0.005,
   };
 }
+
+/**
+ * Strips a bounty's acceptance thresholds before it leaves the server.
+ *
+ * `min_plausibility`/`min_framing` are compared against an episode's score
+ * privately, inside a Chainlink CRE confidential workflow (see `cre/`) — a
+ * contributor who could read the exact bar could tailor a submission to just
+ * clear it rather than genuinely meet it. Every public GET response for a
+ * bounty must go through this first.
+ */
+export function redactThresholds(bounty: Bounty): Omit<Bounty, "min_plausibility" | "min_framing"> {
+  const rest: Partial<Bounty> = { ...bounty };
+  delete rest.min_plausibility;
+  delete rest.min_framing;
+  return rest as Omit<Bounty, "min_plausibility" | "min_framing">;
+}
