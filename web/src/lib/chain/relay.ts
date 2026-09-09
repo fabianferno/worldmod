@@ -18,6 +18,7 @@ import { createPublicClient, createWalletClient, http, type Hash } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { assetRegistryAbi, entityRegistryAbi, episodeRegistryAbi } from "./abi";
 import { ADDRESSES, CHAIN, RPC_URL, relayerKey } from "./config";
+import { waitForSuccess } from "./wait-for-success";
 
 export const publicClient = createPublicClient({ chain: CHAIN, transport: http(RPC_URL) });
 
@@ -115,7 +116,7 @@ export async function registerContributor(
         ],
       });
       txs.push({ step: "registerEntity", hash });
-      await publicClient.waitForTransactionReceipt({ hash });
+      await waitForSuccess(publicClient, hash, "registerEntity");
     }
 
     if (signed.asset) {
@@ -132,7 +133,7 @@ export async function registerContributor(
         ],
       });
       txs.push({ step: "registerAsset", hash });
-      await publicClient.waitForTransactionReceipt({ hash });
+      await waitForSuccess(publicClient, hash, "registerAsset");
     }
 
     // Read back rather than decode logs: the registry's own list is the answer
@@ -180,7 +181,7 @@ export async function anchorEpisode(
       ],
     });
     txs.push({ step: "submitEpisode", hash: submitHash });
-    await publicClient.waitForTransactionReceipt({ hash: submitHash });
+    await waitForSuccess(publicClient, submitHash, "submitEpisode");
 
     // Read the id back from the registry rather than parsing logs: the mapping
     // is the contract's own answer to "which episode is this manifest".
@@ -200,7 +201,7 @@ export async function anchorEpisode(
       args: [episodeId, validation.scoreBps, validation.trustLevel],
     });
     txs.push({ step: "recordValidation", hash: validationHash });
-    await publicClient.waitForTransactionReceipt({ hash: validationHash });
+    await waitForSuccess(publicClient, validationHash, "recordValidation");
 
     return { ok: true, episodeId: episodeId.toString(), txs };
   } catch (err) {

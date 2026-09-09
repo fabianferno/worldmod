@@ -2,7 +2,7 @@
 
 /**
  * The buyer-side action T3 asks for: issue a Hedera Bond against a real
- * Sepolia dataset from World Mod's own app, not a script run by hand. Calls
+ * registry dataset from World Mod's own app, not a script run by hand. Calls
  * /api/hedera/issue-bond, which shells out to an isolated child process —
  * see hedera/scripts/issue-bond-json.mjs and lib/hedera/issue.ts for why
  * that isolation exists (the ATS SDK's window stub cannot run in this app's

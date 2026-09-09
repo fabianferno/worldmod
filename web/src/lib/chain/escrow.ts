@@ -25,6 +25,7 @@ import { createWalletClient, http } from "viem";
 import { bountyEscrowAbi, erc20Abi } from "./abi";
 import { ADDRESSES, CHAIN, RPC_URL, relayerKey } from "./config";
 import { publicClient } from "./relay";
+import { waitForSuccess } from "./wait-for-success";
 
 /** USDC has six decimals. Money is integers here, never floats. */
 export function toUsdc(amount: number): bigint {
@@ -143,7 +144,7 @@ export async function createBountyOnChain(terms: BountyTerms): Promise<ChainResu
       args: [ADDRESSES.bountyEscrow, budget],
     });
     txs.push({ step: "approve", hash: approveHash });
-    await publicClient.waitForTransactionReceipt({ hash: approveHash });
+    await waitForSuccess(publicClient, approveHash, "approve");
 
     const createHash = await client.writeContract({
       address: ADDRESSES.bountyEscrow,
@@ -161,7 +162,7 @@ export async function createBountyOnChain(terms: BountyTerms): Promise<ChainResu
       ],
     });
     txs.push({ step: "createBounty", hash: createHash });
-    await publicClient.waitForTransactionReceipt({ hash: createHash });
+    await waitForSuccess(publicClient, createHash, "createBounty");
 
     return { ok: true, txs };
   } catch (err) {
@@ -201,7 +202,7 @@ export async function acceptEpisodeOnChain(
       functionName: "acceptEpisode",
       args: [bountyKey(bountyId), BigInt(onchainEpisodeId)],
     });
-    await publicClient.waitForTransactionReceipt({ hash });
+    await waitForSuccess(publicClient, hash, "acceptEpisode");
 
     return { ok: true, txs: [{ step: "acceptEpisode", hash }] };
   } catch (err) {
@@ -229,7 +230,7 @@ export async function fundGas(recipient: `0x${string}`, wei: bigint): Promise<Ch
     if (existing >= wei) return { ok: true, txs: [] };
 
     const hash = await client.sendTransaction({ to: recipient, value: wei - existing });
-    await publicClient.waitForTransactionReceipt({ hash });
+    await waitForSuccess(publicClient, hash, "fundGas");
 
     return { ok: true, txs: [{ step: "fundGas", hash }] };
   } catch (err) {

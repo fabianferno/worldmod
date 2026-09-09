@@ -10,10 +10,14 @@ import {EpisodeRegistry} from "../src/EpisodeRegistry.sol";
 /**
  * A dataset is what a buyer actually pays for, so these run against Circle's
  * real USDC for the same reason the escrow tests do.
+ *
+ * No Hedera-forked equivalent — see BountyEscrow.fork.t.sol's header for
+ * why (forge's local EVM can't execute the HTS precompile call this
+ * contract's constructor now makes).
  */
 contract DatasetRegistryForkTest is Test {
-    address internal constant USDC = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
-    uint256 internal constant BASE_SEPOLIA = 84532;
+    address internal constant USDC = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238;
+    uint256 internal constant SEPOLIA = 11155111;
 
     EntityRegistry internal entities;
     AssetRegistry internal assets;
@@ -31,9 +35,9 @@ contract DatasetRegistryForkTest is Test {
     bool internal forked;
 
     function setUp() public {
-        try vm.envString("BASE_SEPOLIA_RPC_URL") returns (string memory url) {
+        try vm.envString("SEPOLIA_RPC_URL") returns (string memory url) {
             vm.createSelectFork(url);
-            forked = block.chainid == BASE_SEPOLIA;
+            forked = block.chainid == SEPOLIA;
         } catch {
             forked = false;
         }

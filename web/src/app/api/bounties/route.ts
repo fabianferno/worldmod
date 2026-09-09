@@ -1,4 +1,4 @@
-import { chainEnabled } from "@/lib/chain/config";
+import { CHAIN, chainEnabled } from "@/lib/chain/config";
 import { bountyKey, createBountyOnChain, relayerAddress } from "@/lib/chain/escrow";
 import { fileStore } from "@/lib/market/store";
 import { budgetBreakdown } from "@/lib/market/types";
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     body.escrow = {
-      chain_id: 11155111,
+      chain_id: CHAIN.id,
       bounty_key: bountyKey(body.bounty_id),
       buyer: relayerAddress() ?? "",
       txs: result.txs.map((t) => ({ step: t.step, hash: t.hash })),
