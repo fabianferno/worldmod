@@ -23,10 +23,10 @@ function SignedIn({ address }: { address: string }) {
   const signer = useSigner();
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-card bg-mint px-4 py-3">
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium">World App</p>
-        <p className="tabular font-mono text-xs text-subtle">
+        <p className="truncate text-sm font-semibold text-mint-ink">World App</p>
+        <p className="tabular mt-0.5 font-mono text-xs text-mint-ink/70">
           {signer ? short(signer.address) : short(address)}
         </p>
       </div>
@@ -39,24 +39,24 @@ function SignedOut() {
   const { connecting, connect } = useWorldAppAuth();
 
   return (
-    <div className="rounded-2xl border border-line bg-surface px-4 py-3">
+    <div className="rounded-card bg-butter px-4 py-3.5">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium">This phone only</p>
-          <p className="tabular font-mono text-xs text-subtle">
+          <p className="text-sm font-semibold text-butter-ink">This phone only</p>
+          <p className="tabular mt-0.5 font-mono text-xs text-butter-ink/70">
             {signer ? short(signer.address) : "…"}
           </p>
         </div>
         <button
           onClick={connect}
           disabled={connecting}
-          className="interactive shrink-0 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background disabled:opacity-40"
+          className="interactive shrink-0 rounded-full bg-ink px-4 py-2.5 text-xs font-semibold text-on-ink disabled:opacity-40"
         >
           {connecting ? "Connecting…" : "Sign in"}
         </button>
       </div>
       {/* The honest reason to bother, rather than a generic prompt. */}
-      <p className="mt-2 text-xs leading-relaxed text-subtle">
+      <p className="mt-2 text-xs leading-relaxed text-butter-ink">
         You can record and get paid without this. Signing in means your earnings
         are reachable from another phone — right now, clearing this browser loses
         the key.

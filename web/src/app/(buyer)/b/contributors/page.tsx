@@ -52,7 +52,7 @@ export default async function ContributorsPage() {
                   <span className="tabular text-lg font-semibold">{rep.score.toFixed(0)}</span>
                   {rep.provisional ? (
                     <span
-                      className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-muted"
+                      className="rounded bg-paper-sunk px-1.5 py-0.5 text-[10px] text-muted"
                       title={`Fewer than ${PROVISIONAL_BELOW} episodes — not yet meaningful`}
                     >
                       provisional
