@@ -5,21 +5,24 @@
  *
  * Two identities can do it and they are not equivalent:
  *
- *   A Privy embedded wallet, reachable again from any device by logging in.
- *   Payments credited to it survive a lost phone, which is the entire reason
- *   §10.3 asks for social login rather than a bare key.
+ *   The wallet already inside World App, reachable again from any device by
+ *   being signed into World App there. Payments credited to it survive a lost
+ *   phone, which is the entire reason §10.3 asks for a recoverable identity
+ *   rather than a bare key.
  *
  *   A device key in localStorage. It signs exactly as well and cannot be
  *   recovered — clear site data and the address, and anything owed to it, is
  *   gone.
  *
- * The device key remains the fallback rather than being removed. Social login
- * needs a network round trip and an account; a contributor with a phone and no
- * patience should still be able to record, and the UI says which identity they
- * are using rather than implying custody that is not there.
+ * The device key remains the fallback rather than being removed. World App's
+ * wallet needs the mini app to actually be running inside World App; a
+ * contributor on plain mobile web should still be able to record, and the UI
+ * says which identity they are using rather than implying custody that is not
+ * there.
  */
 
-import type { ConnectedWallet } from "@privy-io/react-auth";
+import { MiniKit } from "@worldcoin/minikit-js";
+import type { TypedData, TypedDataDomain } from "viem";
 import { ADDRESSES, CHAIN } from "./config";
 import {
   DOMAIN_NAMES,
@@ -34,7 +37,7 @@ import {
   signSubmitEpisode,
 } from "./identity";
 
-export type IdentityKind = "privy" | "device";
+export type IdentityKind = "worldapp" | "device";
 
 export interface Signer {
   kind: IdentityKind;
@@ -62,25 +65,36 @@ function domain(name: string, verifyingContract: `0x${string}`) {
 }
 
 /**
- * A signer backed by a Privy embedded wallet.
+ * A signer backed by the wallet already inside World App.
  *
- * Signs through EIP-1193 `eth_signTypedData_v4` rather than a viem account:
- * the private key lives in Privy's enclave and is never in this page, which is
- * the property that makes it recoverable at all.
+ * `MiniKit.signTypedData` is the same EIP-712-over-the-wire shape Privy's
+ * `eth_signTypedData_v4` used — domain, types, primaryType, message — so
+ * every call site that built a request for Privy needed only its transport
+ * swapped, not its content. The private key never leaves World App; this
+ * page only ever sees the resulting signature, which is what makes the
+ * identity recoverable at all.
  */
-export function privySigner(wallet: ConnectedWallet): Signer {
-  const address = wallet.address as `0x${string}`;
-
-  async function signTypedData(payload: Record<string, unknown>): Promise<`0x${string}`> {
-    const provider = await wallet.getEthereumProvider();
-    return (await provider.request({
-      method: "eth_signTypedData_v4",
-      params: [address, JSON.stringify(payload)],
-    })) as `0x${string}`;
+export function worldAppSigner(address: `0x${string}`): Signer {
+  async function signTypedData(payload: {
+    domain: TypedDataDomain;
+    types: TypedData;
+    primaryType: string;
+    message: Record<string, unknown>;
+  }): Promise<`0x${string}`> {
+    const result = await MiniKit.signTypedData({
+      domain: payload.domain,
+      types: payload.types,
+      primaryType: payload.primaryType,
+      message: payload.message,
+    });
+    if (!("signature" in result.data)) {
+      throw new Error(`World App declined to sign: ${JSON.stringify(result.data)}`);
+    }
+    return result.data.signature as `0x${string}`;
   }
 
-  // EIP-712 over the wire needs the domain type declared explicitly; viem adds
-  // it for you and a raw provider does not.
+  // EIP-712 over the wire needs the domain type declared explicitly; viem
+  // adds it for you and a raw signTypedData call does not.
   const EIP712Domain = [
     { name: "name", type: "string" },
     { name: "version", type: "string" },
@@ -89,7 +103,7 @@ export function privySigner(wallet: ConnectedWallet): Signer {
   ];
 
   return {
-    kind: "privy",
+    kind: "worldapp",
     address,
     recoverable: true,
 

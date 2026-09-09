@@ -31,3 +31,6 @@ subgraph/node_modules/
 # Hedera credentials and working notes — never commit
 hedera.md
 hedera/.env
+
+# Same pattern for World — credentials tend to get pasted into this one too
+world.md

@@ -39,6 +39,7 @@ export default async function BountiesPage() {
           { href: "/b/model", label: "World model" },
           { href: "/b/federated", label: "Federated rounds" },
           { href: "/b/contributors", label: "Contributors" },
+          { href: "/b/datasets", label: "Datasets" },
         ].map(({ href, label }) => (
           <Link
             key={href}

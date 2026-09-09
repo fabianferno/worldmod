@@ -4,12 +4,24 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "spike": "node --env-file=.env spike-issue-bond.mjs"
+    "spike": "node --env-file=.env spike-issue-bond.mjs",
+    "kyc": "node --env-file=.env kyc-exercise.mjs",
+    "coupon": "node --env-file=.env set-coupon.mjs",
+    "verify": "node verify-contract.mjs"
   },
   "dependencies": {
     "@hashgraph/asset-tokenization-contracts": "4.2.0",
     "@hashgraph/asset-tokenization-sdk": "4.2.0",
     "@hiero-ledger/sdk": "^2.87.0",
+    "@terminal3/ecdsa_vc": "0.1.16",
+    "@terminal3/vc_core": "0.0.19",
     "ethers": "^6.17.0"
+  },
+  "devDependencies": {
+    "@onchain-id/solidity": "2.2.1",
+    "@openzeppelin/contracts": "4.9.6",
+    "@openzeppelin/contracts-upgradeable": "4.9.6",
+    "@tokenysolutions/t-rex": "4.1.6",
+    "solc": "0.8.28"
   }
 }

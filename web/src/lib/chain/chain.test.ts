@@ -8,6 +8,7 @@ import {
   SUBMIT_EPISODE_TYPES,
   assetRegistryAbi,
   bountyEscrowAbi,
+  datasetRegistryAbi,
   entityRegistryAbi,
   episodeRegistryAbi,
 } from "./abi";
@@ -50,6 +51,7 @@ when("hand-written ABIs match the compiled contracts", () => {
     ["AssetRegistry", assetRegistryAbi],
     ["EpisodeRegistry", episodeRegistryAbi],
     ["BountyEscrow", bountyEscrowAbi],
+    ["DatasetRegistry", datasetRegistryAbi],
   ];
 
   for (const [name, mine] of cases) {
