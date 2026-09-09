@@ -27,3 +27,7 @@ trainer/.venv/
 subgraph/generated/
 subgraph/build/
 subgraph/node_modules/
+
+# Hedera credentials and working notes — never commit
+hedera.md
+hedera/.env
