@@ -69,7 +69,7 @@ export function IssueBondButton({ datasetId }: { datasetId: number }) {
         type="button"
         onClick={() => void issue()}
         disabled={state === "issuing"}
-        className="interactive rounded-lg border border-line px-3 py-1.5 text-xs font-medium hover:border-white/25 disabled:opacity-40"
+        className="interactive rounded-lg border border-line px-3 py-1.5 text-xs font-medium hover:border-line-strong disabled:opacity-40"
       >
         {state === "issuing" ? "Issuing on Hedera…" : "Issue as Hedera Bond"}
       </button>

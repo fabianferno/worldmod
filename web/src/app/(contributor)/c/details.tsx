@@ -14,7 +14,7 @@ import type { StoredEpisode } from "@/lib/market/types";
 
 function Row({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-line py-2 last:border-0">
+    <div className="flex items-baseline justify-between gap-4 border-b border-line py-2.5 last:border-0">
       <dt className="text-xs text-subtle">{label}</dt>
       <dd className={`tabular font-mono text-xs ${warn ? "text-caution" : "text-muted"}`}>
         {value}
@@ -41,12 +41,12 @@ export function Details({
   const checks = submitted?.validation?.checks;
 
   return (
-    <details className="mx-auto mt-6 w-full max-w-md">
-      <summary className="interactive cursor-pointer list-none rounded-2xl border border-line px-4 py-3 text-sm font-medium text-muted">
+    <details className="mx-auto mt-3 w-full max-w-md">
+      <summary className="interactive cursor-pointer list-none rounded-full bg-paper px-5 py-3.5 text-sm font-semibold text-muted shadow-lift">
         Technical details
       </summary>
 
-      <dl className="mt-2 rounded-2xl border border-line bg-surface px-4 py-1">
+      <dl className="mt-2 rounded-card bg-paper px-5 py-1 shadow-lift">
         <Row label="Duration" value={`${(capture.durationMs / 1000).toFixed(2)}s`} />
         <Row label="Resolution" value={`${video.width}×${video.height}`} />
         <Row label="Frame rate" value={`${video.fpsNominal.toFixed(0)} nominal`} />
@@ -113,7 +113,7 @@ export function Details({
         <Row label="Trust level" value="heuristic" />
       </dl>
 
-      <p className="mt-2 px-1 text-xs leading-relaxed text-subtle">
+      <p className="mt-2.5 px-1 text-xs leading-relaxed text-subtle">
         Scored on the server from the bytes it received. Heuristic means these checks
         measure whether a capture is plausible, not whether it is genuine — nothing here
         is attested by the hardware.

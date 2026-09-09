@@ -43,14 +43,14 @@ function Withdraw() {
 
   if (state === "done") {
     return (
-      <div className="mt-6 rounded-2xl border border-positive/30 bg-positive/10 p-4 text-center">
-        <p className="text-sm font-medium text-positive">USDC is in your wallet</p>
+      <div className="mt-4 rounded-card bg-mint px-4 py-4 text-center">
+        <p className="text-sm font-semibold text-mint-ink">USDC is in your wallet</p>
         {hash ? (
           <a
             href={explorerTx(hash)}
             target="_blank"
             rel="noreferrer"
-            className="interactive tabular mt-1 inline-block font-mono text-xs text-accent underline decoration-dotted"
+            className="interactive tabular mt-1 inline-block font-mono text-xs text-mint-ink underline decoration-dotted underline-offset-2"
           >
             {hash.slice(0, 14)}…
           </a>
@@ -62,19 +62,39 @@ function Withdraw() {
   if (balance <= 0) return null;
 
   return (
-    <div className="mt-6">
+    <div className="mt-4">
       <button
         onClick={() => void collect()}
         disabled={state === "sending"}
-        className="interactive w-full rounded-2xl bg-positive py-4 text-base font-semibold text-background disabled:opacity-60"
+        className="interactive flex w-full items-center gap-3 rounded-full bg-mint p-1.5 text-mint-ink disabled:opacity-60"
       >
-        {state === "sending" ? "Collecting…" : `Withdraw $${balance.toFixed(2)} USDC`}
+        <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-ink text-on-ink">
+          <DownIcon />
+        </span>
+        <span className="flex-1 pr-[52px] text-center text-base font-semibold">
+          {state === "sending" ? "Collecting…" : `Withdraw $${balance.toFixed(2)}`}
+        </span>
       </button>
       {error ? <p className="mt-2 text-xs leading-relaxed text-caution">{error}</p> : null}
       <p className="mt-2 text-center text-xs text-subtle">
         Signed by your device, not by us. Gas is covered.
       </p>
     </div>
+  );
+}
+
+function DownIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden>
+      <path
+        d="M12 4.75v11.5m0 0l4.25-4.25M12 16.25L7.75 12"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M5 19.25h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -88,29 +108,30 @@ function Withdraw() {
 
 function Meter({ label, value, hint }: { label: string; value: number | null; hint: string }) {
   const known = typeof value === "number";
+  const pct = known ? Math.round(value * 100) : null;
   const tone = !known
-    ? "bg-white/20"
+    ? "bg-paper-sunk"
     : value >= 0.7
-      ? "bg-positive"
+      ? "bg-mint-ink"
       : value >= 0.4
-        ? "bg-caution"
+        ? "bg-butter-ink"
         : "bg-negative";
 
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm">{label}</span>
-        <span className="tabular font-mono text-sm text-muted">
-          {known ? `${Math.round(value * 100)}%` : "—"}
+        <span className="text-sm font-medium">{label}</span>
+        <span className="figure text-[15px] text-muted">
+          {pct === null ? "—" : `${pct}%`}
         </span>
       </div>
-      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-paper-sunk">
         <div
           className={`h-full rounded-full ${tone}`}
-          style={{ width: known ? `${Math.max(3, value * 100)}%` : "100%" }}
+          style={{ width: known ? `${Math.max(4, value * 100)}%` : "100%" }}
         />
       </div>
-      <p className="mt-1 text-xs leading-relaxed text-subtle">{hint}</p>
+      <p className="mt-1.5 text-xs leading-relaxed text-subtle">{hint}</p>
     </div>
   );
 }
@@ -130,36 +151,50 @@ export function Result({
 
   return (
     <div className="mx-auto w-full max-w-md pb-4">
-      <div className="pt-6 text-center">
+      {/*
+        The verdict is the one thing on this screen, and it gets the treatment
+        the amount deserves: an accepted take is quoted on mint, everything
+        else on paper. No badge, no icon — the figure is the news.
+      */}
+      <div
+        className={`settle settle-1 mt-5 rounded-panel px-5 py-7 text-center ${
+          paid ? "bg-mint" : "bg-paper shadow-lift"
+        }`}
+      >
         {paid ? (
           <>
-            <p className="tabular text-5xl font-semibold tracking-tight text-positive">
+            <p className="text-[11px] font-medium text-mint-ink">Episode accepted</p>
+            <p className="figure mt-2.5 text-[52px] text-mint-ink">
               +${submitted!.paid_usdc.toFixed(2)}
+              <span className="unit">USDC</span>
             </p>
-            <p className="mt-2 text-base font-medium">Episode accepted</p>
-            <p className="mt-1 text-sm text-muted">Your recording met the bar for this task.</p>
+            <p className="mt-3 text-sm leading-relaxed text-mint-ink">
+              Your recording met the bar for this task.
+            </p>
           </>
         ) : submitted?.status === "failed" ? (
           <>
-            <p className="text-base font-medium">Could not be scored</p>
+            <p className="text-lg font-semibold">Could not be scored</p>
             <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted">
               Something went wrong on our side, not yours. Your recording is saved.
             </p>
           </>
         ) : submitted ? (
           <>
-            <p className="text-base font-medium">Not accepted</p>
+            <p className="text-lg font-semibold">Not accepted</p>
             {/* One clear reason beats a list of measurements. */}
             <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted">
               {submitted.reasons[0] ?? "This one did not meet the task's bar."}
             </p>
             {submitted.reasons.length > 1 ? (
-              <p className="mt-1 text-xs text-subtle">and {submitted.reasons.length - 1} more</p>
+              <p className="mt-1.5 text-xs text-subtle">
+                and {submitted.reasons.length - 1} more
+              </p>
             ) : null}
           </>
         ) : (
           <>
-            <p className="text-base font-medium">Saved on your phone</p>
+            <p className="text-lg font-semibold">Saved on your phone</p>
             <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted">
               {error ?? "It will upload when you are back online. Nothing is lost."}
             </p>
@@ -168,7 +203,7 @@ export function Result({
       </div>
 
       {submitted && submitted.status === "scored" ? (
-        <div className="mt-7 space-y-5">
+        <div className="settle settle-2 mt-3 space-y-5 rounded-panel bg-paper px-5 py-5 shadow-lift">
           <Meter
             label="Hands in view"
             value={submitted.framing}
@@ -193,24 +228,24 @@ export function Result({
       ) : null}
 
       {submitted?.payment?.tx ? (
-        <div className="mt-6 rounded-2xl border border-line bg-surface p-4">
+        <div className="on-ink settle settle-3 mt-3 rounded-card bg-ink px-5 py-4">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-sm font-medium">Paid on-chain</span>
+            <span className="text-sm font-semibold text-on-ink">Paid on-chain</span>
             <a
               href={explorerTx(submitted.payment.tx)}
               target="_blank"
               rel="noreferrer"
-              className="interactive tabular font-mono text-xs text-accent underline decoration-dotted"
+              className="interactive tabular font-mono text-xs text-on-ink-muted underline decoration-dotted underline-offset-2 hover:text-on-ink"
             >
               {submitted.payment.tx.slice(0, 10)}…
             </a>
           </div>
-          <p className="mt-1 text-xs leading-relaxed text-subtle">
+          <p className="mt-1.5 text-xs leading-relaxed text-on-ink-muted">
             Real USDC, credited to your key. Collect it whenever you like.
           </p>
         </div>
       ) : submitted?.payment?.error ? (
-        <p className="mt-6 rounded-2xl border border-caution/40 bg-caution/10 p-4 text-xs leading-relaxed text-caution">
+        <p className="mt-3 rounded-card bg-butter px-5 py-4 text-xs leading-relaxed text-butter-ink">
           Accepted, but the on-chain release did not go through: {submitted.payment.error}
         </p>
       ) : null}
@@ -218,21 +253,21 @@ export function Result({
       <Withdraw />
 
       {submitted?.anchor?.txs?.length ? (
-        <div className="mt-6 rounded-2xl border border-line bg-surface p-4">
-          <p className="text-sm font-medium">On the chain</p>
-          <p className="mt-1 text-xs leading-relaxed text-subtle">
+        <div className="on-ink mt-3 rounded-card bg-ink px-5 py-4">
+          <p className="text-sm font-semibold text-on-ink">On the chain</p>
+          <p className="mt-1.5 text-xs leading-relaxed text-on-ink-muted">
             Your phone signed it; the relayer paid the gas. The episode is attributed
             to your key, not to whoever paid.
           </p>
-          <ul className="mt-3 space-y-1.5">
+          <ul className="mt-3 space-y-2">
             {submitted.anchor.txs.map((tx) => (
               <li key={tx.hash} className="flex items-baseline justify-between gap-3">
-                <span className="text-xs text-muted">{tx.step}</span>
+                <span className="text-xs text-on-ink-muted">{tx.step}</span>
                 <a
                   href={explorerTx(tx.hash)}
                   target="_blank"
                   rel="noreferrer"
-                  className="interactive tabular font-mono text-xs text-accent underline decoration-dotted"
+                  className="interactive tabular font-mono text-xs text-on-ink-muted underline decoration-dotted underline-offset-2 hover:text-on-ink"
                 >
                   {tx.hash.slice(0, 10)}…
                 </a>
@@ -243,7 +278,7 @@ export function Result({
       ) : null}
 
       {paid ? null : (
-        <p className="mt-5 rounded-2xl border border-line bg-surface p-4 text-sm leading-relaxed text-muted">
+        <p className="mt-3 rounded-card bg-paper px-5 py-4 text-sm leading-relaxed text-muted shadow-lift">
           Nothing was charged to you. Most rejections are a framing problem — watch the
           skeleton while you record and keep your hands inside the box.
         </p>
@@ -251,7 +286,7 @@ export function Result({
 
       <button
         onClick={onAgain}
-        className="interactive mt-6 w-full rounded-2xl bg-foreground py-4 text-base font-semibold text-background"
+        className="interactive mt-4 w-full rounded-full bg-ink py-4 text-base font-semibold text-on-ink"
       >
         Record another
       </button>

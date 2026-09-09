@@ -1,0 +1,414 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-09T00:00:00.000Z",
+  "title": "Design System: World Mod",
+  "extensions": {
+    "colorMeta": {
+      "bone": {
+        "role": "neutral",
+        "displayName": "Warm Bone",
+        "canonical": "#e9e9e6",
+        "purpose": "The page ground. Warm off-white, never pure white — white next to ink strobes in sunlight.",
+        "tonalRamp": ["#232322", "#3a3a38", "#54544f", "#71716b", "#93938c", "#b5b5ae", "#d2d2cd", "#f4f4f2"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#f6f6f4",
+        "purpose": "Raised surface on bone: stat cards, secondary buttons, unpaid episode rows.",
+        "tonalRamp": ["#252523", "#3c3c39", "#565652", "#73736e", "#95958f", "#b7b7b1", "#d5d5d1", "#f6f6f4"]
+      },
+      "paper-sunk": {
+        "role": "neutral",
+        "displayName": "Sunk Paper",
+        "canonical": "#e2e2de",
+        "purpose": "Recessed track: meter and progress rails, skeleton fill, inert discs.",
+        "tonalRamp": ["#222220", "#383836", "#51514e", "#6e6e69", "#90908a", "#b1b1ab", "#cdcdc8", "#eeeeea"]
+      },
+      "ink": {
+        "role": "primary",
+        "displayName": "Deep Ink",
+        "canonical": "#0d0d0f",
+        "purpose": "Settled money and the live viewfinder. Off-black so mint beside it is not punched out.",
+        "tonalRamp": ["#0d0d0f", "#1b1b1f", "#2e2e34", "#46464e", "#63636b", "#8a8a92", "#b6b6bc", "#e4e4e7"]
+      },
+      "ink-raised": {
+        "role": "primary",
+        "displayName": "Raised Ink",
+        "canonical": "#1b1b1f",
+        "purpose": "One step above ink, for a surface layered inside an ink card.",
+        "tonalRamp": ["#0d0d0f", "#1b1b1f", "#2e2e34", "#46464e", "#63636b", "#8a8a92", "#b6b6bc", "#e4e4e7"]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Read Ink",
+        "canonical": "#131315",
+        "purpose": "Primary text on bone or paper. 15.25:1 on bone.",
+        "tonalRamp": ["#131315", "#24242a", "#38383f", "#4f4f57", "#6b6b73", "#909097", "#bbbbc0", "#e6e6e8"]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Explaining Grey",
+        "canonical": "#56565e",
+        "purpose": "Explanation and secondary copy. 5.98:1 on bone.",
+        "tonalRamp": ["#141417", "#242429", "#36363c", "#4a4a51", "#56565e", "#7d7d85", "#adadb3", "#dedee1"]
+      },
+      "subtle": {
+        "role": "neutral",
+        "displayName": "Footnote Grey",
+        "canonical": "#63636b",
+        "purpose": "Footnotes and the .tag caption. 4.89:1 on bone, 4.67:1 on paper.",
+        "tonalRamp": ["#161619", "#26262b", "#38383e", "#4d4d54", "#63636b", "#87878e", "#b3b3b9", "#e1e1e4"]
+      },
+      "on-ink": {
+        "role": "neutral",
+        "displayName": "On Ink",
+        "canonical": "#f4f4f1",
+        "purpose": "Primary text inside ink cards and the viewfinder. 17.62:1 on ink.",
+        "tonalRamp": ["#242422", "#3a3a37", "#545450", "#71716c", "#93938d", "#b4b4af", "#d3d3cf", "#f4f4f1"]
+      },
+      "on-ink-muted": {
+        "role": "neutral",
+        "displayName": "On Ink Muted",
+        "canonical": "#a0a0a8",
+        "purpose": "Secondary text inside ink surfaces and inactive dock tabs. 7.48:1 on ink.",
+        "tonalRamp": ["#1f1f23", "#333338", "#4a4a51", "#63636b", "#7f7f87", "#a0a0a8", "#c4c4ca", "#e8e8eb"]
+      },
+      "mint": {
+        "role": "primary",
+        "displayName": "Task Mint",
+        "canonical": "#c7e6da",
+        "purpose": "The task, and money you can act on: what this pays, the withdraw bar, an accepted verdict, the record knob.",
+        "tonalRamp": ["#0f2a22", "#194438", "#1d5b49", "#2c7a63", "#4ba189", "#82c6b1", "#c7e6da", "#eaf7f2"]
+      },
+      "mint-ink": {
+        "role": "primary",
+        "displayName": "Mint Ink",
+        "canonical": "#1d5b49",
+        "purpose": "All text on a mint field. 5.96:1 on mint.",
+        "tonalRamp": ["#0f2a22", "#194438", "#1d5b49", "#2c7a63", "#4ba189", "#82c6b1", "#c7e6da", "#eaf7f2"]
+      },
+      "lilac": {
+        "role": "secondary",
+        "displayName": "Model Lilac",
+        "canonical": "#ded0f3",
+        "purpose": "The model's own reading: task chips, the live prediction thumbnail, the acceptance-rate bar.",
+        "tonalRamp": ["#1f1533", "#33224f", "#472f6d", "#5b3d8c", "#7a5db0", "#9f87cb", "#ded0f3", "#f3ecfb"]
+      },
+      "lilac-ink": {
+        "role": "secondary",
+        "displayName": "Lilac Ink",
+        "canonical": "#5b3d8c",
+        "purpose": "All text on a lilac field. 5.79:1 on lilac.",
+        "tonalRamp": ["#1f1533", "#33224f", "#472f6d", "#5b3d8c", "#7a5db0", "#9f87cb", "#ded0f3", "#f3ecfb"]
+      },
+      "butter": {
+        "role": "tertiary",
+        "displayName": "Needs-A-Hand Butter",
+        "canonical": "#f6dcab",
+        "purpose": "Something needs a hand: insecure connection, in-take coaching, queued uploads, offline.",
+        "tonalRamp": ["#2b1c06", "#45300c", "#5f4110", "#7a5013", "#a2731f", "#c99b3e", "#f6dcab", "#fcf1d9"]
+      },
+      "butter-ink": {
+        "role": "tertiary",
+        "displayName": "Butter Ink",
+        "canonical": "#7a5013",
+        "purpose": "All text on a butter field. 5.28:1 on butter.",
+        "tonalRamp": ["#2b1c06", "#45300c", "#5f4110", "#7a5013", "#a2731f", "#c99b3e", "#f6dcab", "#fcf1d9"]
+      },
+      "positive": {
+        "role": "tertiary",
+        "displayName": "Accepted Green",
+        "canonical": "#1f6b55",
+        "purpose": "Verdict-positive text, drawn from mint so it reads as part of the surface.",
+        "tonalRamp": ["#0d2c23", "#144537", "#1f6b55", "#2b8c70", "#48ad91", "#7fc9b4", "#b6e2d5", "#e3f5ef"]
+      },
+      "caution": {
+        "role": "tertiary",
+        "displayName": "Caution Amber",
+        "canonical": "#7a5013",
+        "purpose": "Inline warning text; the same ink as the butter field.",
+        "tonalRamp": ["#2b1c06", "#45300c", "#5f4110", "#7a5013", "#a2731f", "#c99b3e", "#f6dcab", "#fcf1d9"]
+      },
+      "negative": {
+        "role": "tertiary",
+        "displayName": "Rejected Rust",
+        "canonical": "#a8372f",
+        "purpose": "Used sparingly: the live recording dot, a failed meter segment. Never a panel ground.",
+        "tonalRamp": ["#2e0f0c", "#4a1a15", "#6b2620", "#a8372f", "#c65a51", "#dd8a83", "#f0bcb7", "#fae7e5"]
+      }
+    },
+    "typographyMeta": {
+      "figure-hero": {
+        "displayName": "Figure — Hero",
+        "purpose": "The one number a screen exists to quote: withdrawable balance, an accepted take's payment. One per screen."
+      },
+      "figure-lead": {
+        "displayName": "Figure — Lead",
+        "purpose": "Total earned in the capture header; a screen's secondary quoted amount."
+      },
+      "figure-inline": {
+        "displayName": "Figure — Inline",
+        "purpose": "A figure inside a card: a stat, a per-take amount, the take's remaining seconds."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "The landing page's one sentence. There is no separate display face."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Screen titles, panel headings, the bounty's name."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Explanation, rejection reasons, coaching copy. Capped at max-w-xs / max-w-prose."
+      },
+      "label": {
+        "displayName": "Tag",
+        "purpose": "The small grey caption naming a figure. Sentence case, never uppercase."
+      },
+      "unit": {
+        "displayName": "Unit Rider",
+        "purpose": "The small unit sitting on the figure's baseline. Inherits the figure's colour at 72% opacity; floored at 10px."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Geist Mono, scoped to addresses, transaction hashes and sensor measurements only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "lift",
+        "value": "0 1px 2px rgb(19 19 21 / 0.04), 0 10px 28px -14px rgb(19 19 21 / 0.22)",
+        "purpose": "Default separation of a paper surface from the bone ground, and the viewfinder panel. Panels take shadow, not border."
+      },
+      {
+        "name": "lift-high",
+        "value": "0 2px 6px rgb(19 19 21 / 0.06), 0 22px 48px -20px rgb(19 19 21 / 0.3)",
+        "purpose": "Only for something genuinely floating: the record disc straddling the dock, the prediction thumbnail over live video."
+      }
+    ],
+    "lines": [
+      { "name": "line", "value": "rgb(19 19 21 / 0.09)", "purpose": "Hairline divider on bone or paper. Never used to box a card." },
+      { "name": "line-strong", "value": "rgb(19 19 21 / 0.2)", "purpose": "Emphasised divider." },
+      { "name": "line-on-ink", "value": "rgb(255 255 255 / 0.12)", "purpose": "Divider inside an ink surface." }
+    ],
+    "motion": [
+      {
+        "name": "ease-interactive",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "State transitions on .interactive: 200ms for colour/border/shadow, 160ms for transform. Press sinks to scale(0.975)."
+      },
+      {
+        "name": "ease-settle",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The one authored moment: a 620ms exponential ease-out arrival."
+      },
+      {
+        "name": "settle",
+        "value": "settle 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards",
+        "purpose": "Panels arrive as a downward cascade from opacity 0 / translateY(14px) / scale(0.985) / blur(6px). Steps settle-1..4 at 40/100/160/220ms. Starts from an already-visible default so a failed animation never costs anyone their balance."
+      },
+      {
+        "name": "shimmer",
+        "value": "shimmer 1.6s ease-in-out infinite",
+        "purpose": "Skeletons pulse 0.45 → 0.8 → 0.45 opacity on paper-sunk. Skeletons match the shape of what is loading, never a spinner. Disabled under prefers-reduced-motion: reduce."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "@media (prefers-reduced-motion: no-preference)",
+        "purpose": "Every transition, the settle cascade and smooth scrolling live inside this guard. Nothing animates without it."
+      }
+    ],
+    "focus": [
+      {
+        "name": "focus-visible",
+        "value": "outline: 2px solid #131315; outline-offset: 2px; border-radius: 999px",
+        "purpose": "Keyboard focus. Switches outline-color to #f4f4f1 inside any .on-ink region."
+      }
+    ],
+    "breakpoints": [
+      { "name": "content", "value": "max-w-md (28rem)" },
+      { "name": "dock", "value": "max-w-lg (32rem)" }
+    ],
+    "scope": {
+      "designed": [
+        "web/src/app/(contributor)/",
+        "web/src/app/page.tsx",
+        "web/src/app/not-found.tsx",
+        "web/src/app/offline/page.tsx",
+        "web/src/components/nav.tsx"
+      ],
+      "sweptOnly": ["web/src/app/(buyer)/"],
+      "note": "The buyer dashboard received a mechanical class sweep onto these tokens (via the --background / --surface / --surface-raised / --accent aliases) so it stays legible on the bone ground. It was not redesigned; its compositions are not evidence of this system."
+    }
+  },
+  "components": [
+    {
+      "name": "Knob Bar — Start",
+      "kind": "button",
+      "refersTo": "bar-primary",
+      "description": "The signature control: a full-pill ink bar with a mint knob inset at its head. Used for the action a screen exists to perform.",
+      "html": "<button class=\"ds-knob-bar\"><span class=\"ds-knob-bar-knob\"><svg viewBox=\"0 0 24 24\" fill=\"none\" width=\"24\" height=\"24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"6.5\" fill=\"currentColor\"/></svg></span><span class=\"ds-knob-bar-label\">Start recording · 15s</span></button>",
+      "css": ".ds-knob-bar { display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px; border: none; border-radius: 999px; background: var(--ink, #0d0d0f); color: var(--on-ink, #f4f4f1); font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; cursor: pointer; transition: background-color 200ms cubic-bezier(0.22,1,0.36,1), box-shadow 200ms cubic-bezier(0.22,1,0.36,1), transform 160ms cubic-bezier(0.22,1,0.36,1); } .ds-knob-bar-knob { display: flex; align-items: center; justify-content: center; flex-shrink: 0; height: 52px; width: 52px; border-radius: 999px; background: var(--mint, #c7e6da); color: var(--mint-ink, #1d5b49); } .ds-knob-bar-label { flex: 1; padding-right: 52px; text-align: center; font-size: 16px; font-weight: 600; } .ds-knob-bar:active { transform: scale(0.975); } .ds-knob-bar:focus-visible { outline: 2px solid var(--on-ink, #f4f4f1); outline-offset: 2px; border-radius: 999px; } .ds-knob-bar:disabled { opacity: 0.4; cursor: default; }"
+    },
+    {
+      "name": "Knob Bar — Withdraw",
+      "kind": "button",
+      "refersTo": "bar-withdraw",
+      "description": "The same bar in reverse — mint field, ink knob. Recording and collecting are the same gesture in opposite directions.",
+      "html": "<button class=\"ds-knob-bar-alt\"><span class=\"ds-knob-bar-alt-knob\"><svg viewBox=\"0 0 24 24\" fill=\"none\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M12 4.75v11.5m0 0l4.25-4.25M12 16.25L7.75 12\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M5 19.25h14\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg></span><span class=\"ds-knob-bar-alt-label\">Withdraw $12.40</span></button>",
+      "css": ".ds-knob-bar-alt { display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px; border: none; border-radius: 999px; background: var(--mint, #c7e6da); color: var(--mint-ink, #1d5b49); font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; cursor: pointer; transition: background-color 200ms cubic-bezier(0.22,1,0.36,1), transform 160ms cubic-bezier(0.22,1,0.36,1); } .ds-knob-bar-alt-knob { display: flex; align-items: center; justify-content: center; flex-shrink: 0; height: 52px; width: 52px; border-radius: 999px; background: var(--ink, #0d0d0f); color: var(--on-ink, #f4f4f1); } .ds-knob-bar-alt-label { flex: 1; padding-right: 52px; text-align: center; font-size: 16px; font-weight: 600; } .ds-knob-bar-alt:active { transform: scale(0.975); } .ds-knob-bar-alt:focus-visible { outline: 2px solid var(--foreground, #131315); outline-offset: 2px; } .ds-knob-bar-alt:disabled { opacity: 0.6; cursor: default; }"
+    },
+    {
+      "name": "Quoted Figure Panel",
+      "kind": "card",
+      "refersTo": "panel-money",
+      "description": "The hero pattern: a 30px mint lozenge quoting one figure at 52px with a tag above and a unit rider on the baseline.",
+      "html": "<div class=\"ds-figure-panel\"><p class=\"ds-figure-panel-tag\">Ready to withdraw</p><p class=\"ds-figure\">$12.40<span class=\"ds-unit\">USDC</span></p></div>",
+      "css": ".ds-figure-panel { border-radius: 30px; background: var(--mint, #c7e6da); padding: 28px 20px; text-align: center; font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; } .ds-figure-panel-tag { margin: 0; font-size: 11px; font-weight: 500; color: var(--mint-ink, #1d5b49); } .ds-figure { margin: 10px 0 0; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 52px; line-height: 0.95; letter-spacing: -0.035em; color: var(--mint-ink, #1d5b49); } .ds-unit { font-size: max(10px, 0.34em); font-weight: 600; letter-spacing: 0.02em; color: inherit; opacity: 0.72; margin-left: 0.35em; vertical-align: baseline; }"
+    },
+    {
+      "name": "Paper Card",
+      "kind": "card",
+      "refersTo": "card-paper",
+      "description": "The default container: a 22px paper lozenge lifted off the bone ground by shadow, never by a border.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-tag\">Earned so far</p><p class=\"ds-card-figure\">$48.00</p><p class=\"ds-card-hint\">across all bounties</p></div>",
+      "css": ".ds-card { border-radius: 22px; background: var(--paper, #f6f6f4); padding: 14px 16px; box-shadow: 0 1px 2px rgb(19 19 21 / 0.04), 0 10px 28px -14px rgb(19 19 21 / 0.22); font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; color: var(--foreground, #131315); } .ds-card-tag { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: 0.005em; color: var(--subtle, #63636b); } .ds-card-figure { margin: 6px 0 0; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 24px; line-height: 0.95; letter-spacing: -0.035em; } .ds-card-hint { margin: 4px 0 0; font-size: 12px; color: var(--subtle, #63636b); }"
+    },
+    {
+      "name": "Settled Ink Card",
+      "kind": "card",
+      "refersTo": "card-settled",
+      "description": "Reserved for money that has settled and on-chain receipts. Ink ground, no shadow — tone carries the depth.",
+      "html": "<div class=\"ds-card-ink\"><div class=\"ds-card-ink-row\"><span class=\"ds-card-ink-title\">Paid on-chain</span><a href=\"#\" class=\"ds-card-ink-link\">0x8f21ac…</a></div><p class=\"ds-card-ink-body\">Real USDC, credited to your key. Collect it whenever you like.</p></div>",
+      "css": ".ds-card-ink { border-radius: 22px; background: var(--ink, #0d0d0f); padding: 16px 20px; font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; } .ds-card-ink-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; } .ds-card-ink-title { font-size: 14px; font-weight: 600; color: var(--on-ink, #f4f4f1); } .ds-card-ink-link { font-family: var(--font-geist-mono), ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--on-ink-muted, #a0a0a8); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px; transition: color 200ms cubic-bezier(0.22,1,0.36,1); } .ds-card-ink-link:hover { color: var(--on-ink, #f4f4f1); } .ds-card-ink-link:focus-visible { outline: 2px solid var(--on-ink, #f4f4f1); outline-offset: 2px; border-radius: 999px; } .ds-card-ink-body { margin: 6px 0 0; font-size: 12px; line-height: 1.625; color: var(--on-ink-muted, #a0a0a8); }"
+    },
+    {
+      "name": "Attention Notice",
+      "kind": "card",
+      "refersTo": "card-attention",
+      "description": "Butter means something needs a hand — never an error, never a celebration. Insecure connection, queued uploads, coaching.",
+      "html": "<p class=\"ds-notice\">Camera and motion need a secure connection. Open this over https.</p>",
+      "css": ".ds-notice { margin: 0; border-radius: 22px; background: var(--butter, #f6dcab); padding: 12px 16px; font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.625; color: var(--butter-ink, #7a5013); }"
+    },
+    {
+      "name": "Task Chip",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Lilac when selected because a chosen task is the model's framing of the work, not money. Paper when not.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip-on\" aria-pressed=\"true\">Warehouse pick</button><button class=\"ds-chip\" aria-pressed=\"false\">Kitchen prep</button></div>",
+      "css": ".ds-chips { display: flex; gap: 8px; } .ds-chip { flex-shrink: 0; border: none; border-radius: 999px; padding: 10px 16px; background: var(--paper, #f6f6f4); color: var(--muted, #56565e); font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 200ms cubic-bezier(0.22,1,0.36,1), color 200ms cubic-bezier(0.22,1,0.36,1), transform 160ms cubic-bezier(0.22,1,0.36,1); } .ds-chip-on { background: var(--lilac, #ded0f3); color: var(--lilac-ink, #5b3d8c); } .ds-chip:active { transform: scale(0.975); } .ds-chip:focus-visible { outline: 2px solid var(--foreground, #131315); outline-offset: 2px; }"
+    },
+    {
+      "name": "Meter",
+      "kind": "custom",
+      "refersTo": "card-paper",
+      "description": "A label and percentage on one baseline, a pill track in sunk paper, and one line of plain-language hint. Fill tone is the verdict.",
+      "html": "<div class=\"ds-meter\"><div class=\"ds-meter-head\"><span class=\"ds-meter-label\">Hands in view</span><span class=\"ds-meter-value\">82%</span></div><div class=\"ds-meter-track\"><div class=\"ds-meter-fill\" style=\"width:82%\"></div></div><p class=\"ds-meter-hint\">How much of the take had your hands where the task needs them.</p></div>",
+      "css": ".ds-meter { font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; color: var(--foreground, #131315); } .ds-meter-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; } .ds-meter-label { font-size: 14px; font-weight: 500; } .ds-meter-value { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 15px; line-height: 0.95; letter-spacing: -0.035em; color: var(--muted, #56565e); } .ds-meter-track { margin-top: 8px; height: 8px; border-radius: 999px; background: var(--paper-sunk, #e2e2de); overflow: hidden; } .ds-meter-fill { height: 100%; border-radius: 999px; background: var(--mint-ink, #1d5b49); } .ds-meter-hint { margin: 6px 0 0; font-size: 12px; line-height: 1.625; color: var(--subtle, #63636b); }"
+    },
+    {
+      "name": "Dock",
+      "kind": "nav",
+      "refersTo": "dock",
+      "description": "An ink bar at panel radius on a bone strip, with a record disc cut into its top edge by a 5px bone ring. Sticky on every route.",
+      "html": "<nav class=\"ds-dock\" aria-label=\"Main\"><div class=\"ds-dock-inner\"><a href=\"#\" class=\"ds-dock-disc\" aria-label=\"Record an episode\"><svg viewBox=\"0 0 24 24\" fill=\"none\" width=\"28\" height=\"28\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8.25\" stroke=\"currentColor\" stroke-width=\"1.8\"/><circle cx=\"12\" cy=\"12\" r=\"3.5\" fill=\"currentColor\"/></svg></a><ul class=\"ds-dock-bar\"><li class=\"ds-dock-slot ds-dock-slot-left\"><a href=\"#\" class=\"ds-dock-tab ds-dock-tab-on\"><svg viewBox=\"0 0 24 24\" fill=\"none\" width=\"22\" height=\"22\" aria-hidden=\"true\"><rect x=\"3.75\" y=\"4.75\" width=\"16.5\" height=\"14.5\" rx=\"4\" stroke=\"currentColor\" stroke-width=\"1.7\" fill=\"currentColor\" fill-opacity=\"0.18\"/><path d=\"M7.75 9.5h5\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\"/><path d=\"M7.75 14.5h8.5\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\"/></svg>Account</a></li><li class=\"ds-dock-slot ds-dock-slot-right\"><a href=\"#\" class=\"ds-dock-tab\"><svg viewBox=\"0 0 24 24\" fill=\"none\" width=\"22\" height=\"22\" aria-hidden=\"true\"><rect x=\"3.75\" y=\"7.25\" width=\"16.5\" height=\"12\" rx=\"3.5\" stroke=\"currentColor\" stroke-width=\"1.7\"/><path d=\"M8.75 7.25V6.1A1.85 1.85 0 0110.6 4.25h2.8A1.85 1.85 0 0115.25 6.1v1.15\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\"/><path d=\"M3.75 12.25h16.5\" stroke=\"currentColor\" stroke-width=\"1.7\"/></svg>Bounties</a></li></ul></div></nav>",
+      "css": ".ds-dock { background: var(--bone, #e9e9e6); padding: 28px 16px max(12px, env(safe-area-inset-bottom)); font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; } .ds-dock-inner { position: relative; margin: 0 auto; width: 100%; max-width: 32rem; } .ds-dock-disc { position: absolute; top: -24px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; align-items: center; justify-content: center; height: 68px; width: 68px; border-radius: 999px; border: 5px solid var(--bone, #e9e9e6); background: var(--ink, #0d0d0f); color: var(--on-ink, #f4f4f1); box-shadow: 0 2px 6px rgb(19 19 21 / 0.06), 0 22px 48px -20px rgb(19 19 21 / 0.3); transition: color 200ms cubic-bezier(0.22,1,0.36,1), transform 160ms cubic-bezier(0.22,1,0.36,1); } .ds-dock-disc:active { transform: translateX(-50%) scale(0.975); } .ds-dock-bar { display: flex; align-items: stretch; margin: 0; padding: 10px 0 8px; list-style: none; border-radius: 30px; background: var(--ink, #0d0d0f); } .ds-dock-slot { flex: 1; } .ds-dock-slot-left { padding-right: 40px; } .ds-dock-slot-right { padding-left: 40px; } .ds-dock-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; border-radius: 16px; font-size: 11px; font-weight: 500; text-decoration: none; color: var(--on-ink-muted, #a0a0a8); transition: color 200ms cubic-bezier(0.22,1,0.36,1); } .ds-dock-tab-on { color: var(--on-ink, #f4f4f1); } .ds-dock-tab:focus-visible, .ds-dock-disc:focus-visible { outline: 2px solid var(--on-ink, #f4f4f1); outline-offset: 2px; border-radius: 999px; }"
+    },
+    {
+      "name": "Ghost Button on Ink",
+      "kind": "button",
+      "refersTo": "button-ink",
+      "description": "A 2px translucent-white outlined pill. Used only inside the viewfinder, where a paper button would glare.",
+      "html": "<div class=\"ds-ghost-wrap\"><button class=\"ds-ghost\">No</button><button class=\"ds-ghost-mint\">Yes</button></div>",
+      "css": ".ds-ghost-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--ink, #0d0d0f); padding: 16px; border-radius: 22px; } .ds-ghost { border: 2px solid rgb(255 255 255 / 0.45); border-radius: 999px; background: transparent; padding: 16px 0; color: var(--on-ink, #f4f4f1); font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: border-color 200ms cubic-bezier(0.22,1,0.36,1), transform 160ms cubic-bezier(0.22,1,0.36,1); } .ds-ghost-mint { border: none; border-radius: 999px; background: var(--mint, #c7e6da); padding: 16px 0; color: var(--mint-ink, #1d5b49); font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 160ms cubic-bezier(0.22,1,0.36,1); } .ds-ghost:hover { border-color: rgb(255 255 255 / 0.7); } .ds-ghost:active, .ds-ghost-mint:active { transform: scale(0.975); } .ds-ghost:focus-visible, .ds-ghost-mint:focus-visible { outline: 2px solid var(--on-ink, #f4f4f1); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Payout Ledger",
+    "overview": "This is a ledger, read outdoors, at arm's length, by somebody who has just taken a phone off their forehead and wants to know what they earned. Everything follows from that scene. The ground is bone — a warm off-white, never pure white, because white next to black strobes in sunlight. The surface is a stack of soft lozenges at a 30px radius, each holding one thing. One figure is quoted at a time, at 600 weight, with a small unit riding its baseline.\n\nIt refuses the dark crypto dashboard on purpose: no chart wall, no neon accent, no metric grid, no gradient text. Dark survives in exactly two roles, and in both of them it is a material rather than a theme — the live viewfinder, and the ink cards that hold money that has actually settled. Colour is never decoration here. Three flat pastel fields each own a meaning and are used only where that meaning applies, so a contributor scanning the screen in daylight can tell what a panel is about before reading a word of it.\n\nThe world was pinned by a user-supplied reference image (a pastel crypto-wallet UI) rather than chosen by a direction roll, which is why the radii are unusually large and why the palette is a family of flat tints rather than a single accent with neutrals.",
+    "keyCharacteristics": [
+      "Bone ground (#e9e9e6), never pure white, never near-black.",
+      "Stacked lozenges: 30px panels, 22px cards, full pills for anything pressable.",
+      "Three meaning-bearing fields — mint, lilac, butter — plus ink for settled money.",
+      "Figures at 600 weight, tabular, tight tracking, with a small unit on the baseline.",
+      "One elevation: a soft offset shadow. Panels take shadow, not border.",
+      "One authored motion moment: a four-step downward settle on arrival."
+    ],
+    "rules": [
+      {
+        "name": "The Earned-Colour Rule",
+        "body": "Nothing is coloured in a field it has not earned. Mint means the task or money you can move; lilac means the model's reading; butter means something needs a hand; ink means money that has settled. A panel that is none of those is paper on bone. Audit test: point at any coloured panel and name which of the four meanings it carries — if you cannot, it should be paper.",
+        "section": "colors"
+      },
+      {
+        "name": "The Field-Not-Sprinkle Rule",
+        "body": "A field colours a whole region — a panel, a pill, a card — never a word, an icon, an underline, or a border. There is no accent colour in this system.",
+        "section": "colors"
+      },
+      {
+        "name": "The Contrast Floor",
+        "body": "Verified numerically at finish. Body on bone 15.25, muted on bone 5.98, subtle on bone 4.89, subtle on paper 4.67, mint-ink on mint 5.96, lilac-ink on lilac 5.79, butter-ink on butter 5.28, on-ink on ink 17.62, on-ink-muted on ink 7.48. Every pairing clears 4.5:1. Any new pairing must be measured, not assumed.",
+        "section": "colors"
+      },
+      {
+        "name": "The Quoted Figure Rule",
+        "body": "A figure is one weight and one size (600, tracking -0.035em, tabular). Its unit is a small rider on the same baseline at 34% of the figure's size, inheriting the figure's colour at 72% opacity — so a unit on mint reads as mint, never as grey punched into it. Never scale the unit by a second type step; never colour it independently.",
+        "section": "typography"
+      },
+      {
+        "name": "The Cents Knock-Down",
+        "body": "The cents of a dollar amount drop to 62% opacity, because nobody decides anything on the cents. This is a bone-ground-only device. On the mint fields the same knock-down falls under 3:1 against its own panel, so figures on mint, lilac or butter stay solid.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Every number in this product is compared against another — frame rates, scores, payments. All of them carry tabular-nums, via .figure, .tabular, or [data-numeric].",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence-Case Rule",
+        "body": "No uppercase labels, no letter-spaced small caps, no kickers or eyebrows. The reference whispers; caps at 11px lose legibility outdoors.",
+        "section": "typography"
+      },
+      {
+        "name": "The Two-Elevations Rule",
+        "body": "There are exactly two shadows. If a surface needs to feel deeper, change its tone (bone → paper → ink), do not invent a third shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No-Border Rule",
+        "body": "Surfaces are separated by tone and shadow. Hairlines exist for dividers and for outlined controls on ink, not for boxing a card.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Pill Rule",
+        "body": "If it can be pressed, it is a full pill — buttons, chips, tabs, toggles, discs. Rectangles with modest corners are surfaces; pills are controls. The only pressable exception is a whole-surface row, which stays at panel radius because it is a panel.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do pick a panel's colour from its meaning: mint = the task or money you can move, lilac = the model's reading, butter = needs a hand, ink = settled money. Otherwise paper on bone.",
+      "Do quote one figure per screen at 52px, and give it a .tag label above and a .unit rider beside it.",
+      "Do use .figure for every amount, score, and count, so columns of numbers do not jitter.",
+      "Do put a full pill on anything pressable, and reach for the knob bar when the action is the screen's whole purpose.",
+      "Do measure any new colour pairing against the 4.5:1 floor before shipping it; the fields are light and a wrong ink fails immediately.",
+      "Do put the primary action in the thumb zone directly above the dock.",
+      "Do honour env(safe-area-inset-bottom) on anything fixed to the bottom — this ships as an installed PWA on iOS.",
+      "Do wrap every transition and animation in prefers-reduced-motion: no-preference, and start animated elements from a visible default so a failed animation never costs someone their balance.",
+      "Do scope Geist Mono to addresses, hashes, and sensor measurements. Everything a person reads is Manrope."
+    ],
+    "donts": [
+      "Don't introduce an accent colour, a gradient fill, or a neon. This world refuses the dark crypto dashboard; the four fields are the whole palette.",
+      "Don't paint a border on a panel to separate it. Tone and the Lift shadow do that.",
+      "Don't invent a third shadow, or stack z-levels. Change the tone instead.",
+      "Don't apply .cents on a mint, lilac, or butter ground — the knock-down drops under 3:1 there.",
+      "Don't set a label in uppercase or letter-spaced small caps, and don't add a kicker or eyebrow above a heading.",
+      "Don't use ink as a background for anything other than settled money, live video, and the dock. It is a material, not a theme.",
+      "Don't put a chart wall or a metric grid on a contributor screen. One figure at a time.",
+      "Don't shrink the .unit below its 10px floor — a rider on a 17px figure was computing to under 6px before it was floored.",
+      "Don't add a second animation. There is one authored moment (.settle), and adding a second one makes the first stop meaning anything."
+    ]
+  }
+}

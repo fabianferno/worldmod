@@ -22,8 +22,10 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#0a0a0a",
-    theme_color: "#0a0a0a",
+    // The splash and chrome match the bone ground the app now opens on;
+    // a black flash before a light app reads as a failed load.
+    background_color: "#e9e9e6",
+    theme_color: "#e9e9e6",
     categories: ["productivity", "utilities"],
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
