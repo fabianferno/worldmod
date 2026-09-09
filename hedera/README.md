@@ -13,12 +13,29 @@ alongside World Mod's existing Sepolia DePIN loop rather than replacing it.
 
 ## Architecture
 
-Two chains, one dataset. Sepolia is where World Mod's DePIN loop already
-lives (capture → validate → mint → escrow); Hedera is where that same
-dataset becomes a compliant, KYC-gated, coupon-bearing security token. The
-bridge is one function — `readSepoliaDataset` → `datasetToBondRequest` →
-`Bond.create` — reading one chain live and writing the other, not two
-features that happen to agree on some numbers.
+Two chains, one dataset — as of this writing, and as everything below was
+built and verified. World Mod's core DePIN loop (capture → validate → mint
+→ escrow) has since also been migrated to Hedera testnet, in a separate,
+later piece of work (see the repo's top-level migration plan) — but the app
+still *defaults* to Sepolia until that migration is proven end-to-end and
+the default is deliberately flipped, so every claim below remains exactly
+what it says: real, live, and currently the default path. `read-dataset-
+registry.ts` (renamed from `read-sepolia-dataset.ts` — same function, no
+logic change) has no chain config of its own; it reads whatever `config.ts`
+points at. The day the default flips to Hedera, this bridge becomes "one
+registry, two token layers" on a single chain — the core registry via a
+plain relayer key, the ATS Bond via the Hashgraph SDK, two tool-chains for
+one real, documented reason (ATS's SDK has hard constraints — the
+`!!global.window` gate, CJS-only internals — a relayer's plain
+`writeContract` doesn't) — rather than "two chains, one dataset" the way it
+reads today. Whichever is true when you're reading this, the Bond a buyer
+holds still traces back to a specific, inspectable dataset; only which
+chain hosts the registry changes.
+
+The bridge is one function — `readDatasetRegistry` → `datasetToBondRequest`
+→ `Bond.create` — reading one chain live and writing the other (Hedera,
+always, for the Bond itself), not two features that happen to agree on some
+numbers.
 
 ```mermaid
 flowchart LR

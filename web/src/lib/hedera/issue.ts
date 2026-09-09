@@ -23,7 +23,7 @@ import "server-only";
 import { execFile } from "node:child_process";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import type { SepoliaDataset } from "./dataset-to-bond";
+import type { RegistryDataset } from "./dataset-to-bond";
 
 const run = promisify(execFile);
 
@@ -41,7 +41,7 @@ export function hederaConfigured(): boolean {
 }
 
 export async function issueDatasetBond(
-  dataset: SepoliaDataset,
+  dataset: RegistryDataset,
   datasetRegistryAddress: string,
 ): Promise<IssueBondResult> {
   if (!hederaConfigured()) {

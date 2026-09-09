@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { datasetToBondRequest, BOND_CONFIG_ID, type SepoliaDataset } from "./dataset-to-bond";
+import { datasetToBondRequest, BOND_CONFIG_ID, type RegistryDataset } from "./dataset-to-bond";
 
 /** The real dataset minted on Sepolia — see hedera/README.md for the tx. */
-const REAL_DATASET: SepoliaDataset = {
+const REAL_DATASET: RegistryDataset = {
   datasetId: 1,
   creator: "0x89EA57a0E61Ac9B167e263839b65E58E8DFDAAe8",
   priceUsdc: BigInt("6000000"),

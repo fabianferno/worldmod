@@ -8,7 +8,7 @@ import {EntityRegistry} from "../src/EntityRegistry.sol";
 import {EpisodeRegistry} from "../src/EpisodeRegistry.sol";
 
 /**
- * Escrow tests against the real USDC on Base Sepolia.
+ * Escrow tests against the real USDC on Ethereum Sepolia.
  *
  * A mock would have hidden the two behaviours that actually matter here.
  * Circle's token REVERTS on insufficient balance or allowance rather than
@@ -19,11 +19,21 @@ import {EpisodeRegistry} from "../src/EpisodeRegistry.sol";
  *
  * These tests need a fork and are skipped without one, so the suite still runs
  * offline; they are the ones that count before a deploy.
+ *
+ * No Hedera-forked equivalent exists, and won't via `forge test`: forge's
+ * local EVM (revm) has no implementation of Hedera's HTS precompile (0x167),
+ * which BountyEscrow's constructor now calls to self-associate with USDC.
+ * A real forge script deploy against Hedera testnet hit exactly this wall
+ * (InvalidFEOpcode, confirmed nothing broadcast) before switching to a raw
+ * viem deploy — see script/deploy-hedera.mjs's header. The Hedera-side
+ * proof this project actually has is stronger than a fork test would be
+ * anyway: a real deploy, independently confirmed via the mirror node
+ * (contracts/deployments.json's "296" entry), not a local simulation.
  */
 contract BountyEscrowForkTest is Test {
-    /// @dev Circle's official USDC on Base Sepolia.
-    address internal constant USDC = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
-    uint256 internal constant BASE_SEPOLIA = 84532;
+    /// @dev Circle's official USDC on Ethereum Sepolia.
+    address internal constant USDC = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238;
+    uint256 internal constant SEPOLIA = 11155111;
 
     IERC20 internal usdc = IERC20(USDC);
     EntityRegistry internal entities;
@@ -51,9 +61,9 @@ contract BountyEscrowForkTest is Test {
     bool internal forked;
 
     function setUp() public {
-        try vm.envString("BASE_SEPOLIA_RPC_URL") returns (string memory url) {
+        try vm.envString("SEPOLIA_RPC_URL") returns (string memory url) {
             vm.createSelectFork(url);
-            forked = block.chainid == BASE_SEPOLIA;
+            forked = block.chainid == SEPOLIA;
         } catch {
             forked = false;
         }
@@ -104,8 +114,8 @@ contract BountyEscrowForkTest is Test {
         episodes.recordValidation(id, 8310, EpisodeRegistry.TrustLevel.Heuristic);
     }
 
-    function test_forkIsBaseSepoliaWithRealUSDC() public onlyForked {
-        assertEq(block.chainid, BASE_SEPOLIA);
+    function test_forkIsEthereumSepoliaWithRealUSDC() public onlyForked {
+        assertEq(block.chainid, SEPOLIA);
         (, bytes memory data) = USDC.staticcall(abi.encodeWithSignature("decimals()"));
         assertEq(abi.decode(data, (uint8)), 6);
     }
@@ -154,7 +164,7 @@ contract BountyEscrowForkTest is Test {
         uint256 id = _submitAndValidate(keccak256("m1"));
 
         // Balances are measured as deltas. On a real chain an address has
-        // history: 0xC0FFEE already holds USDC on Base Sepolia, and asserting
+        // history: 0xC0FFEE already holds USDC on Ethereum Sepolia, and asserting
         // an absolute balance assumed a clean slate that does not exist.
         uint256 before = usdc.balanceOf(contributor);
 

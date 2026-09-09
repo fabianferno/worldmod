@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ADDRESSES, explorerAddress } from "@/lib/chain/config";
-import { readSepoliaDataset, sepoliaDatasetCount } from "@/lib/hedera/read-sepolia-dataset";
+import { ADDRESSES, CHAIN, explorerAddress } from "@/lib/chain/config";
+import { readDatasetRegistry, datasetRegistryCount } from "@/lib/hedera/read-dataset-registry";
 import { hederaConfigured } from "@/lib/hedera/issue";
 import { IssueBondButton } from "./issue-bond-button";
 
@@ -8,15 +8,15 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Datasets — World Mod",
-  description: "Datasets minted on Sepolia, tokenizable as Hedera Bonds.",
+  description: "Datasets minted on-chain, tokenizable as Hedera Bonds.",
 };
 
 const usd = (cents6: bigint) => `$${(Number(cents6) / 1_000_000).toFixed(2)}`;
 
 export default async function DatasetsPage() {
-  const count = await sepoliaDatasetCount();
+  const count = await datasetRegistryCount();
   const ids = Array.from({ length: count }, (_, i) => i + 1);
-  const datasets = await Promise.all(ids.map((id) => readSepoliaDataset(id)));
+  const datasets = await Promise.all(ids.map((id) => readDatasetRegistry(id)));
   const configured = hederaConfigured();
 
   return (
@@ -28,7 +28,7 @@ export default async function DatasetsPage() {
       <header className="mt-4">
         <h1 className="text-2xl font-semibold">Datasets</h1>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-          Every dataset here is minted on Sepolia&rsquo;s <code className="text-xs">DatasetRegistry</code> from
+          Every dataset here is minted on {CHAIN.name}&rsquo;s <code className="text-xs">DatasetRegistry</code> from
           episodes already validated by World Mod&rsquo;s own flow-vs-gyro check. A dataset can also be
           tokenized as a Hedera Bond — a licence instrument, not a copy of the data — so it can be
           held, transferred and later paid against on Hedera testnet as part of the Tokenization
@@ -85,7 +85,7 @@ export default async function DatasetsPage() {
       )}
 
       <p className="mt-6 text-center text-xs text-subtle">
-        Sepolia registry:{" "}
+        {CHAIN.name} registry:{" "}
         <a
           href={explorerAddress(ADDRESSES.datasetRegistry)}
           target="_blank"

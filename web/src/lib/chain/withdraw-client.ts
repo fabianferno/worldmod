@@ -12,19 +12,17 @@
  */
 
 import { createPublicClient, createWalletClient, http } from "viem";
-import { sepolia } from "viem/chains";
 import { bountyEscrowAbi } from "./abi";
-import { ADDRESSES } from "./config";
+import { ADDRESSES, CHAIN, RPC_URL } from "./config";
 import { deviceAccount } from "./identity";
-
-const RPC = "https://ethereum-sepolia-rpc.publicnode.com";
+import { waitForSuccess } from "./wait-for-success";
 
 function clients() {
   const account = deviceAccount();
   return {
     account,
-    publicClient: createPublicClient({ chain: sepolia, transport: http(RPC) }),
-    walletClient: createWalletClient({ account, chain: sepolia, transport: http(RPC) }),
+    publicClient: createPublicClient({ chain: CHAIN, transport: http(RPC_URL) }),
+    walletClient: createWalletClient({ account, chain: CHAIN, transport: http(RPC_URL) }),
   };
 }
 
@@ -70,7 +68,7 @@ export async function withdrawEarnings(): Promise<WithdrawResult> {
       functionName: "withdraw",
       args: [],
     });
-    await publicClient.waitForTransactionReceipt({ hash });
+    await waitForSuccess(publicClient, hash, "withdraw");
 
     return { ok: true, hash };
   } catch (err) {

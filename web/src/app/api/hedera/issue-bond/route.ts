@@ -1,5 +1,5 @@
 /**
- * A buyer-side action, not a script run by hand: read a real Sepolia
+ * A buyer-side action, not a script run by hand: read a real registry
  * dataset, issue it as a compliant ATS Bond on Hedera testnet.
  *
  * Additive on top of a marketplace that works without it, the same as
@@ -7,9 +7,9 @@
  * already-real dataset, not something the dataset's existence depends on.
  */
 
-import { ADDRESSES } from "@/lib/chain/config";
+import { ADDRESSES, CHAIN } from "@/lib/chain/config";
 import { hederaConfigured, issueDatasetBond } from "@/lib/hedera/issue";
-import { readSepoliaDataset } from "@/lib/hedera/read-sepolia-dataset";
+import { readDatasetRegistry } from "@/lib/hedera/read-dataset-registry";
 
 export async function POST(request: Request) {
   if (!hederaConfigured()) {
@@ -28,9 +28,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const dataset = await readSepoliaDataset(body.datasetId);
+    const dataset = await readDatasetRegistry(body.datasetId);
     if (dataset.episodeCount === 0) {
-      return Response.json({ error: `No dataset #${body.datasetId} on Sepolia.` }, { status: 404 });
+      return Response.json({ error: `No dataset #${body.datasetId} on ${CHAIN.name}.` }, { status: 404 });
     }
 
     const result = await issueDatasetBond(dataset, ADDRESSES.datasetRegistry);
