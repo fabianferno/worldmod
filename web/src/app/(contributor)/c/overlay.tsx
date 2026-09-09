@@ -43,7 +43,9 @@ export function LiveOverlay({
     ctx.clearRect(0, 0, width, height);
 
     if (showGuide) {
-      ctx.strokeStyle = hands.length > 0 ? "rgba(52, 211, 153, 0.7)" : "rgba(251, 191, 36, 0.7)";
+      // The guide box speaks the surface's own two signals: mint when the framing
+    // is right, butter when it needs a hand.
+    ctx.strokeStyle = hands.length > 0 ? "rgba(199, 230, 218, 0.85)" : "rgba(246, 220, 171, 0.9)";
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 5]);
       ctx.strokeRect(

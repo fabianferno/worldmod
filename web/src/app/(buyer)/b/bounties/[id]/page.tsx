@@ -32,7 +32,7 @@ function Term({ label, value, note }: { label: string; value: string; note?: str
 function Score({ label, value }: { label: string; value: number | null }) {
   const known = typeof value === "number";
   const tone = !known
-    ? "bg-white/20"
+    ? "bg-paper-sunk"
     : value >= 0.7
       ? "bg-positive"
       : value >= 0.4
@@ -45,7 +45,7 @@ function Score({ label, value }: { label: string; value: number | null }) {
         <span className="text-xs text-subtle">{label}</span>
         <span className="tabular font-mono text-xs">{pct(value)}</span>
       </div>
-      <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+      <div className="mt-1 h-1 overflow-hidden rounded-full bg-paper-sunk">
         <div
           className={`h-full rounded-full ${tone}`}
           style={{ width: known ? `${Math.max(3, value * 100)}%` : "100%" }}
@@ -128,7 +128,7 @@ function EpisodeRow({ episode }: { episode: StoredEpisode }) {
             <a
               key={stream.kind}
               href={`/api/episodes/${episode.episode_id}/stream?kind=${stream.kind}`}
-              className="interactive rounded-lg border border-line px-2.5 py-1 text-xs font-medium hover:border-white/25 hover:text-accent"
+              className="interactive rounded-lg border border-line px-2.5 py-1 text-xs font-medium hover:border-line-strong hover:text-accent"
             >
               {stream.kind === "rgb" ? "Video" : stream.kind.toUpperCase()}
               <span className="ml-1.5 tabular text-subtle">
@@ -187,7 +187,7 @@ export default async function BountyDetail({ params }: PageProps<"/b/bounties/[i
           </div>
         </div>
 
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-paper-sunk">
           <div className="h-full rounded-full bg-accent" style={{ width: `${progress * 100}%` }} />
         </div>
       </section>
@@ -245,7 +245,7 @@ export default async function BountyDetail({ params }: PageProps<"/b/bounties/[i
             </p>
             <Link
               href="/c"
-              className="interactive mt-4 inline-block rounded-xl border border-line px-4 py-2 text-sm font-medium hover:border-white/25"
+              className="interactive mt-4 inline-block rounded-xl border border-line px-4 py-2 text-sm font-medium hover:border-line-strong"
             >
               Record one yourself
             </Link>

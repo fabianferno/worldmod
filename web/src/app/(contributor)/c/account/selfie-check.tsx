@@ -92,11 +92,11 @@ export function SelfieCheck() {
 
   if (verification) {
     return (
-      <div className="rounded-2xl border border-positive/25 bg-positive/5 px-4 py-3">
+      <div className="rounded-card bg-mint px-4 py-3.5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-medium">Selfie Check verified</p>
-            <p className="mt-0.5 text-xs text-positive/80">
+            <p className="text-sm font-semibold text-mint-ink">Selfie Check verified</p>
+            <p className="mt-1 text-xs text-mint-ink">
               {new Date(verification.verifiedAt * 1000).toLocaleDateString()}
               {verification.mock ? " — sandbox mock, not a real World App proof" : ""}
             </p>
@@ -107,11 +107,11 @@ export function SelfieCheck() {
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-surface px-4 py-3">
+    <div className="rounded-card bg-paper px-4 py-3.5 shadow-lift">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium">Selfie Check</p>
-          <p className="mt-0.5 text-xs leading-relaxed text-subtle">
+          <p className="text-sm font-semibold">Selfie Check</p>
+          <p className="mt-1 text-xs leading-relaxed text-subtle">
             A liveness check via World App — a badge on your reputation, not a
             requirement to earn.
           </p>
@@ -119,7 +119,7 @@ export function SelfieCheck() {
         <button
           onClick={start}
           disabled={loadingContext}
-          className="interactive shrink-0 rounded-full border border-line px-3.5 py-1.5 text-xs font-medium hover:border-white/25 disabled:opacity-40"
+          className="interactive shrink-0 rounded-full bg-lilac px-4 py-2.5 text-xs font-semibold text-lilac-ink disabled:opacity-40"
         >
           {loadingContext ? "Preparing…" : "Verify"}
         </button>
