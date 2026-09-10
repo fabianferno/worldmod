@@ -1,23 +1,29 @@
 /**
  * The asset class: a World Mod dataset licence, expressed as an ATS Bond.
  *
- * The mapping from what exists on Ethereum Sepolia (DatasetRegistry.Dataset,
- * see contracts/src/DatasetRegistry.sol) to what Hedera's Asset Tokenization
- * Studio needs to issue a compliant security token. Every field is a
- * specific decision, not a default; the comments are the spec. Proven
- * against a real dataset before this port existed — see hedera/README.md.
+ * The mapping from what `DatasetRegistry.Dataset` records on-chain (see
+ * contracts/src/DatasetRegistry.sol — deployed to Ethereum Sepolia
+ * originally, migrated to Hedera testnet, see hedera/README.md's "one
+ * registry, two token layers") to what Hedera's Asset Tokenization Studio
+ * needs to issue a compliant security token. Every field is a specific
+ * decision, not a default; the comments are the spec. Proven against a real
+ * dataset before this port existed — see hedera/README.md.
  *
  * A Bond, not an Equity: a dataset licence is closer to a receivable with a
  * term than to a share of an enterprise. `setCoupon` is the natural fit for
  * a future licence-fee distribution; Equity's dividend/voting-rights
  * machinery has nothing to attach to here.
  *
- * What this does NOT solve, and says so rather than hiding it: a Sepolia
- * dataset's `creator` is an Ethereum EOA, which has no Hedera equivalent.
- * `diamondOwnerAccount` is the issuing Hedera account passed in, not a
- * derivation from the Sepolia creator — that identity bridge is unbuilt.
+ * What this does NOT solve, and says so rather than hiding it: a registry
+ * dataset's `creator` is an EVM address, which has no direct equivalent in
+ * Hedera's own native account-id model (0.0.X, distinct from a Hedera
+ * account's aliased EVM address). `diamondOwnerAccount` is the issuing
+ * Hedera account passed in, not a derivation from the registry's own
+ * `creator` field — that identity bridge is unbuilt, on either chain the
+ * registry has lived on.
  */
 
+import { CHAIN } from "@/lib/chain/config";
 import { realIsin } from "./isin";
 
 /** apps/ats/web/.env.example: "...001" is Equity, "...002" is Bond. */
@@ -29,26 +35,27 @@ const BOND_NOMINAL_DECIMALS = 2; // cents
 
 /**
  * How long a licence issued today stays valid. DatasetRegistry has no
- * expiry of its own — a Sepolia licence, once purchased, does not lapse —
+ * expiry of its own — a registry licence, once purchased, does not lapse —
  * so this is a Hedera-side term applied at issuance, not a mirror of
  * anything on-chain. A year is a starting assumption, not a researched one.
  */
 const DEFAULT_LICENSE_TERM_SECONDS = 365 * 24 * 60 * 60;
 
 /**
- * Sepolia's `purchaseLicense` has no cap — any number of buyers can each
- * independently license the same dataset. ATS's `numberOfUnits` is a fixed
- * maximum set at issuance, so the two cannot literally mirror each other;
- * this picks a deliberately generous ceiling for how many licence seats the
- * Hedera-side instrument offers, decoupled from Sepolia's own count.
+ * The registry's `purchaseLicense` has no cap — any number of buyers can
+ * each independently license the same dataset. ATS's `numberOfUnits` is a
+ * fixed maximum set at issuance, so the two cannot literally mirror each
+ * other; this picks a deliberately generous ceiling for how many licence
+ * seats the Hedera-side instrument offers, decoupled from the registry's
+ * own count.
  */
 const DEFAULT_MAX_LICENSE_SEATS = 100;
 
 const DEFAULT_REGULATION_TYPE = 1; // RegulationType.REG_S
 const DEFAULT_REGULATION_SUBTYPE = 0; // RegulationSubType.NONE
 
-/** One Sepolia `DatasetRegistry.Dataset`, read from the chain. */
-export interface SepoliaDataset {
+/** One `DatasetRegistry.Dataset`, read live from whichever chain it's on. */
+export interface RegistryDataset {
   datasetId: number | bigint;
   creator: string;
   priceUsdc: bigint;
@@ -99,13 +106,14 @@ export interface BondFields {
 }
 
 /**
- * @param dataset The real, on-chain Sepolia dataset this Bond represents.
- * @param datasetRegistryAddress Sepolia DatasetRegistry's address — recorded
- *   in `info` so a Bond holder can trace back to it without trusting this
- *   module's own claim of which dataset it corresponds to.
+ * @param dataset The real, on-chain registry dataset this Bond represents.
+ * @param datasetRegistryAddress DatasetRegistry's address on whichever chain
+ *   it's currently deployed to — recorded in `info` so a Bond holder can
+ *   trace back to it without trusting this module's own claim of which
+ *   dataset it corresponds to.
  */
 export function datasetToBondRequest(
-  dataset: SepoliaDataset,
+  dataset: RegistryDataset,
   datasetRegistryAddress: string,
   options: BondMappingOptions,
 ): BondFields {
@@ -172,11 +180,11 @@ export function datasetToBondRequest(
     isCountryControlListWhiteList: true,
     countries,
     // The traceability contract: chain, registry address, dataset id, and the
-    // same content-addressed metadata Sepolia's own metadataURI points at —
-    // so a Bond holder can verify this token corresponds to a specific,
+    // same content-addressed metadata the registry's own metadataURI points
+    // at — so a Bond holder can verify this token corresponds to a specific,
     // inspectable bundle of episodes without trusting this module's word for it.
     info:
-      `World Mod dataset #${datasetId} on Ethereum Sepolia DatasetRegistry ` +
+      `World Mod dataset #${datasetId} on ${CHAIN.name} DatasetRegistry ` +
       `${datasetRegistryAddress} — ${dataset.episodeCount} episodes, ` +
       `${dataset.license}, episodesRoot ${dataset.episodesRoot}, ` +
       `metadata ${dataset.metadataURI}`,

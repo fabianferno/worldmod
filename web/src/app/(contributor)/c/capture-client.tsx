@@ -23,6 +23,7 @@ import {
 import { anchorEpisode } from "@/lib/chain/anchor-client";
 import { useSigner } from "@/lib/chain/signer-context";
 import { AccountBar } from "./account";
+import { SelfieCheck } from "./account/selfie-check";
 import { buildEpisodeManifest, toSubmission, type SelfReport } from "@/lib/episode/build";
 import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/episode/queue";
 import type { Bounty, StoredEpisode } from "@/lib/market/types";
@@ -165,6 +166,24 @@ export default function CaptureClient() {
     () => (signer ? (signer.address as string) : `0x${"0".repeat(40)}`),
     [signer],
   );
+
+  /**
+   * Required once, before this identity's first recording — not a
+   * per-episode re-check; the credential is a standing fact good for 90
+   * days, not something re-proven each take. `null` means "still checking",
+   * not "unverified" — the gate below only ever shows once the answer is
+   * actually known, so a contributor who already verified never sees a
+   * flash of "you must verify" before the check completes.
+   */
+  const [verified, setVerified] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!signer) return;
+    fetch(`/api/world/verify?address=${signer.address}`)
+      .then((r) => r.json())
+      .then((data: { verification: unknown }) => setVerified(!!data.verification))
+      .catch(() => setVerified(false));
+  }, [signer]);
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -789,7 +808,21 @@ export default function CaptureClient() {
 
       {/* Primary action sits in the thumb zone, above the dock. */}
       <div className="settle settle-3 pb-3 pt-3">
-        {phase === "idle" ? (
+        {phase === "idle" && signer && verified === false ? (
+          <>
+            {/* Hard gate: Selfie Check must pass before this identity's
+                first recording. No fallback and no way past it from here —
+                the button below never appears until `verified` flips true.
+                Once, not per-episode: the credential is a 90-day standing
+                fact, not something re-proven every take. */}
+            <p className="mb-3 text-center text-sm font-medium">
+              Verify with Selfie Check to start recording
+            </p>
+            <SelfieCheck onVerified={() => setVerified(true)} />
+          </>
+        ) : phase === "idle" && signer && verified === null ? (
+          <p className="py-4 text-center text-sm text-subtle">Checking your account…</p>
+        ) : phase === "idle" ? (
           <>
             {bounties.length > 1 ? (
               <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1">
@@ -819,7 +852,7 @@ export default function CaptureClient() {
                 Google account ended up on three different addresses. */}
             <button
               onClick={begin}
-              disabled={!secure || !signer}
+              disabled={!secure || !signer || verified !== true}
               className="interactive on-ink flex w-full items-center gap-3 rounded-full bg-ink p-1.5 text-on-ink disabled:opacity-40"
             >
               <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-mint text-mint-ink">

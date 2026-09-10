@@ -6,6 +6,17 @@ interface IERC20Minimal {
     function transfer(address to, uint256 amount) external returns (bool);
 }
 
+/// @dev Hedera Token Service precompile, fixed at 0x167 on every Hedera
+/// network. On any other chain this address has no code, so the low-level
+/// call below succeeds trivially with empty returndata and self-association
+/// is silently skipped — the same bytecode deploys unmodified to Sepolia or
+/// Hedera; real association only happens where the precompile actually
+/// exists. Proven live against Hedera testnet before wiring this in — see
+/// hedera/spike-hts-association-part3.mjs.
+interface IHederaTokenService {
+    function associateToken(address account, address token) external returns (int64 responseCode);
+}
+
 /**
  * @title FederatedRound
  * @notice Coordination for federated training rounds. The data never moves.
@@ -88,6 +99,15 @@ contract FederatedRound {
     constructor(IERC20Minimal usdc) {
         token = usdc;
         owner = msg.sender;
+        // A deploy must never leave the round contract live but unable to
+        // hold the token it was configured with — see the interface doc
+        // above. Return value deliberately unchecked: on a non-Hedera chain
+        // this call has no code to execute against and "succeeds" doing
+        // nothing.
+        (bool associated,) = address(0x167).call(
+            abi.encodeWithSelector(IHederaTokenService.associateToken.selector, address(this), address(usdc))
+        );
+        associated;
     }
 
     function getRound(uint256 roundId) external view returns (Round memory) {

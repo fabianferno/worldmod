@@ -208,12 +208,14 @@ export default async function BountyDetail({ params }: PageProps<"/b/bounties/[i
             label="Duration"
             value={`${bounty.duration_range_s[0]}–${bounty.duration_range_s[1]}s`}
           />
-          <Term label="Minimum framing" value={pct(bounty.min_framing)} />
+          <Term
+            label="Minimum framing"
+            value="confidential"
+            note="Checked privately inside a Chainlink CRE enclave, not exposed here."
+          />
           <Term
             label="Minimum motion match"
-            value={
-              bounty.motion_policy === "require" ? pct(bounty.min_plausibility) : "not required"
-            }
+            value={bounty.motion_policy === "require" ? "confidential" : "not required"}
           />
           <Term label="Minimum trust level" value={bounty.min_trust_level} />
           <Term label="Licence" value={bounty.license.replace(/_/g, " ")} />

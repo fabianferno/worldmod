@@ -7,10 +7,14 @@ import {FederatedRound, IERC20Minimal} from "../src/FederatedRound.sol";
 /**
  * §9's coordination pattern, tested for the property it actually claims:
  * participation is recorded and paid, and the data never appears anywhere.
+ *
+ * No Hedera-forked equivalent — see BountyEscrow.fork.t.sol's header for
+ * why (forge's local EVM can't execute the HTS precompile call this
+ * contract's constructor now makes).
  */
 contract FederatedRoundForkTest is Test {
-    address internal constant USDC = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
-    uint256 internal constant BASE_SEPOLIA = 84532;
+    address internal constant USDC = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238;
+    uint256 internal constant SEPOLIA = 11155111;
 
     FederatedRound internal rounds;
 
@@ -25,9 +29,9 @@ contract FederatedRoundForkTest is Test {
     bool internal forked;
 
     function setUp() public {
-        try vm.envString("BASE_SEPOLIA_RPC_URL") returns (string memory url) {
+        try vm.envString("SEPOLIA_RPC_URL") returns (string memory url) {
             vm.createSelectFork(url);
-            forked = block.chainid == BASE_SEPOLIA;
+            forked = block.chainid == SEPOLIA;
         } catch {
             forked = false;
         }

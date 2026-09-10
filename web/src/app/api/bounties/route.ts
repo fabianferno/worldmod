@@ -1,11 +1,12 @@
-import { chainEnabled } from "@/lib/chain/config";
+import { CHAIN, chainEnabled } from "@/lib/chain/config";
 import { bountyKey, createBountyOnChain, relayerAddress } from "@/lib/chain/escrow";
 import { fileStore } from "@/lib/market/store";
-import { budgetBreakdown } from "@/lib/market/types";
+import { budgetBreakdown, redactThresholds } from "@/lib/market/types";
 import type { Bounty } from "@/lib/market/types";
 
 export async function GET() {
-  return Response.json({ bounties: await fileStore.listBounties() });
+  const bounties = await fileStore.listBounties();
+  return Response.json({ bounties: bounties.map(redactThresholds) });
 }
 
 export async function POST(request: Request) {
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     }
 
     body.escrow = {
-      chain_id: 11155111,
+      chain_id: CHAIN.id,
       bounty_key: bountyKey(body.bounty_id),
       buyer: relayerAddress() ?? "",
       txs: result.txs.map((t) => ({ step: t.step, hash: t.hash })),
