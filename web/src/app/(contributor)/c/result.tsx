@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { explorerTx } from "@/lib/chain/config";
 import { pendingWithdrawal, withdrawEarnings } from "@/lib/chain/withdraw-client";
 import type { StoredEpisode } from "@/lib/market/types";
+import { PredictionStrip } from "./prediction-strip";
 
 /**
  * Collecting real USDC.
@@ -226,6 +227,8 @@ export function Result({
           />
         </div>
       ) : null}
+
+      {submitted ? <PredictionStrip episodeId={submitted.episode_id} /> : null}
 
       {submitted?.payment?.tx ? (
         <div className="on-ink settle settle-3 mt-3 rounded-card bg-ink px-5 py-4">

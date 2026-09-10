@@ -128,6 +128,23 @@ function forgetAwaiting(): void {
   }
 }
 
+/**
+ * Encode a prediction thumbnail for storage. Reuses one scratch canvas
+ * across the whole take rather than allocating one per tick — this already
+ * runs up to `predictFps` times a second alongside live encoding.
+ */
+function encodeThumbnail(image: ImageData, canvasHolder: { current: HTMLCanvasElement | null }): string | null {
+  if (!canvasHolder.current) canvasHolder.current = document.createElement("canvas");
+  const canvas = canvasHolder.current;
+  if (canvas.width !== image.width) canvas.width = image.width;
+  if (canvas.height !== image.height) canvas.height = image.height;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.putImageData(image, 0, 0);
+  return canvas.toDataURL("image/png");
+}
+
 export default function CaptureClient() {
   const backendRef = useRef<CaptureBackend | null>(null);
   const analyzerRef = useRef<LiveAnalyzer | null>(null);
@@ -135,6 +152,18 @@ export default function CaptureClient() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  /**
+   * The live prediction sequence, accumulated as `LivePredictor` ticks.
+   * `PredictionPanel` only ever shows the latest one and unmounts when
+   * recording ends — this is what survives long enough to post to
+   * `/api/episodes/{id}/predictions` once the episode id exists, so the
+   * result screen can replay it afterwards.
+   */
+  const predictionLogRef = useRef<
+    { t: number; distance: number; warming: boolean; thumbnail: string }[]
+  >([]);
+  const recordingStartedAtRef = useRef(0);
+  const thumbnailCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [caps, setCaps] = useState<CaptureCapabilities | null>(null);
@@ -496,6 +525,19 @@ export default function CaptureClient() {
       await enqueueEpisode(entry);
       setPending((await listPending()).length);
 
+      // Fire-and-forget, same discipline as the live predict endpoint itself:
+      // this is a nice-to-have replay, not something an upload should ever
+      // wait on or fail over. Sent independently of the upload below — the
+      // episode id is already fixed (minted above, in the manifest), so
+      // there's no reason to wait for the streams to finish uploading first.
+      if (predictionLogRef.current.length > 0) {
+        fetch(`/api/episodes/${submission.episode_id}/predictions`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ predictions: predictionLogRef.current }),
+        }).catch(() => {});
+      }
+
       const outcome = await uploadEpisode({
         ...entry,
         queued_at: Date.now(),
@@ -533,7 +575,9 @@ export default function CaptureClient() {
       setPhase("recording");
       setRemainingMs(EPISODE_MS);
 
+      predictionLogRef.current = [];
       const started = performance.now();
+      recordingStartedAtRef.current = started;
       const tick = () => {
         const left = EPISODE_MS - (performance.now() - started);
         setRemainingMs(Math.max(0, left));
@@ -574,7 +618,18 @@ export default function CaptureClient() {
       // scratch handle the live prediction endpoint uses to carry the GRU's
       // hidden state and frame bank between requests.
       const predictor = new LivePredictor(videoRef.current!, crypto.randomUUID(), {
-        onPrediction: setLivePrediction,
+        onPrediction: (prediction) => {
+          setLivePrediction(prediction);
+          const thumbnail = encodeThumbnail(prediction.image, thumbnailCanvasRef);
+          if (thumbnail) {
+            predictionLogRef.current.push({
+              t: performance.now() - recordingStartedAtRef.current,
+              distance: prediction.distance,
+              warming: prediction.warming,
+              thumbnail,
+            });
+          }
+        },
         onUnavailable: () => setLivePrediction(null),
       });
       predictorRef.current = predictor;
@@ -605,6 +660,7 @@ export default function CaptureClient() {
     predictorRef.current?.dispose();
     predictorRef.current = null;
     setLivePrediction(null);
+    predictionLogRef.current = [];
     backendRef.current?.abort();
     backendRef.current = createCaptureBackend();
     setCapture(null);

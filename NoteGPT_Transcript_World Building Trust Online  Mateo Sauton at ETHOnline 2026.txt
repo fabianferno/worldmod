@@ -1,0 +1,119 @@
+00:00:01 - 00:01:17
+[music] Hey everyone, uh this is Mateo. I am part of the T TFH team, Tools for Humanity. We are the team building tools for the project world. Maybe you know them as world coin as we were named before, but we rebrand it. Um and yeah the idea for this workshop is to give you a brief introduction on what uh world is what world ideas uh present you the tracks um and a few things that we are super interested in you uh for for you to test and try. Uh with more further ado let's go. Um I always want
+
+00:00:48 - 00:02:01
+to I always kind of start this the presentations with this image. Uh this is where where my head like this aha moment. Uh, I see I saw Peter Stainberger, the guy that created Cloudbot um on Alex Fritman product podcast saying this exact phrase. I watched my agent happily click the I'm not a robot button. And like that moment for me was oh we are we we got to the moment we really need this uh way of differentiating and and knowing that someone's a human online, right? And that is uh what world does. Uh that made
+
+00:01:24 - 00:02:45
+[clears throat] us think okay the the the trust in the internet is kind of broken right sorry um more than 50% in traffic is now bots organizations experienced like deep takes a lot of deep fakes uh over the past year and I may you might know this famous case of um the Arab CFO deep face scam that cost them 25 million. I mean these are just random facts that again made me and the whole company realize how how important this is right the the need of an AI proof way to distinguish uh between a real person and a bot in
+
+00:02:04 - 00:03:23
+digital interactions right uh so world is the real human network uh built to ensure that every human uh benefits in the age of AI we actively have 39 million users in over 160 countries and it's a company co-founded by Sam Alman. The other co-founder is Alex Blania. Uh and we have this amazing product one of this one of our amazing products but our our main product is world lady. uh world ID basically is a high assurance method uh of a authentication uh layer for bot protection which is a privacy
+
+00:02:44 - 00:03:59
+preserving protocol which means it does have not have anything about you as a person but yes as a human uh that lets you prove that you are a human online without sharing personal information. Uh it is very interesting because a developer or you can use this as a trust layer to stop for example bots abuse uh in your in your website or projects uh through credentials like proof of human document verification or selfp check I will talk about that in like literally one slide and it's a very interesting
+
+00:03:21 - 00:04:35
+and secure architecture that uh uses zero knowledge proof and ondevice generation of cryptographic proofs instead of uh the raw data So uh what that basically means is that uh if you get your world ID and you want to use it uh this thing uh is not revealing any information. It just proves that there is a human holding this device and it's uh doing this online interaction. Uh just one caveat I will go through questions at the end of the presentation. Um as I mentioned we have three different solutions for world ID. uh the
+
+00:03:57 - 00:05:20
+highest uh assurance method is called uh orb verification. Um orb verification means you went physically to an orb which is a very cool camera with a lot of sensors uh and that took an image of your iris. Uh it generated a proof that there's a human behind this this phone and um basically you can use that proof uh online. Um Just one thing on that, the orb immediately deletes the image after generating the proof. Uh, and if you don't trust me, you can go and verify by yourself. The repo is public
+
+00:04:39 - 00:05:54
+and you can check uh check it on GitHub. It's called warcoin/orb firmware. You can check the firmware there. And then you if you want to double verify, you can check the or firmware when you get verified. Uh the second uh solution that we have is called official ID. Uh basically an a set of uh NFC ID chip passports uh that we are supporting and I think it's if I'm not wrong it's 13 different countries right now. Of course we are expanding that. Um so basically what this means is uh there's a government or
+
+00:05:16 - 00:06:37
+an entity that we all trust that is telling okay there is a citizen from this country um holding this this thing. Uh again without revealing any personal information uh the only thing that we will know is that there is a US or for in my case Argentinian citizen uh holding an Argentinian passport at this moment. And the the medium uh assurance method is well there's a new thing we just uh developed called selfie check. So basically you can imagine that this as this lightness proofs or uh yeah
+
+00:05:57 - 00:07:18
+selfie proofs that many neo banks and banks and fintex use right now to check that there is a human um in the in the other side of the screen. Uh we developed our own version of that uh that allows you to with outgoing to an orb and with a lower assurance uh uh prove that you are again a human online. This is not again not as reliable as going through the orb and proving that you are a human. But yes, uh it uses uh the end camera device uh device, yeah, a camera to prove that uh there's a person
+
+00:06:38 - 00:07:58
+on the other side. Uh but it has a different ways of proving this and it's not so uh precise as the orbit is. Uh going through the tracks, uh we'll we will be uh doing two different tracks on 3.5K each. Um there will be three winners for each track. One is agent kit new use cases. This will be a continuity track. Uh we want teams who are already building stuff for their companies to integrate agent kit. I will talk about agent kit in a few. Um integrate agent kit in a new way that will benefit their
+
+00:07:17 - 00:08:45
+project in a meaningful way. uh it could be uh gating uh nonhumanbacked agents or any use case they they would like to show us. It will be super interesting. Uh and the other one is selfie check which is in beta right now will be uh rolled for probably everyone next week but you are getting it uh after this presentation as a courtesy of the selfie bit selfie check beta team. [laughter] Um, also again building products using this uh assurance method that is not not as high as the orb but is way faster and
+
+00:08:02 - 00:09:15
+way less it has less friction than going to a physical orb because it checks uh again the image that your phone has of you and uh the image that you are doing during the selfie check process. Um, ideally for both of them, we would love for you to handle us uh a document with um feedback on both products. Again, selfie check is in beta. So, we are actively looking for people to integrate it and tell us what is wrong about this product and what would they like about this product. Of course, for agent kit,
+
+00:08:38 - 00:09:49
+we want that too. So, let's go for a selfie check and a deep explanation on this. So again this is the low friction on run to world ID. Uh it is super interesting because it not it not only gives you a check that this person is a human uh and it's uh at some point unique but it it will also return uh something we call civil score. It is the way I explain this is not super technical but I think it's uh the way that most people would understand this is the civil score is a representation
+
+00:09:12 - 00:10:28
+of how many times a user wants wanted to log in to this uh to this platform for example if I use selfie check like a million times in different devices my civil score will be up so it's how many times do this face is this face recognized in this platform uh that that will if so if the the civil score is super high that means I try to break uh this platform's uh uniqueness by trying to log in with different accounts so trying to break the civil score right um again it uses the the user's mobile
+
+00:09:51 - 00:11:06
+camera to establish the humanness or lightness uh it's a very very quick selfie uh that confirms the a real live person is behind the camera, the device. You don't need to go through the orb. Uh, and it's a super low friction thing. Uh, unlike the orb that requires a taking a picture of your iris, this focuses on your um whole face. Uh, civil score will be available from next week on. Uh so if you are interested in improving this new feature and testing this new feature, please reach out to us
+
+00:10:28 - 00:11:56
+and I will probably whitelist you to use civil score earlier. And then agent kit agent kit is the human layer for agentic automation. So again the way I explain this to people is you know we have world ID right? uh world ID is proving that you are a human online. You can delegate your world ID to your agent and let your agent do stuff for you with this ver verified world ID. Okay, so as it says here uh it's a human verified autonomy autonomy. It unlocks a new primitive for the agentic economy
+
+00:11:12 - 00:12:35
+because uh you can distinguish uh an army of bots that are not verified by no one from a humanbacked agent. Okay. And it's a super seamless integration. You just need to run a one literally one command. uh it links uh your agent to the your agent's wallet to the world ID and a secure authorized access and that's it. That's how you uh delegate it to your agent that writes basically uh at some point it writes the agent's address into an address book that is the address book represented by
+
+00:11:53 - 00:13:07
+all the human bank agents. uh and you can use different use cases. Onchain delegation is one that I just mentioned. Agentic commerce, you can go and go to Shopify for example or any other e-commerce that you will want to integrate. Um and if the the e-commerce already integrated this this feature, uh you can give special discounts for human backed agents. Uh another use case could be a human in the loop. Uh that's an this is an integration we did with uh Verscell the company. So basically in in
+
+00:12:30 - 00:13:52
+Verser workflows you can set up a human in the loop uh when you want a human to uh prove that uh they they are there uh before the agent uh doing certain action. Um and there there's one difference between this hackathon and all the other hackathons that we've been doing that is uh this is online. So uh as I said uh agent kit uh only uses a world ID orb verified credentials and so if you're online you're not being able to go and verify with an or that's why we have uh the world ID sandbox app as our one of
+
+00:13:11 - 00:14:22
+our latest releases. Uh so basically the world ID sandbox app uh is the world ID app but in sandbox mode. So basically it is a non-production app. It does not re create real uniqueness. Uh but it creates your identifier and it copies everything that we have in production but in uh the staging environment. It is not publicly listed yet. Uh you are getting beta access to this app too. Uh that's what we that's why I will require your emails to give you access to test flight and uh firebased app
+
+00:13:46 - 00:15:01
+distribution. um uh for this. Uh so yeah, basically this app will give you the ability to unlock and use all the features that world ID or verify credential will give you without needing to actually verify. Uh and this is something I I find very very interesting because I have a lot of friends and people that talk with me that are not afraid but they're like skeptical on going to verify but they really want to try what we do. So this is our solution for them. Um so I think this this is a this is a great unlock for for everyone
+
+00:14:24 - 00:15:42
+that wants to to use world ID and your verified credential. We would love for you to give us feedback on this. So if you are building on the agent git track, you will definitely be recommended to use the sandbox app and that will be so nice from you to give us feedback on it. Some example patterns that I would like to for you to like uh uh see and and maybe build on top uh for for agent kit are new verticals for humanbacked agents. uh for example change different type of access to some platforms or
+
+00:15:04 - 00:16:18
+different type of pricing to some platforms uh because the agent is backed by a human. Another one will be agentic workflows uh that combine for example identity and payments in a different way that we already know them. Uh again it's I mentioned pricing in the in the IDM before not changing of the pricing but I don't know again this is ideas for you to uh brainstorm that I'm not going to give you a solution because I don't have it either. Uh another idea or example that I want to show you mention you um
+
+00:15:41 - 00:17:09
+is a human backed agent for regulated workflows. uh one human behind many agent agents change uh changing the product logic. Um I did not mention this until this point but you can delegate your world ID to many different agents. Okay. So if you want you can uh for example my world ID I have it delegated with like three or four different RMS agents and they do workflows for me. Uh and the la latest is a new again idea for agent to agent or agent to API uh trust uh flow. Um again this is these are ideas for you to to brainstorm.
+
+00:16:24 - 00:17:40
+Um one example use case for agent kit was uh the Spotify integration that we we did a few months ago. This is also written down in the docs. So I want to show you how easy it is for for someone to use um agent kit. Uh so basically we did a Shopify integration where we gave people hats. Uh we had 500 hats exclusively for verified humans. Um uh you can buy this you had to buy this hat actually but only verified humans and verified human uh human backed agents could go and u claim this product. Uh,
+
+00:17:03 - 00:18:16
+so it's a super simple integration. [snorts] You add the plugin, you install the agent kit, Shopify integration, and then you ask your agent or claude or whatever like, "Help me purchase this item," and it will be able to do it because it's a verified uh human agent. Things that won't qualify. Again, this is a long list, but I just wanted to exclude a lot of different uh sloppy uh cases that we have been uh looking and and and receiving a lot. Um, I won't stop too much on this one because I I I
+
+00:17:39 - 00:18:58
+al I actually want you to like build whatever you want and if you are in doubt if this is something that's super uh normal that everyone built uh you can ask for ask for it uh on the discord channel like static demos without uh any end toend integration with agent kit that's not uh something that we want simple agent reputation we have already seen a lot of use cases for that. Um, commerce demos that only apply uh a discount to an agent like we did here. Uh, that's something that you could uh
+
+00:18:18 - 00:19:46
+skip. We already did it. We want new uh interesting use cases for agent kit. Uh, some example patterns for everything actually, not just agent kit. You can use uh selfie check to do uh researching funnels. Uh so if your uh user is doing something but you just want real users to access certain types of information, you can use selfie check as a low assurance method to only gate only those people. uh you can you can create risk based flows based on for example I don't know if you want users to go through to
+
+00:19:03 - 00:20:12
+your platform but you don't want them to access everything uh but you also don't want to make them a huge on boarding because it's boring for them and you're going to you're going to lose them. You can for example make the users do selfie check and then unlock a few features and of course lowrisk features and if they go and do your verification then you can unlo unlock highrisk uh different type of features or actions. Um and yeah uh free trials for for selfie check also it's a very low friction and
+
+00:19:37 - 00:20:45
+something that has been interesting and useful for a lot of companies that are or startups that are using selfie check right now. Uh because again this gives you an idea of okay there's a human behind this. I don't know who he is. I don't need to know who he is. So I can give them or it or her uh whatever uh you want to give them without needing to get their information. Um for track requirements we are for selfie check we want you to use selfie check in a meaningful way cover both dev
+
+00:20:11 - 00:21:26
+and user feedback in detail ideally in a document. Um we need to you need to have it working end to end. uh new verticals be beyond obvious examples that I just mentioned and you can use either B3 or B4 proofs uh B4 proofs are going to be available next week. uh for agent kit same meaningful way using agent kit verifying that the agent is human back before granting access to whatever you're building again a working end to end flow and of course as I mentioned uh chat before new verticals beyond obvious
+
+00:20:49 - 00:22:09
+examples the judgment break will be divided into this basically is this a strategic fit uh and useful trust event that's this integration is meaningful to world or to what the products that we have 25% will be allocated in how hard the feedback you give us. So don't be nice. We really want to test this and the you really want you to tell us what's bad, what's good and what will you like from this. 20% to product quality, 15% to technical integration. We are going to check that you are
+
+00:21:28 - 00:22:57
+integrated correctly with IDKit or agent kit and 10% will be uh deployment on or or feedback path. Uh can this become something outside being a a hackathon project? Uh can you continue and are you going to continue building on top of this? This is of course uh for the selfie check. This is it. Uh this is the QR code for the dogs. Um and for support, please reach out uh to us on the Discord channel. I will stop presenting and read the questions. There we go. Whoa. Hold on. One. I tried an agentless.
+
+00:22:19 - 00:23:58
+Okay. Okay. Alexander. Uh I think this is a long one. I think uh the idea ideally we can we can talk on discord and I can help you uh I can help you debug this uh because yeah I think it will take a few how do okay yeah you if for the sandbox question you will need to get access to sandbox first. So uh yeah, can selfie pay can selfie juxtapose with an already taken selfie? So you want to this is a so you want to have a selfie that's been already taken and like match it against another selfie at the moment using
+
+00:23:11 - 00:24:43
+selfie check. That's what basically selfie check does. It's uh not that but it uses a non-chain uh a nondevice image that you have and basically checks that against the selfie check image that we are taking at that moment. Uh Alexander no SJ cannot back agent uh book registration. Agent kit is only for orb verified. That's what why we have a the sandbox. Uh oh uh I think I covered the part of the ideas for selfie check. Um, but if you want more ideas, I'm happy to uh send you more or chat them uh on discord.
+
+00:23:58 - 00:25:07
+>> What the difference between selfie check legacy and proof of human? Do both qualify for selfie? Oh, no, no, no. So, selfie check legacy. Well, this is a naming thing I think we need to change. But selfie check legacy is selfie check and proof of human is being orb verified. Okay. So these are for the same SDK that's ID kit two different credentials. We are aiming for you to build on top of selfie check. If you want to build on on top of like selfie check and proof of human that's perfect
+
+00:24:32 - 00:26:04
+but you need to include selfie check. Okay. >> Can we see the QR code better? Uh uh yeah, the QR code get uh forwards you to this. So you can uh you can go to the dogs through here uh dogs.world.org. Uh and how we send our email to uh for the email and the sandbox. Um, if you create an account and you you'll need to create an account in our de developer portal. Um, when you create an account there, you will see there's a button that says access to the de portal uh to the sandbox. Uh, you will request access to
+
+00:25:20 - 00:27:03
+that. And in the world prices page, let me find it super quick. You will be able to see uh a link to the forms. I also sent this form in the discord channel uh a few an hour ago I think. But let me give you this. Uh here you have it guys. Uh the Sophie chick support indefinitely. No it's a top of 90 90 days. 90 days. Uh and there you have the the world tracks and you you'll see there uh on the bottom in the resources part you will see sandbox access and there's a form there you can use that
+
+00:26:28 - 00:27:37
+and yes if you don't have any other questions I think we can wrap this up. Alexander will be great if you text me on on Discord. My my handle is this. There you go. You can you can reach out to me on on Discord. My handle is Mr. Saon because my last name is Saon and it was very obvious thing to do for me when I was 18. [laughter] So yeah, that's it for me. Uh thank you all guys. [music]

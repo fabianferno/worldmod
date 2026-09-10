@@ -224,3 +224,37 @@ export async function readTraces(episodeId: string): Promise<unknown | null> {
     return null;
   }
 }
+
+/**
+ * Store the live world-model prediction sequence captured during a take.
+ *
+ * Same reasoning as traces: kept beside the streams, not in market.json,
+ * because it is data only the result screen reads and nobody queries. This
+ * is the ONLY record of what the model showed live — the panel that
+ * displayed it during recording (`prediction-panel.tsx`) unmounts the moment
+ * recording stops, so without this the guess is gone the instant the take
+ * ends. Written by the client (the predictions themselves are generated
+ * client-side, one per tick, never persisted server-side until now), so
+ * unlike traces there is no server-computed source of truth to fall back on
+ * — a client that never calls this simply has no saved prediction sequence,
+ * which is a normal, silent state, not a failure.
+ */
+export async function storePredictions(episodeId: string, predictions: unknown): Promise<void> {
+  if (!/^ep_[0-9a-f]{8,64}$/.test(episodeId)) {
+    throw new Error(`Refusing to store under a malformed episode id: ${episodeId}`);
+  }
+  const dir = join(ROOT, episodeId);
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, "predictions.json"), JSON.stringify(predictions));
+}
+
+export async function readPredictions(episodeId: string): Promise<unknown | null> {
+  if (!/^ep_[0-9a-f]{8,64}$/.test(episodeId)) return null;
+  const path = join(ROOT, episodeId, "predictions.json");
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(await readFile(path, "utf8"));
+  } catch {
+    return null;
+  }
+}
