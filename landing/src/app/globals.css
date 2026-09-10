@@ -1,0 +1,324 @@
+@import "tailwindcss";
+
+/*
+ * A payout ledger, not a dashboard.
+ *
+ * The contributor half of this product is somebody standing outside with a
+ * phone strapped to their head, in daylight, waiting to be told what they
+ * earned. That scene picks the ground: bone, not near-black. The dark that
+ * remains is the one place dark is a material rather than a theme — the
+ * viewfinder, and the ink cards that quote a number back at you.
+ *
+ * Four fields carry the surface. Mint is the task you are being paid for.
+ * Lilac is the model's own reading of you. Butter is something needing a hand.
+ * Ink is money, settled. Nothing is decorated in a colour it has not earned.
+ */
+:root {
+  /* Warm off-white, never #fff — pure white next to ink strobes in sunlight. */
+  --bone: #e9e9e6;
+  --paper: #f6f6f4;
+  --paper-sunk: #e2e2de;
+
+  /* The inset card. Off-black so the mint beside it does not look punched out. */
+  --ink: #0d0d0f;
+  --ink-raised: #1b1b1f;
+
+  --foreground: #131315;
+  --muted: #56565e;
+  --subtle: #63636b;
+
+  /* On ink. */
+  --on-ink: #f4f4f1;
+  --on-ink-muted: #a0a0a8;
+
+  /* The three fields. Each owns a region, never a sprinkle. */
+  --mint: #c7e6da;
+  --mint-ink: #1d5b49;
+  --lilac: #ded0f3;
+  --lilac-ink: #5b3d8c;
+  --butter: #f6dcab;
+  --butter-ink: #7a5013;
+
+  /*
+   * Status is information a contributor scans for — accepted, needs a hand,
+   * rejected. Drawn from the fields above so a verdict reads as part of the
+   * surface rather than a browser alert dropped onto it.
+   */
+  --positive: #1f6b55;
+  --caution: #7a5013;
+  --negative: #a8372f;
+
+  /*
+   * Aliases the buyer dashboard still speaks. That half of the product was not
+   * in this pass's scope, so its class names keep resolving — and resolve to
+   * the new world's values, which lands it on the bone ground legibly instead
+   * of leaving it half-painted.
+   */
+  --background: #e9e9e6;
+  --surface: #f6f6f4;
+  --surface-raised: #e2e2de;
+  --accent: #5b3d8c;
+
+  --line: rgb(19 19 21 / 0.09);
+  --line-strong: rgb(19 19 21 / 0.2);
+  --line-on-ink: rgb(255 255 255 / 0.12);
+
+  /*
+   * Radii are the loudest thing about this world. Panels are almost lozenges;
+   * anything small enough to press is a full pill.
+   */
+  --r-panel: 30px;
+  --r-card: 22px;
+  --r-inner: 16px;
+
+  /* One elevation, offset and softly blurred. Panels take shadow, not border. */
+  --lift: 0 1px 2px rgb(19 19 21 / 0.04), 0 10px 28px -14px rgb(19 19 21 / 0.22);
+  --lift-high: 0 2px 6px rgb(19 19 21 / 0.06), 0 22px 48px -20px rgb(19 19 21 / 0.3);
+}
+
+@theme inline {
+  --color-bone: var(--bone);
+  --color-paper: var(--paper);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-ink: var(--ink);
+  --color-ink-raised: var(--ink-raised);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-on-ink: var(--on-ink);
+  --color-on-ink-muted: var(--on-ink-muted);
+  --color-mint: var(--mint);
+  --color-mint-ink: var(--mint-ink);
+  --color-lilac: var(--lilac);
+  --color-lilac-ink: var(--lilac-ink);
+  --color-butter: var(--butter);
+  --color-butter-ink: var(--butter-ink);
+  --color-positive: var(--positive);
+  --color-caution: var(--caution);
+  --color-negative: var(--negative);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-accent: var(--accent);
+  --color-line: var(--line);
+  --color-line-on-ink: var(--line-on-ink);
+
+  --radius-panel: var(--r-panel);
+  --radius-card: var(--r-card);
+  --radius-inner: var(--r-inner);
+
+  --shadow-lift: var(--lift);
+  --shadow-lift-high: var(--lift-high);
+
+  --font-sans: var(--font-manrope);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--bone);
+  color: var(--foreground);
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Every number in this product is a measurement someone compares against
+ * another — frame rates, scores, payments. Proportional digits make columns of
+ * them jitter.
+ */
+.tabular,
+[data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The signature: a quoted figure is one weight and one size, and its unit is a
+ * small grey rider sitting on the baseline beside it. Amounts are the loudest
+ * type on any screen here, so they carry the tightest tracking.
+ */
+.figure {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+.unit {
+  /* Floored in px: a rider on a 17px clock was computing to under 6px. */
+  font-size: max(10px, 0.34em);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  /* Inherits so a unit on mint reads as mint, not as grey punched into it. */
+  color: inherit;
+  opacity: 0.72;
+  margin-left: 0.35em;
+  vertical-align: baseline;
+}
+
+/*
+ * The cents of an amount. Quieter than the dollars, because nobody decides
+ * anything on the cents — the reference greys exactly this and nothing else.
+ *
+ * A bone-ground device only. On the mint fields the same knock-down drops
+ * under 3:1 against its own panel, so the figures there stay solid rather than
+ * trading a legible balance for a flourish.
+ */
+.cents {
+  opacity: 0.62;
+}
+
+/* The small grey caption that names a figure. Never uppercase — the reference
+   whispers rather than shouts, and small caps at this size lose legibility. */
+.tag {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  color: var(--subtle);
+}
+
+/* Headings carry weight rather than size alone; tighten as they grow. */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/*
+ * Keyboard focus. A contributor approving a withdrawal should never have to
+ * guess where they are, and this is an accessibility requirement rather than a
+ * finish.
+ */
+:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+.on-ink :focus-visible {
+  outline-color: var(--on-ink);
+}
+
+/* Respect a user's reduced-motion preference before adding any transition. */
+@media (prefers-reduced-motion: no-preference) {
+  .interactive {
+    transition:
+      background-color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* A press should feel physical: the lozenge sinks toward the page. */
+  .interactive:active {
+    transform: scale(0.975);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /*
+   * The one authored moment. A screen's panels arrive as a short cascade,
+   * settling downward the way the stacked lozenges of this world imply — and
+   * they start visible, so a failed animation never costs anyone their balance.
+   */
+  @keyframes settle {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.985);
+      filter: blur(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: blur(0);
+    }
+  }
+
+  .settle {
+    animation: settle 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  .settle-1 { animation-delay: 40ms; }
+  .settle-2 { animation-delay: 100ms; }
+  .settle-3 { animation-delay: 160ms; }
+  .settle-4 { animation-delay: 220ms; }
+}
+
+
+/* Long-form legal copy. Same type ramp as the product, set for reading. */
+.prose-legal h2 {
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 2.25rem;
+  margin-bottom: 0.6rem;
+}
+.prose-legal p,
+.prose-legal li {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.prose-legal p + p,
+.prose-legal ul {
+  margin-top: 0.85rem;
+}
+.prose-legal ul {
+  padding-left: 1.2rem;
+  list-style: disc;
+}
+.prose-legal li + li {
+  margin-top: 0.35rem;
+}
+.prose-legal strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.prose-legal a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/*
+ * The hero arc, vendored from the app. The canvas fills the frame; the frame
+ * owns the clip. The light variant paints a near-white paper — multiplying it
+ * against the panel makes that paper vanish while the arc stays, tinted toward
+ * mint-ink.
+ */
+.threeui-background {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: transparent;
+}
+.threeui-background > canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: brightness(1.12) hue-rotate(20deg) saturate(0.9) !important;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10% 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10% 90%, transparent);
+}
+.shader-frame {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .shader-frame { height: 220px; }
+}
