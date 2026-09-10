@@ -152,15 +152,19 @@ export async function registerContributor(
 }
 
 /**
- * Commit a scored episode's manifest hash, then record what the validator found.
+ * Commit a scored episode's manifest hash on-chain.
  *
- * Two transactions, sequential because the second needs the episode id the
- * first creates.
+ * This used to also call `recordValidation` itself, with the relayer's own
+ * key comparing the score against the bounty's threshold — the "trusted
+ * operator" pattern product-spec §8.3 names as the MVP's honest limit. That
+ * comparison now happens inside a Chainlink CRE Confidential Workflow (see
+ * `cre/episode-validator/`), which fetches the threshold as a secret inside a
+ * TEE and delivers its verdict on-chain via a DON-signed report to
+ * `ChainlinkValidatorConsumer`, itself a registered `EpisodeRegistry`
+ * validator. This function's only job is getting the episode itself on-chain
+ * so that workflow has an `episodeId` to validate.
  */
-export async function anchorEpisode(
-  signed: RelayedSignatures,
-  validation: { scoreBps: number; trustLevel: number },
-): Promise<AnchorResult> {
+export async function anchorEpisode(signed: RelayedSignatures): Promise<AnchorResult> {
   const client = wallet();
   if (!client) return { ok: false, txs: [], error: "No relayer key configured." };
 
@@ -191,17 +195,6 @@ export async function anchorEpisode(
       functionName: "episodeByManifest",
       args: [signed.episode.manifestHash],
     })) as bigint;
-
-    // The relayer is also the registry's validator, which §8.3 says plainly is
-    // centralized in the MVP.
-    const validationHash = await client.writeContract({
-      address: ADDRESSES.episodeRegistry,
-      abi: episodeRegistryAbi,
-      functionName: "recordValidation",
-      args: [episodeId, validation.scoreBps, validation.trustLevel],
-    });
-    txs.push({ step: "recordValidation", hash: validationHash });
-    await waitForSuccess(publicClient, validationHash, "recordValidation");
 
     return { ok: true, episodeId: episodeId.toString(), txs };
   } catch (err) {

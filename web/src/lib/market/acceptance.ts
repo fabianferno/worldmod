@@ -54,10 +54,10 @@ export function evaluateEpisode(bounty: Bounty, episode: EpisodeSubmission): Dec
   if (episode.framing === null) {
     reasons.push("Framing could not be measured; no frames were analysed.");
   } else if (episode.framing < bounty.min_framing) {
-    reasons.push(
-      `Hands were well framed in ${(episode.framing * 100).toFixed(0)}% of frames; ` +
-        `the bounty needs ${(bounty.min_framing * 100).toFixed(0)}%.`,
-    );
+    // The bounty's exact bar is confidential (verified against it privately
+    // inside a Chainlink CRE enclave) — the reason says the check failed,
+    // not by how much, so a contributor can't triangulate the threshold.
+    reasons.push("Hands were not well framed enough for this bounty's requirement.");
   }
 
   if (episode.plausibility === null) {
@@ -71,10 +71,7 @@ export function evaluateEpisode(bounty: Bounty, episode: EpisodeSubmission): Dec
       );
     }
   } else if (episode.plausibility < bounty.min_plausibility) {
-    reasons.push(
-      `Motion match was ${(episode.plausibility * 100).toFixed(0)}%; ` +
-        `the bounty needs ${(bounty.min_plausibility * 100).toFixed(0)}%.`,
-    );
+    reasons.push("Motion match was too low for this bounty's requirement.");
   }
 
   const accepted = reasons.length === 0;

@@ -6,9 +6,11 @@
  * them, so a dishonest relayer can withhold a submission but cannot steal or
  * alter one.
  *
- * Called after an episode has been scored, and the score it records on-chain is
- * read from storage rather than taken from the request: a client that could
- * post its own validation score would make the validator ornamental.
+ * Called after an episode has been scored. This route only commits the
+ * episode's manifest hash — it no longer records a validation score itself.
+ * That comparison now happens inside a Chainlink CRE Confidential Workflow
+ * (see `cre/episode-validator/`), which reaches its own verdict against the
+ * bounty's private threshold and writes it on-chain via a DON-signed report.
  */
 
 import { fileStore } from "@/lib/market/store";
@@ -25,9 +27,6 @@ import { anchorEpisode, type RelayedSignatures } from "@/lib/chain/relay";
  * allowance.
  */
 const WITHDRAW_GAS_WEI = BigInt("2000000000000000"); // 0.002 ETH
-
-/** Trust levels as EpisodeRegistry's enum orders them. */
-const TRUST_LEVELS = ["self_reported", "heuristic", "attested", "hardware"];
 
 export async function POST(request: Request) {
   if (!chainEnabled()) {
@@ -65,10 +64,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const scoreBps = Math.round((episode.validation?.plausibility_score ?? 0) * 10_000);
-  const trustLevel = Math.max(0, TRUST_LEVELS.indexOf(episode.trust_level));
-
-  const result = await anchorEpisode(signed, { scoreBps, trustLevel });
+  const result = await anchorEpisode(signed);
 
   const anchor = {
     chain_id: CHAIN.id,
