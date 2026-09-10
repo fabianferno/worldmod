@@ -1,15 +1,20 @@
 "use client";
 
 /**
- * Selfie Check: a medium-assurance liveness/personhood signal, shown as a
- * badge next to Identity — never a gate. §12's reputation score already sets
- * the precedent (computed and displayed, nothing blocked on it); a contributor
- * who has not done a selfie check still records and still gets paid.
+ * Selfie Check: a medium-assurance liveness/personhood signal.
  *
- * What it is FOR here: abuse resistance against scripted/duplicate accounts
+ * Required once, before a contributor's first recording — not a per-episode
+ * re-check (the credential itself isn't shaped for that: it's a standing
+ * fact valid 90 days, not a one-time proof consumed per use). Capture
+ * itself enforces the gate (`capture-client.tsx`); this component is the
+ * same completion flow shown there and, as a standing badge, on the
+ * account page — one implementation, two places it's reachable from.
+ *
+ * What it is FOR: abuse resistance against scripted/duplicate accounts
  * farming bounty payouts, and continuity — the same World App account
- * re-verifying on a new phone reads as the same contributor, not a fresh one.
- * See world/README.md for how that maps onto World's own qualification bar.
+ * re-verifying on a new phone reads as the same contributor, not a fresh
+ * one. See world/README.md for how that maps onto World's own
+ * qualification bar.
  *
  * Tied to whichever address `useSigner()` currently reports — the World App
  * wallet if connected, the device key otherwise — so a verification always
@@ -31,7 +36,7 @@ interface Verification {
   mock: boolean;
 }
 
-export function SelfieCheck() {
+export function SelfieCheck({ onVerified }: { onVerified?: (v: Verification) => void } = {}) {
   const signer = useSigner();
   const [open, setOpen] = useState(false);
   const [rpContext, setRpContext] = useState<{ context: RpContext; mock: boolean } | null>(null);
@@ -45,8 +50,15 @@ export function SelfieCheck() {
     if (!address) return;
     fetch(`/api/world/verify?address=${address}`)
       .then((r) => r.json())
-      .then((data: { verification: Verification | null }) => setVerification(data.verification))
+      .then((data: { verification: Verification | null }) => {
+        setVerification(data.verification);
+        if (data.verification) onVerified?.(data.verification);
+      })
       .catch(() => {});
+    // onVerified is a callback, not reactive state — re-running this effect
+    // whenever the caller passes a fresh function reference would re-fetch
+    // on every render for no reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
 
   const start = useCallback(() => {
@@ -81,8 +93,10 @@ export function SelfieCheck() {
 
   const onSuccess = useCallback(() => {
     if (!address || !rpContext) return;
-    setVerification({ address, verifiedAt: Math.floor(Date.now() / 1000), mock: rpContext.mock });
-  }, [address, rpContext]);
+    const v = { address, verifiedAt: Math.floor(Date.now() / 1000), mock: rpContext.mock };
+    setVerification(v);
+    onVerified?.(v);
+  }, [address, rpContext, onVerified]);
 
   const onError = useCallback((code: IDKitErrorCodes) => {
     setError(`Selfie Check did not complete (${code}).`);
@@ -112,8 +126,9 @@ export function SelfieCheck() {
         <div className="min-w-0">
           <p className="text-sm font-semibold">Selfie Check</p>
           <p className="mt-1 text-xs leading-relaxed text-subtle">
-            A liveness check via World App — a badge on your reputation, not a
-            requirement to earn.
+            A one-time liveness check via World App, required before your
+            first recording. Good for 90 days — you won&rsquo;t need to do it
+            again after this.
           </p>
         </div>
         <button
