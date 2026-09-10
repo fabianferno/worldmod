@@ -85,10 +85,14 @@ export const onCronTrigger = (runtime: TeeRuntime<Config>): string => {
 	const httpClient = new cre.capabilities.HTTPClient()
 
 	// ── Step 2: Fetch secrets inside the enclave ──
-	// The Vault DON releases these only into an attested enclave. One call per
-	// secret — the TypeScript SecretsProvider has no batch variant.
-	const minFraming = Number(runtime.getSecret({ id: secretIds.minFramingId }).result().value)
-	const minPlausibility = Number(runtime.getSecret({ id: secretIds.minPlausibilityId }).result().value)
+	// The Vault DON releases these only into an attested enclave. Fetched in a
+	// single batched call — the shape the confidential-workflows starter
+	// template uses: `getSecrets([...]).result()` returns a map keyed by id.
+	const secrets = runtime
+		.getSecrets([{ id: secretIds.minFramingId }, { id: secretIds.minPlausibilityId }])
+		.result()
+	const minFraming = Number(secrets[secretIds.minFramingId].value)
+	const minPlausibility = Number(secrets[secretIds.minPlausibilityId].value)
 	runtime.log('episode-validator-getsecrets-ok')
 
 	// ── Step 3: Capability calls from inside the enclave ──

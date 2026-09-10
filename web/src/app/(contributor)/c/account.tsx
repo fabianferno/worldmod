@@ -14,6 +14,7 @@
 
 import { useMiniKit } from "@worldcoin/minikit-js/minikit-provider";
 import { useSigner, useWorldAppAuth } from "@/lib/chain/signer-context";
+import { WorldGlyph } from "@/components/world-glyph";
 
 function short(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -21,6 +22,7 @@ function short(address: string): string {
 
 function SignedIn({ address }: { address: string }) {
   const signer = useSigner();
+  const { disconnect } = useWorldAppAuth();
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-card bg-mint px-4 py-3">
@@ -30,6 +32,14 @@ function SignedIn({ address }: { address: string }) {
           {signer ? short(signer.address) : short(address)}
         </p>
       </div>
+      {/* Signing out only forgets this address; World App keeps the wallet and
+          the device key takes over, so nothing recorded is lost. */}
+      <button
+        onClick={disconnect}
+        className="interactive shrink-0 rounded-full bg-mint-ink/10 px-4 py-2.5 text-xs font-semibold text-mint-ink"
+      >
+        Sign out
+      </button>
     </div>
   );
 }
@@ -50,8 +60,9 @@ function SignedOut() {
         <button
           onClick={connect}
           disabled={connecting}
-          className="interactive shrink-0 rounded-full bg-ink px-4 py-2.5 text-xs font-semibold text-on-ink disabled:opacity-40"
+          className="interactive inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 py-2.5 text-xs font-semibold text-on-ink disabled:opacity-40"
         >
+          <WorldGlyph />
           {connecting ? "Connecting…" : "Sign in"}
         </button>
       </div>

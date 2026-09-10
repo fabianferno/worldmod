@@ -21,7 +21,7 @@ type FakeOptions = {
 
 // The public test surface does not yet ship a TEE runtime factory, so we
 // stand up the small slice of `TeeRuntime` the handler actually uses:
-// config, getSecret, callCapability (HTTPClient.sendRequest goes through
+// config, getSecrets, callCapability (HTTPClient.sendRequest goes through
 // this), log, and usingTheDons.
 const makeFakeTeeRuntime = ({
 	bounty = { motion_policy: 'require' },
@@ -34,8 +34,8 @@ const makeFakeTeeRuntime = ({
 
 	const runtime = {
 		config: makeConfig(),
-		getSecret: (request: { id: string }) => ({
-			result: () => ({ id: request.id, value: secretValues[request.id] }),
+		getSecrets: (requests: Array<{ id: string }>) => ({
+			result: () => Object.fromEntries(requests.map((r) => [r.id, { id: r.id, value: secretValues[r.id] }])),
 		}),
 		callCapability: ({ payload }: { payload: { url?: string } }) => {
 			const url = payload.url ?? ''

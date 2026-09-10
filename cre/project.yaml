@@ -5,9 +5,16 @@ staging-settings:
   rpcs:
     - chain-name: ethereum-testnet-sepolia
       url: https://ethereum-sepolia-rpc.publicnode.com
+    # CRE's Workflow Registry + Vault DON operations (link-key, secrets, deploy)
+    # resolve against ethereum-mainnet, even for a testnet workflow — so the CLI
+    # needs a mainnet RPC here too. The confidential write target is still Sepolia.
+    - chain-name: ethereum-mainnet
+      url: https://eth.blockrazor.xyz
 
 # ==========================================================================
 production-settings:
   rpcs:
     - chain-name: ethereum-testnet-sepolia
       url: https://ethereum-sepolia-rpc.publicnode.com
+    - chain-name: ethereum-mainnet
+      url: https://eth.blockrazor.xyz

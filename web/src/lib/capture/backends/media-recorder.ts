@@ -322,6 +322,22 @@ export class MediaRecorderCapture implements CaptureBackend {
       return await navigator.mediaDevices.getUserMedia({ video, audio: opts.audio });
     } catch (err) {
       const name = (err as { name?: string }).name;
+
+      // Some in-app webviews gate the microphone more strictly than the
+      // camera — a combined video+audio request can come back denied even
+      // when camera alone would have been granted. Audio is already
+      // optional throughout this pipeline (no stream is recorded unless a
+      // track actually exists — see finishAudio()), so a mic-only denial
+      // should cost the audio track, not the whole take.
+      if ((name === "NotAllowedError" || name === "SecurityError") && opts.audio) {
+        try {
+          return await navigator.mediaDevices.getUserMedia({ video, audio: false });
+        } catch {
+          // Camera itself is also denied; fall through to the same error
+          // this whole take would have failed with anyway.
+        }
+      }
+
       if (name === "NotAllowedError" || name === "SecurityError") {
         throw new CaptureError("permission_denied", "Camera permission was denied.");
       }

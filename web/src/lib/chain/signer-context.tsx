@@ -39,6 +39,12 @@ import {
 import { MiniKit } from "@worldcoin/minikit-js";
 import { useMiniKit } from "@worldcoin/minikit-js/minikit-provider";
 import { deviceSigner, worldAppSigner, type Signer } from "./signer";
+import {
+  clearWorldAppAddress,
+  loadWorldAppAddress,
+  saveWorldAppAddress,
+  subscribeWorldAppAddress,
+} from "./world-app-store";
 
 const SignerContext = createContext<Signer | null>(null);
 
@@ -52,12 +58,15 @@ interface WorldAppAuthState {
   connecting: boolean;
   /** No-op wherever World App isn't installed — check `useMiniKit().isInstalled` first. */
   connect: () => void;
+  /** Forget the World App address and fall back to the device key. */
+  disconnect: () => void;
 }
 
 const WorldAppAuthContext = createContext<WorldAppAuthState>({
   address: null,
   connecting: false,
   connect: () => {},
+  disconnect: () => {},
 });
 
 /** Drives the "sign in with World App" button — see the file header. */
@@ -74,22 +83,41 @@ function useMounted(): boolean {
   return useSyncExternalStore(noSubscribe, onClient, onServer);
 }
 
+const noAddress = () => null;
+
+/**
+ * The remembered World App address, read reactively. null on the server (no
+ * storage) and whenever nothing is signed in; connect/disconnect re-run this
+ * by writing through the store. Restoring a saved value here is not connecting
+ * — it never calls `walletAuth` — so the header's "connecting is never
+ * automatic" rule still holds.
+ */
+function useStoredAddress(): `0x${string}` | null {
+  return useSyncExternalStore(subscribeWorldAppAddress, loadWorldAppAddress, noAddress);
+}
+
 function WorldAppBacked({ children }: { children: React.ReactNode }) {
   const mounted = useMounted();
-  const [address, setAddress] = useState<`0x${string}` | null>(null);
+  // The signed-in address lives in the store, not React state, so it survives a
+  // reload and every reader updates when connect/disconnect writes it.
+  const address = useStoredAddress();
   const [connecting, setConnecting] = useState(false);
 
   // `walletAuth` needs a fresh, single-use nonce. No server session sits
   // behind it here — the trust boundary is the EIP-712 signature each
   // registry contract itself checks, same as it was with Privy — so a
   // client-generated one is enough to satisfy the command's own replay
-  // protection rather than to anchor a login session.
+  // protection rather than to anchor a login session. On success the address
+  // is written to the store, which re-renders this provider through
+  // `useStoredAddress`.
   const connect = useCallback(() => {
     if (connecting || address) return;
     setConnecting(true);
     MiniKit.walletAuth({ nonce: crypto.randomUUID().replace(/-/g, "") })
       .then((result) => {
-        if ("address" in result.data) setAddress(result.data.address as `0x${string}`);
+        if ("address" in result.data) {
+          saveWorldAppAddress(result.data.address as `0x${string}`);
+        }
       })
       .catch(() => {
         // Declined or failed — stays on the device key below.
@@ -97,12 +125,22 @@ function WorldAppBacked({ children }: { children: React.ReactNode }) {
       .finally(() => setConnecting(false));
   }, [connecting, address]);
 
+  // Signing out drops back to the device key, which always exists. World App
+  // keeps the wallet itself; this only forgets that we were using it, so a
+  // later connect re-prompts exactly as the first one did.
+  const disconnect = useCallback(() => {
+    clearWorldAppAddress();
+  }, []);
+
   const signer = useMemo(() => {
     if (!mounted) return null;
     return address ? worldAppSigner(address) : deviceSigner();
   }, [mounted, address]);
 
-  const authState = useMemo(() => ({ address, connecting, connect }), [address, connecting, connect]);
+  const authState = useMemo(
+    () => ({ address, connecting, connect, disconnect }),
+    [address, connecting, connect, disconnect],
+  );
 
   return (
     <WorldAppAuthContext.Provider value={authState}>

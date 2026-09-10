@@ -23,6 +23,7 @@ import {
 import { anchorEpisode } from "@/lib/chain/anchor-client";
 import { useSigner } from "@/lib/chain/signer-context";
 import { AccountBar } from "./account";
+import { PredictiveArcBackdrop } from "@/app/_components/PredictiveArcBackdrop";
 import { SelfieCheck } from "./account/selfie-check";
 import { buildEpisodeManifest, toSubmission, type SelfReport } from "@/lib/episode/build";
 import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/episode/queue";
@@ -590,7 +591,16 @@ export default function CaptureClient() {
     }
   }, [fail, finish, shareLocation]);
 
-  /** The only tap in the flow — iOS refuses motion permission without a gesture. */
+  /**
+   * The only tap in the flow — both the camera and iOS motion permission
+   * need a direct user gesture to prompt at all, and some in-app webviews
+   * (World App's included) are stricter than a regular mobile browser about
+   * how long that "this came from a tap" context survives across an
+   * intervening await. `getUserMedia` goes first, right up against the tap,
+   * for the harder-to-recover-from permission; the motion prompt — which
+   * degrades gracefully to `lacksMotionEvidence` rather than blocking
+   * capture entirely — comes second, however much gesture context is left.
+   */
   const begin = useCallback(async () => {
     setError(null);
     setCapture(null);
@@ -598,14 +608,14 @@ export default function CaptureClient() {
     setPhase("preparing");
 
     try {
-      setMotion(await requestMotionPermission());
-
       const backend = backendRef.current!;
       const stream = await backend.preview({ maxDurationMs: EPISODE_MS, audio: true });
       if (stream && videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
       }
+
+      setMotion(await requestMotionPermission());
       setCaps(await backend.probe());
       await acquireWakeLock();
 
@@ -734,15 +744,24 @@ export default function CaptureClient() {
         <LiveOverlay hands={liveHands} guide={GUIDE_REGION} showGuide={live} />
         {phase === "recording" ? <PredictionPanel prediction={livePrediction} /> : null}
 
+        {/* Ambient motion while the viewfinder is still empty — the landing
+            page's arc, in dark mode. It unmounts the instant a take begins, so
+            it never paints over live video or the overlays above. */}
+        {phase === "idle" ? <PredictiveArcBackdrop /> : null}
+
         {phase === "idle" ? (
           <div className="on-ink absolute inset-x-0 top-0 flex flex-col items-center gap-3 px-8 pt-[28%] text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/8 text-on-ink-muted">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-ink/45 text-on-ink-muted backdrop-blur-sm">
               <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden>
                 <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.6" />
                 <circle cx="12" cy="12" r="3.4" stroke="currentColor" strokeWidth="1.6" />
               </svg>
             </span>
-            <p className="text-sm leading-relaxed text-on-ink-muted">
+            {/* Chip backing, not bare text: the arc sweeps straight through this
+                zone, and muted copy laid directly over the emerald was washed
+                out to the point of vanishing. The scrim guarantees contrast
+                while leaving the arc visible around it. */}
+            <p className="max-w-[26ch] rounded-2xl bg-ink/55 px-3.5 py-2 text-sm leading-relaxed text-on-ink backdrop-blur-sm">
               Your camera opens when you start. Nothing is recorded until then.
             </p>
           </div>

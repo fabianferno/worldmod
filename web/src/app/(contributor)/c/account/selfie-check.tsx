@@ -148,7 +148,7 @@ export function SelfieCheck({ onVerified }: { onVerified?: (v: Verification) => 
           action={ACTION}
           rp_context={rpContext.context}
           allow_legacy_proofs
-          environment="sandbox"
+          environment="production"
           preset={selfieCheckLegacy({ signal: address })}
           handleVerify={handleVerify}
           onSuccess={onSuccess}

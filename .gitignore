@@ -35,3 +35,7 @@ hedera/.env
 # Same pattern for World — credentials tend to get pasted into this one too
 world.md
 .gstack/
+
+# October (generated — context bus / browser MCP)
+.codex/config.toml
+.codex/hooks.json

@@ -10,12 +10,14 @@
       "EpisodeRegistry": "0xA5dB7Ad4BcCA2E2a189c257606c4B96AD32b563F",
       "BountyEscrow": "0x0Be163d4795D77dC8CdB2cAedF08e213ADef27D6",
       "DatasetRegistry": "0x1df8feDf50394A9e0f78cb0EF8F187D587812cbB",
-      "FederatedRound": "0x65297C410B96C3604b0A41921e355B24E6cf782e"
+      "FederatedRound": "0x65297C410B96C3604b0A41921e355B24E6cf782e",
+      "ChainlinkValidatorConsumer": "0xe0ca68241159A635Bc383f79c7095dC09d9C3dde"
     },
     "notes": [
       "USDC is Circle's real testnet token, not one we deployed.",
       "The deployer is the episode registry's owner and its first validator, and the escrow's oracle and treasury.",
       "BountyEscrow was redeployed on 2026-09-04 to add settleUtility; the first deployment at 0x583A5Cb7CF570F11CC24be7c4eB74F500Dc4B3b5 could not pay out its utility pool and is abandoned.",
+      "ChainlinkValidatorConsumer (2026-09-12) is the CRE Confidential Workflow's on-chain receiver, deployed via script/DeployChainlinkValidatorConsumer.s.sol and registered as an EpisodeRegistry validator (setValidator = true) in the same broadcast. It accepts TWO forwarders, mirroring the reference perjury VerdictSink: the production Sepolia KeystoneForwarder 0xF8344CFd5c43616a4366C34E3EEE75af79a74482 (forwarder) and the tenant's mock forwarder 0x15fC6ae953E024d975e77382eEeC56A9101f9F88 (altForwarder), both confirmed against this org via `cre workflow supported-chains`. This lets a report land whether delivered by the live DON or a mock/test path. Either slot is rotatable by the owner (setForwarder / setAltForwarder). A prior single-forwarder consumer at 0xDC859C3B803F82ABD180e7AFBb55718F87E48443 was superseded by this one and de-registered as a validator (isValidator = false) on the same day.",
       "Kept as the rollback fallback network after the Hedera migration (see \"296\" below) — not deprecated, not deleted."
     ]
   },

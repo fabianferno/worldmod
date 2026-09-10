@@ -9,7 +9,7 @@
   "evms": [
     {
       "chainSelectorName": "ethereum-testnet-sepolia",
-      "consumerAddress": "0x0000000000000000000000000000000000000000",
+      "consumerAddress": "0xe0ca68241159A635Bc383f79c7095dC09d9C3dde",
       "gasLimit": "500000"
     }
   ]

@@ -11,13 +11,14 @@
 
 import { useMiniKit } from "@worldcoin/minikit-js/minikit-provider";
 import { useSigner, useWorldAppAuth } from "@/lib/chain/signer-context";
+import { WorldGlyph } from "@/components/world-glyph";
 
 function short(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
 function Inner() {
-  const { address, connecting, connect } = useWorldAppAuth();
+  const { address, connecting, connect, disconnect } = useWorldAppAuth();
   const signer = useSigner();
 
   if (address) {
@@ -31,6 +32,14 @@ function Inner() {
               comes back.
             </p>
           </div>
+          {/* Recoverable, so signing out is safe: this only forgets the address
+              on this phone, and the device key signs until you connect again. */}
+          <button
+            onClick={disconnect}
+            className="interactive shrink-0 rounded-full bg-mint-ink/10 px-4 py-2.5 text-xs font-semibold text-mint-ink"
+          >
+            Sign out
+          </button>
         </div>
       </div>
     );
@@ -49,8 +58,9 @@ function Inner() {
         <button
           onClick={connect}
           disabled={connecting}
-          className="interactive shrink-0 rounded-full bg-ink px-4 py-2.5 text-xs font-semibold text-on-ink disabled:opacity-40"
+          className="interactive inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 py-2.5 text-xs font-semibold text-on-ink disabled:opacity-40"
         >
+          <WorldGlyph />
           {connecting ? "Connecting…" : "Sign in"}
         </button>
       </div>

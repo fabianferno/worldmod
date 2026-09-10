@@ -16,6 +16,7 @@ contract ChainlinkValidatorConsumerTest is Test {
     uint256 internal contributorKey = 0xA11CE;
     address internal contributor;
     address internal forwarder = address(0xF0F0);
+    address internal altForwarder = address(0xA17E);
     address internal outsider = address(0xDEAD);
 
     uint256 internal assetId;
@@ -29,7 +30,7 @@ contract ChainlinkValidatorConsumerTest is Test {
         entities = new EntityRegistry();
         assets = new AssetRegistry(entities);
         episodes = new EpisodeRegistry(assets);
-        consumer = new ChainlinkValidatorConsumer(episodes, forwarder);
+        consumer = new ChainlinkValidatorConsumer(episodes, forwarder, altForwarder);
         episodes.setValidator(address(consumer), true);
 
         vm.startPrank(contributor);
@@ -77,6 +78,45 @@ contract ChainlinkValidatorConsumerTest is Test {
         vm.prank(outsider);
         vm.expectRevert(ChainlinkValidatorConsumer.NotOwner.selector);
         consumer.setForwarder(outsider);
+    }
+
+    function test_altForwarderReportRecordsValidation() public {
+        vm.prank(altForwarder);
+        consumer.onReport("", _report(episodeId, 8000, uint8(EpisodeRegistry.TrustLevel.Heuristic)));
+
+        EpisodeRegistry.Validation memory v = episodes.getValidation(episodeId);
+        assertEq(v.score, 8000);
+        assertTrue(v.recorded);
+    }
+
+    function test_ownerCanRotateAltForwarder() public {
+        address newAlt = address(0xBEEF);
+        consumer.setAltForwarder(newAlt);
+
+        vm.prank(altForwarder);
+        vm.expectRevert(ChainlinkValidatorConsumer.NotForwarder.selector);
+        consumer.onReport("", _report(episodeId, 9000, 0));
+
+        vm.prank(newAlt);
+        consumer.onReport("", _report(episodeId, 9000, 0));
+        assertTrue(episodes.getValidation(episodeId).recorded);
+    }
+
+    function test_zeroAltForwarderNeverAuthorizes() public {
+        // A consumer with no alternate forwarder must not let address(0) — or
+        // anyone spoofing an unset slot — deliver a report.
+        ChainlinkValidatorConsumer solo = new ChainlinkValidatorConsumer(episodes, forwarder, address(0));
+        episodes.setValidator(address(solo), true);
+
+        vm.prank(address(0));
+        vm.expectRevert(ChainlinkValidatorConsumer.NotForwarder.selector);
+        solo.onReport("", _report(episodeId, 9000, 0));
+    }
+
+    function test_nonOwnerCannotRotateAltForwarder() public {
+        vm.prank(outsider);
+        vm.expectRevert(ChainlinkValidatorConsumer.NotOwner.selector);
+        consumer.setAltForwarder(outsider);
     }
 
     function test_supportsInterface() public view {

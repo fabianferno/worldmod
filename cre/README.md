@@ -61,7 +61,7 @@ installed `cre` CLI (`v1.33.0`), not guessed from docs.
 
 - **One bounty per deployed workflow instance** (`bountyId` in `config.staging.json`/`config.production.json`). Multi-bounty support would need per-bounty dynamic secret ids — a real next step, not done here.
 - **Utility scoring is out of scope.** `BountyEscrow.settleUtility` has no callers anywhere in the app; wiring it up would be new product functionality, not confidentializing something that already exists.
-- **The on-chain write path is proven by unit tests and code review, not yet by a real broadcast.** The simulation run below is genuine and live (real TEE simulator, real secret fetch, real HTTP calls into the running app) but exercised the *reject* path, because the one real episode in the local store scores below the confidential bar. `workflow.test.ts` covers the pass/fail decision logic directly (`passesConfidentialBar`) for both branches. A real on-chain `writeReport` would need `consumerAddress` pointed at a deployed `ChainlinkValidatorConsumer` and a funded signing key — deliberately not done automatically, since broadcasting a real transaction is a deliberate action, not a side effect of running a demo.
+- **The on-chain receiver is live and fully wired; only the CRE-side `writeReport` broadcast remains.** `ChainlinkValidatorConsumer` is deployed on Sepolia at [`0xe0ca68241159A635Bc383f79c7095dC09d9C3dde`](https://sepolia.etherscan.io/address/0xe0ca68241159A635Bc383f79c7095dC09d9C3dde), registered as an `EpisodeRegistry` validator (`isValidator` = true), and wired into both configs' `evms[0].consumerAddress` — so the pass path no longer targets a zero address. It accepts **two** forwarders, mirroring the reference [`perjury`](https://github.com/krishnan74/perjury) `VerdictSink`: the production Sepolia `KeystoneForwarder` [`0xF8344CFd5c43616a4366C34E3EEE75af79a74482`](https://sepolia.etherscan.io/address/0xF8344CFd5c43616a4366C34E3EEE75af79a74482) and the tenant's mock forwarder [`0x15fC6ae953E024d975e77382eEeC56A9101f9F88`](https://sepolia.etherscan.io/address/0x15fC6ae953E024d975e77382eEeC56A9101f9F88), both confirmed against this org with `cre workflow supported-chains`. A report therefore lands whether delivered by the live DON or a mock/test path, and either slot is owner-rotatable (`setForwarder` / `setAltForwarder`). The contract shape otherwise matches Chainlink's official `ReceiverTemplate` (`IReceiver` + `onReport(bytes,bytes)` + forwarder gating + ERC-165). The only thing left for a real `writeReport` is deploying the workflow itself live to the DON (the on-chain CRE Workflow Registry is mainnet-anchored, so link-key + deploy need a funded mainnet owner key — `cre account access` already reports deploy access enabled); until then the simulation below exercises both branches — `getSecrets` in-enclave, reject with no on-chain call, and the pass path reaching `writeReport` through the simulator's mock forwarder.
 
 ## Running the simulation
 
@@ -116,9 +116,11 @@ the confidential bar of `0.7` (from `SECRET_MIN_FRAMING` in `.env`, matching
 `web/src/lib/market/seed.ts`'s bounty) — correctly rejected, entirely inside
 the enclave, with **no on-chain call attempted** for the reject case. Lower
 `SECRET_MIN_FRAMING`/`SECRET_MIN_PLAUSIBILITY` in `.env` below `0.512`/`0.714`
-to see the pass path attempt a real `writeReport` instead (it will fail
-against the placeholder zero-address `consumerAddress` in
-`config.staging.json` until a real deployment address is filled in).
+to see the pass path attempt a real `writeReport` against the deployed
+`ChainlinkValidatorConsumer` now wired into `config.staging.json`. On a live
+DON deployment that write is delivered by the Sepolia `KeystoneForwarder`
+(`0xF8344CFd5c43616a4366C34E3EEE75af79a74482`), which the consumer's `onReport`
+already trusts; the local simulator routes it through a mock forwarder instead.
 
 ### Unit tests
 
@@ -148,10 +150,25 @@ the Vault DON and released only into the attested enclave.
 
 ## Deploying for real
 
-Deployment needs Confidential Workflows private-beta access
-(`cre account access` — requested via Chainlink's self-serve form; per their
-team, requests take 24–48 hours). Once approved:
+The on-chain receiver is already deployed and wired (see "Scope" above):
 
-1. Deploy `ChainlinkValidatorConsumer` (constructor: `EpisodeRegistry` address, forwarder address) and call `EpisodeRegistry.setValidator(consumer, true)`.
-2. Set `evms[0].consumerAddress` in `config.staging.json` to the deployed address.
-3. `cre workflow deploy episode-validator --target staging-settings`.
+1. ✅ `ChainlinkValidatorConsumer` is deployed on Sepolia and registered as an
+   `EpisodeRegistry` validator, via
+   `forge script script/DeployChainlinkValidatorConsumer.s.sol --broadcast --sig "run(address,address,address)" <episodeRegistry> <forwarder> <altForwarder>`
+   (see `contracts/deployments.json`).
+2. ✅ `evms[0].consumerAddress` in both config files points at it.
+3. ✅ Its two forwarders are set to the real Sepolia `KeystoneForwarder`
+   (`0xF8344CFd5c43616a4366C34E3EEE75af79a74482`) and the tenant mock forwarder
+   (`0x15fC6ae953E024d975e77382eEeC56A9101f9F88`), both confirmed against this
+   org with `cre workflow supported-chains`. Repoint either with
+   `consumer.setForwarder(...)` / `consumer.setAltForwarder(...)` if a value
+   ever changes.
+
+What still needs a funded mainnet owner key (the CRE Workflow Registry is
+anchored on ethereum-mainnet, so `cre account link-key` and the deploy both
+broadcast a small mainnet tx — ~0.00001 ETH at current gas; `cre account
+access` already reports deploy access enabled):
+
+4. Link the workflow owner: `cre account link-key --target staging-settings`.
+5. Upload secrets to the Vault DON: `cre secrets create secrets.yaml --target staging-settings`.
+6. `cre workflow deploy episode-validator --target staging-settings`.
