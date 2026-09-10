@@ -20,7 +20,6 @@ Full specification: [`product-spec.md`](product-spec.md).
 | [`web/`](web) | The PWA — contributor capture, buyer dashboard, validator, marketplace API |
 | [`contracts/`](contracts) | Solidity registries and escrow (Foundry) |
 | [`trainer/`](trainer) | World model, scaling curve, federated rounds (PyTorch) |
-| [`subgraph/`](subgraph) | The provenance graph, indexed from the six contracts |
 | [`docs/superpowers/specs/`](docs/superpowers/specs) | Design document for the PWA |
 
 ## Running it
