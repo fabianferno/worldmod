@@ -18,9 +18,13 @@ Full specification: [`product-spec.md`](product-spec.md).
 | Path | What it is |
 |---|---|
 | [`web/`](web) | The PWA — contributor capture, buyer dashboard, validator, marketplace API |
-| [`contracts/`](contracts) | Solidity registries and escrow (Foundry) |
+| [`contracts/`](contracts) | Solidity registries and escrow (Foundry), deployed to Sepolia and Hedera testnet |
 | [`trainer/`](trainer) | World model, scaling curve, federated rounds (PyTorch) |
+| [`cre/`](cre) | Chainlink CRE Confidential Workflow — episode validation against a private threshold |
+| [`hedera/`](hedera) | Standalone Hedera scripts: Asset Tokenization Studio bond issuance, KYC, coupon ops |
+| [`world/`](world) | World App mini app notes — MiniKit wallet auth, Selfie Check |
 | [`docs/superpowers/specs/`](docs/superpowers/specs) | Design document for the PWA |
+| [`ENV_VARS.md`](ENV_VARS.md) | Every environment variable this repo uses, and why |
 
 ## Running it
 
@@ -89,15 +93,22 @@ client polls.
 skeleton and a live world-model overlay (below). Sealed manifests, verified
 server-side from the uploaded bytes. Server-side scoring across every frame,
 with near-duplicate detection. Marketplace with bounties, acceptance reasons
-and licensed download. Real USDC moving on Ethereum Sepolia: a bounty escrows
-its budget before it is listed, acceptance releases the per-episode rate, and
-a contributor withdraws with their own signature. All six §11 contracts are
-live (see [`contracts/deployments.json`](contracts/deployments.json)),
-including relayed submission so a contributor never needs gas of their own.
-Every episode gets a real IPFS content address, pinned to a local node. A
-subgraph indexes all six contracts, built and ready to deploy. A world model
-and federated rounds over the real episodes, with a working account page for
-a contributor to see their own history and collect their own balance.
+and licensed download. Real USDC moving on Ethereum Sepolia (default) or
+Hedera testnet, toggled by `NEXT_PUBLIC_ACTIVE_CHAIN` (see `web/src/lib/chain/config.ts`):
+a bounty escrows its budget before it is listed, acceptance releases the
+per-episode rate, and a contributor withdraws with their own signature. All
+six §11 contracts are live on both chains (see
+[`contracts/deployments.json`](contracts/deployments.json)), including
+relayed submission so a contributor never needs gas of their own. Every
+episode gets a real IPFS content address, pinned to a local node. A world
+model and federated rounds over the real episodes, with a working account
+page for a contributor to see their own history and collect their own
+balance. Episode validation runs inside a Chainlink CRE Confidential
+Workflow — see [`cre/README.md`](cre/README.md) — so a buyer's acceptance
+threshold is compared against an episode's score inside a TEE, never in
+plaintext. The app itself is a World App mini app: wallet auth and identity
+via MiniKit, a one-time Selfie Check gate before a contributor's first
+recording (see [`world/README.md`](world/README.md)).
 
 **Measured and not good enough yet.** The world model does not beat a
 "predict no change" baseline. Five episodes across three contributors now,
@@ -106,8 +117,6 @@ scoring to compute something for the first time — but still far short of
 being enough data for the model to actually work. The curve falls steeply
 enough that it should cross the baseline somewhere near 8–12 episodes, and
 that is an extrapolation labelled as one, not a promise.
-
-**Not deployed.** The subgraph — built, compiles, needs a Graph Studio key.
 
 **Not durable.** IPFS pinning runs on one local node. The content addresses
 are real and independently verified against kubo's own output; nothing
@@ -185,7 +194,10 @@ Each is deliberate, and the reasoning lives next to the code.
 - **`fps_observed` is nullable.** Safari cannot report it at signing time, and a
   placeholder zero inside a signed manifest is a number nobody measured.
 - **Capability bitmask** instead of §11's `getEligibleAssets` loop, which is
-  unbounded and eventually uncallable. Enumeration belongs in the subgraph.
+  unbounded and eventually uncallable. Enumeration belongs in an off-chain
+  indexer, not on-chain iteration — the Graph subgraph filled that role
+  briefly but only ever indexed Sepolia, and was dropped with the Hedera
+  migration rather than kept as unwired dead code.
 - **Utility holds out contributors, not episodes.** §8.3's random split lets a
   contributor be paid for correlating with their own evaluation clips.
 - **Bounties declare a motion policy.** Seated tasks barely rotate the head, so
