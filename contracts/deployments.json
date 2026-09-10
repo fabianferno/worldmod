@@ -15,29 +15,7 @@
     "notes": [
       "USDC is Circle's real testnet token, not one we deployed.",
       "The deployer is the episode registry's owner and its first validator, and the escrow's oracle and treasury.",
-      "BountyEscrow was redeployed on 2026-09-04 to add settleUtility; the first deployment at 0x583A5Cb7CF570F11CC24be7c4eB74F500Dc4B3b5 could not pay out its utility pool and is abandoned.",
-      "Kept as the rollback fallback network after the Hedera migration (see \"296\" below) — not deprecated, not deleted."
-    ]
-  },
-  "296": {
-    "network": "Hedera Testnet",
-    "deployedAt": "2026-09-09",
-    "deployer": "0xE8289A12Ee0B460C51936B0A7782B69840104236",
-    "usdc": "0x0000000000000000000000000000000000068cDa",
-    "usdcHederaId": "0.0.429274",
-    "contracts": {
-      "EntityRegistry": "0xCa4B07748704dDD01C3F22108D7f3eeAE2799B5a",
-      "AssetRegistry": "0x81c7cd9156215db1AB704C2d9cDbEEE1ba460F9A",
-      "EpisodeRegistry": "0x328C505E7aC99C966f09275aAE8F4265A5612dAb",
-      "BountyEscrow": "0x455b3DD688d92DC9eE0F0A26301A1E356123Cb87",
-      "DatasetRegistry": "0xEe83C802Bb7E0B999bd74E57452752be4b7b667e",
-      "FederatedRound": "0xd48Fa193303260061af52cF4232f81a26A994aDE"
-    },
-    "notes": [
-      "USDC is Circle's real Hedera testnet token (HTS 0.0.429274, not a plain ERC-20) — same non-mock principle as the Sepolia deployment.",
-      "Deployed via script/deploy-hedera.mjs (raw viem over Hashio), not `forge script` — forge's local EVM (revm) has no implementation of Hedera's HTS precompile (0x167), which BountyEscrow/DatasetRegistry/FederatedRound now call in their own constructors to self-associate with USDC. A real forge script broadcast against these three failed locally with InvalidFEOpcode before sending any transaction; EntityRegistry/AssetRegistry/EpisodeRegistry (which never touch 0x167) deployed fine through forge in the same run. See script/deploy-hedera.mjs's header.",
-      "BountyEscrow/DatasetRegistry/FederatedRound each self-associated with USDC in their constructors — confirmed independently via the mirror node (GET /accounts/{id}/tokens?token.id=0.0.429274 for each), not merely assumed from the deploy succeeding.",
-      "The deployer is the episode registry's owner and its first validator, and the escrow's oracle and treasury — same convention as Sepolia."
+      "BountyEscrow was redeployed on 2026-09-04 to add settleUtility; the first deployment at 0x583A5Cb7CF570F11CC24be7c4eB74F500Dc4B3b5 could not pay out its utility pool and is abandoned."
     ]
   }
 }

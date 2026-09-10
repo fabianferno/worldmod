@@ -1,16 +1,5 @@
 # Subgraph
 
-**Status: not wired into `web/`, and the contracts it indexes have since
-migrated to Hedera testnet** (see the repo's Sepolia-to-Hedera migration
-plan). Left in place rather than deleted — it's real, working code, and
-removing it costs a working reference for no benefit. `web/src/lib/hedera/
-lineage.ts` covers the same product-spec §6.1 requirement a different way:
-live queries against Hedera's mirror node (no subgraph-equivalent indexer
-exists there, so this was never a like-for-like port), decoded with the
-same event definitions this subgraph's own mapping handlers
-(`src/*.ts`) already document — that's the reference for which events
-matter and how they join, even on the new path.
-
 The provenance graph, indexed from the six contracts on Ethereum Sepolia.
 
 product-spec §6.1 claims lineage as *"a queryable graph"* and demo scene 6 closes

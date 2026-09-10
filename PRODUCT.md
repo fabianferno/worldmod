@@ -37,9 +37,8 @@ scaling curve. Desk-bound, dashboard-shaped.
   nothing may present as lost.
 - Scoring takes about a minute and survives a page reload. Anchoring takes longer
   and is never allowed to block a result.
-- Identity is a device key by default and a World App wallet if connected. The
-  difference is *recoverability*, and the copy must never flatten it into
-  "wallet connected".
+- Identity is a device key: it signs and gets paid, but is not recoverable —
+  clearing site data loses it, and the copy must say so plainly.
 - Installed PWA, iOS included: safe-area insets, no pinch-zoom on the viewfinder.
 
 ## Brand commitments

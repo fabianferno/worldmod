@@ -11,11 +11,11 @@ import {FederatedRound, IERC20Minimal as IERC20MinimalFederated} from "../src/Fe
  * Deploy.s.sol never covered. They were deployed once by hand, undocumented
  * (contracts/deployments.json's Sepolia entry postdates the other four by a
  * week, with no forge script or command anywhere accounting for how). This
- * closes that gap for real, not just for the Hedera migration: the same
- * script works for any chain usdcFor() knows about.
+ * closes that gap for real: the same script works for any chain usdcFor()
+ * knows about.
  *
  *   forge script script/DeployDatasetsAndFederation.s.sol \
- *     --rpc-url hedera_testnet --broadcast --verify \
+ *     --rpc-url sepolia --broadcast --verify \
  *     --sig "run(address)" <episodeRegistryAddress>
  */
 contract DeployDatasetsAndFederation is Script {
@@ -24,7 +24,6 @@ contract DeployDatasetsAndFederation is Script {
     /// FederatedRound.sol rather than imported from a shared file. Keep the
     /// two lists in sync if a new chain is added.
     function usdcFor(uint256 chainId) public pure returns (address) {
-        if (chainId == 296) return 0x0000000000000000000000000000000000068cDa; // Hedera testnet (HTS 0.0.429274)
         if (chainId == 11155111) return 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238; // Ethereum Sepolia
         if (chainId == 84532) return 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // Base Sepolia
         if (chainId == 421614) return 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d; // Arbitrum Sepolia
@@ -57,9 +56,5 @@ contract DeployDatasetsAndFederation is Script {
         console.log("");
         console.log("DatasetRegistry", address(datasets));
         console.log("FederatedRound ", address(federated));
-        console.log("");
-        console.log("Both self-associate with USDC in their own constructors on");
-        console.log("chains with the Hedera Token Service precompile (0x167), a");
-        console.log("no-op elsewhere. Confirm via the mirror node, don't assume.");
     }
 }

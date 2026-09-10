@@ -12,14 +12,7 @@ libs = ["lib"]
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
 [rpc_endpoints]
-# Hedera testnet's JSON-RPC relay (Hashio). Chain id 296 — proven live in
-# hedera/spike-viem-write.mjs / spike-hts-association*.mjs before this was
-# ever wired into a real deploy target.
-hedera_testnet = "${HEDERA_TESTNET_RPC_URL}"
+sepolia = "${SEPOLIA_RPC_URL}"
 
-# Hedera has no Etherscan-equivalent — verification is Sourcify, driven by
-# `forge verify-contract --verifier sourcify --chain-id 296` CLI flags, not
-# an [etherscan] table entry (that table is Etherscan-API-specific and
-# doesn't apply here). See hedera/verify-contract.mjs for the pattern this
-# project already proved against Hedera's Sourcify instance for the
-# separate ATS Bond work.
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 11155111 }

@@ -31,20 +31,20 @@ cp .env.example .env                 # then fill in PRIVATE_KEY
 
 ```sh
 forge test                                   # unit tests, offline
-BASE_SEPOLIA_RPC_URL=https://sepolia.base.org forge test   # + escrow against real USDC
+SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com forge test   # + escrow against real USDC
 ```
 
-Escrow tests run against Circle's real USDC on a Base Sepolia fork rather than
-a mock. That matters: real USDC reverts rather than returning false, and it is
-an upgradeable proxy. The fork tests skip themselves without an RPC so the
-suite still runs offline.
+Escrow tests run against Circle's real USDC on an Ethereum Sepolia fork rather
+than a mock. That matters: real USDC reverts rather than returning false, and
+it is an upgradeable proxy. The fork tests skip themselves without an RPC so
+the suite still runs offline.
 
 ## Deploy
 
-Fund the deployer with Base Sepolia ETH first, then:
+Fund the deployer with Sepolia ETH first, then:
 
 ```sh
-forge script script/Deploy.s.sol --rpc-url base_sepolia --broadcast --verify
+forge script script/Deploy.s.sol --rpc-url sepolia --broadcast --verify
 ```
 
 No token is deployed. The script points at Circle's real USDC for the target

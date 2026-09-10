@@ -22,7 +22,6 @@ import {
 } from "@/lib/capture";
 import { anchorEpisode } from "@/lib/chain/anchor-client";
 import { useSigner } from "@/lib/chain/signer-context";
-import { AccountBar } from "./account";
 import { buildEpisodeManifest, toSubmission, type SelfReport } from "@/lib/episode/build";
 import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/episode/queue";
 import type { Bounty, StoredEpisode } from "@/lib/market/types";
@@ -153,11 +152,7 @@ export default function CaptureClient() {
 
   const secure = useSyncExternalStore(noSubscribe, secureSnapshot, secureServerSnapshot);
 
-  /**
-   * The identity this episode is attributed to — the World App wallet where
-   * someone has connected, the device key otherwise. Both sign; only one
-   * survives a lost phone.
-   */
+  /** The device key this episode is signed and attributed to. */
   const signer = useSigner();
   // Null until the client mounts. Every caller runs from an event handler or a
   // post-verdict effect, by which point it is set.
@@ -809,10 +804,6 @@ export default function CaptureClient() {
                 ))}
               </div>
             ) : null}
-
-            <div className="mb-3">
-              <AccountBar />
-            </div>
 
             {/* Held until the identity is settled. Recording first and
                 resolving the signer afterwards is how three takes from one

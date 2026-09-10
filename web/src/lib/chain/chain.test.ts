@@ -12,7 +12,7 @@ import {
   entityRegistryAbi,
   episodeRegistryAbi,
 } from "./abi";
-import { ACTIVE_CHAIN, ADDRESSES } from "./config";
+import { ADDRESSES } from "./config";
 
 /**
  * The ABIs in this directory are hand-written, and a hand-written ABI that has
@@ -117,10 +117,7 @@ describe("deployed addresses", () => {
     const path = join(process.cwd(), "..", "contracts", "deployments.json");
     if (!existsSync(path)) return;
 
-    // "11155111" (Sepolia) or "296" (Hedera testnet) — whichever config.ts
-    // is actually pointed at, not hardcoded to one network.
-    const chainId = ACTIVE_CHAIN === "hedera" ? "296" : "11155111";
-    const deployed = JSON.parse(readFileSync(path, "utf8"))[chainId].contracts;
+    const deployed = JSON.parse(readFileSync(path, "utf8"))["11155111"].contracts;
     expect(ADDRESSES.entityRegistry).toBe(deployed.EntityRegistry);
     expect(ADDRESSES.assetRegistry).toBe(deployed.AssetRegistry);
     expect(ADDRESSES.episodeRegistry).toBe(deployed.EpisodeRegistry);

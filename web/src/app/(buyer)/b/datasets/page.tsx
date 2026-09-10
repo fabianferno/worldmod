@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { ADDRESSES, CHAIN, explorerAddress } from "@/lib/chain/config";
-import { readDatasetRegistry, datasetRegistryCount } from "@/lib/hedera/read-dataset-registry";
-import { hederaConfigured } from "@/lib/hedera/issue";
-import { IssueBondButton } from "./issue-bond-button";
+import { readDatasetRegistry, datasetRegistryCount } from "@/lib/chain/datasets";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Datasets — World Mod",
-  description: "Datasets minted on-chain, tokenizable as Hedera Bonds.",
+  description: "Datasets minted on-chain from validated episodes.",
 };
 
 const usd = (cents6: bigint) => `$${(Number(cents6) / 1_000_000).toFixed(2)}`;
@@ -17,7 +15,6 @@ export default async function DatasetsPage() {
   const count = await datasetRegistryCount();
   const ids = Array.from({ length: count }, (_, i) => i + 1);
   const datasets = await Promise.all(ids.map((id) => readDatasetRegistry(id)));
-  const configured = hederaConfigured();
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-5 py-8">
@@ -29,20 +26,9 @@ export default async function DatasetsPage() {
         <h1 className="text-2xl font-semibold">Datasets</h1>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
           Every dataset here is minted on {CHAIN.name}&rsquo;s <code className="text-xs">DatasetRegistry</code> from
-          episodes already validated by World Mod&rsquo;s own flow-vs-gyro check. A dataset can also be
-          tokenized as a Hedera Bond — a licence instrument, not a copy of the data — so it can be
-          held, transferred and later paid against on Hedera testnet as part of the Tokenization
-          of Anything track.
+          episodes already validated by World Mod&rsquo;s own flow-vs-gyro check.
         </p>
       </header>
-
-      {!configured ? (
-        <p className="mt-5 rounded-2xl border border-caution/30 bg-caution/5 p-4 text-sm leading-relaxed text-caution">
-          Hedera issuance is not configured on this deployment — the &ldquo;Issue as Hedera Bond&rdquo; action
-          will not appear until <code className="text-xs">HEDERA_ACCOUNT_ID</code> and{" "}
-          <code className="text-xs">HEDERA_PRIVATE_KEY</code> are set.
-        </p>
-      ) : null}
 
       {datasets.length === 0 ? (
         <p className="mt-6 rounded-2xl border border-dashed border-line p-8 text-center text-sm text-subtle">
@@ -77,8 +63,6 @@ export default async function DatasetsPage() {
                   {dataset.metadataURI}
                 </p>
               ) : null}
-
-              {configured ? <IssueBondButton datasetId={Number(dataset.datasetId)} /> : null}
             </li>
           ))}
         </ul>

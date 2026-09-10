@@ -19,16 +19,6 @@ import {EpisodeRegistry} from "../src/EpisodeRegistry.sol";
  *
  * These tests need a fork and are skipped without one, so the suite still runs
  * offline; they are the ones that count before a deploy.
- *
- * No Hedera-forked equivalent exists, and won't via `forge test`: forge's
- * local EVM (revm) has no implementation of Hedera's HTS precompile (0x167),
- * which BountyEscrow's constructor now calls to self-associate with USDC.
- * A real forge script deploy against Hedera testnet hit exactly this wall
- * (InvalidFEOpcode, confirmed nothing broadcast) before switching to a raw
- * viem deploy — see script/deploy-hedera.mjs's header. The Hedera-side
- * proof this project actually has is stronger than a fork test would be
- * anyway: a real deploy, independently confirmed via the mirror node
- * (contracts/deployments.json's "296" entry), not a local simulation.
  */
 contract BountyEscrowForkTest is Test {
     /// @dev Circle's official USDC on Ethereum Sepolia.

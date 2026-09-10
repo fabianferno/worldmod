@@ -9,17 +9,6 @@ interface IERC20 {
     function balanceOf(address account) external view returns (uint256);
 }
 
-/// @dev Hedera Token Service precompile, fixed at 0x167 on every Hedera
-/// network. On any other chain this address has no code, so the low-level
-/// call below succeeds trivially with empty returndata and self-association
-/// is silently skipped — the same bytecode deploys unmodified to Sepolia or
-/// Hedera; real association only happens where the precompile actually
-/// exists. Proven live against Hedera testnet before wiring this in — see
-/// hedera/spike-hts-association-part3.mjs.
-interface IHederaTokenService {
-    function associateToken(address account, address token) external returns (int64 responseCode);
-}
-
 /**
  * @title BountyEscrow
  * @notice Demand-first bounties: a buyer escrows USDC, contributors generate the data.
@@ -129,14 +118,6 @@ contract BountyEscrow {
         // Usable from the first block; the owner can move both afterwards.
         oracle = msg.sender;
         treasury = msg.sender;
-        // A deploy must never leave the escrow live but unable to hold the
-        // token it was configured with — see the interface doc above. The
-        // return value is deliberately unchecked: on a non-Hedera chain this
-        // call has no code to execute against and "succeeds" doing nothing.
-        (bool associated,) = address(0x167).call(
-            abi.encodeWithSelector(IHederaTokenService.associateToken.selector, address(this), address(usdc))
-        );
-        associated;
     }
 
     modifier onlyOwner() {

@@ -7,10 +7,6 @@ import {FederatedRound, IERC20Minimal} from "../src/FederatedRound.sol";
 /**
  * §9's coordination pattern, tested for the property it actually claims:
  * participation is recorded and paid, and the data never appears anywhere.
- *
- * No Hedera-forked equivalent — see BountyEscrow.fork.t.sol's header for
- * why (forge's local EVM can't execute the HTS precompile call this
- * contract's constructor now makes).
  */
 contract FederatedRoundForkTest is Test {
     address internal constant USDC = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238;

@@ -17,8 +17,6 @@ import { useSigner } from "@/lib/chain/signer-context";
 import { pendingWithdrawal, withdrawEarnings } from "@/lib/chain/withdraw-client";
 import { reputationFor, type Reputation } from "@/lib/market/reputation";
 import type { StoredEpisode } from "@/lib/market/types";
-import { Identity } from "./identity";
-import { SelfieCheck } from "./selfie-check";
 
 function short(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -335,14 +333,6 @@ export function AccountView() {
           ))}
         </ul>
       )}
-
-      {/* Who this account is comes after what it earned: the balance is the
-          question, the key is the footnote that explains where it goes. */}
-      <h2 className="mb-2.5 mt-7 text-sm font-semibold">Your identity</h2>
-      <div className="space-y-2.5">
-        <Identity />
-        <SelfieCheck />
-      </div>
 
       {address ? (
         <p className="mt-6 text-center text-xs text-subtle">

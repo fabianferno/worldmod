@@ -391,7 +391,7 @@ The chain provides coordination and verification. Not bulk storage. A 20-second 
 | Validator | Python: OpenCV optical flow + numpy | Runs as a service |
 | Trainer | PyTorch, frozen DINOv2/CLIP + small GRU | Laptop-trainable |
 
-**Sponsor note:** ETHOnline 2026 partners reportedly include 1inch, Chainlink, Hedera, Ledger, The Graph, Uniswap Foundation, World Network, and 0G Labs — sourced from ETHGlobal's own announcement post, **not yet verified against the official prize page.** Confirm live tracks before locking the stack. The natural fits: 0G (AI data/storage), The Graph (provenance indexing), World Network (contributor proof-of-personhood for sybil resistance), Chainlink (utility oracle attestation).
+**Sponsor note (superseded):** this project explored Hedera (asset tokenization), Chainlink (confidential validation), and World Network (proof-of-personhood) as candidate sponsor tracks; all three were tried and then removed from the repo. The stack now follows `attestcoin.md` exclusively — DePIN settlement on Ethereum Sepolia, verified cross-chain via the Attestcoin Protocol onto Creditcoin testnet.
 
 ---
 
