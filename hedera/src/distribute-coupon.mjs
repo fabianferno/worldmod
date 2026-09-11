@@ -163,8 +163,15 @@ export async function distributeCoupon({ ports }, { securityId, couponId, holder
         payouts.push({ ...base, transferTxId, note: receipt.status.toString() });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        log(`  ${holder}: transfer failed — ${msg}`);
-        payouts.push({ ...base, transferTxId: null, note: `transfer failed: ${msg}` });
+        // A holder can have a Hedera account yet not have associated the USDC
+        // token. We cannot associate on their behalf (we don't hold their key),
+        // so this is the same "holder must act" caveat as the no-account case —
+        // surfaced specifically rather than as a generic failure.
+        const note = /TOKEN_NOT_ASSOCIATED/i.test(msg)
+          ? "holder has not associated USDC; they must associate the token to receive it"
+          : `transfer failed: ${msg}`;
+        log(`  ${holder}: ${note}`);
+        payouts.push({ ...base, transferTxId: null, note });
       }
     }
   } finally {
