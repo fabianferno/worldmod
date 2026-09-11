@@ -279,7 +279,28 @@ p {
   width: 100%;
   height: 200px;
   overflow: hidden;
-  border-radius: var(--r-panel);
-  background: #030304;
-  box-shadow: var(--lift);
+  background: transparent;
+}
+
+/* No panel, no box. The light variant paints a near-white paper; multiplying it
+   against the page makes that paper vanish into the bone surface while the
+   emerald arc stays, tinted onto the real page background. A soft horizontal
+   mask keeps the side edges from ending in a hard line. */
+/* threeui.css paints the shader host an opaque light panel (#f3f6f1) and isolates
+   it — that lighter rectangle is the seam. Make the host transparent and drop the
+   isolation so the canvas's multiply blends against the real page underneath. */
+.shader-frame > .threeui-background {
+  background: transparent !important;
+  isolation: auto !important;
+}
+
+.shader-frame > .threeui-background > canvas {
+  /* Lift the near-white paper to true white so multiply leaves the page's bone
+     background untouched; only the arc survives, tinted onto the page. hue-rotate
+     + saturate pull the stock spring-green toward the app's deep teal mint-ink
+     (#1d5b49); white paper carries no hue, so the seam is unaffected. */
+  filter: brightness(1.12) hue-rotate(20deg) saturate(0.9) !important;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10% 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10% 90%, transparent);
 }

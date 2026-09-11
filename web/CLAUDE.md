@@ -22,5 +22,5 @@ When you import a new package, add it to `package.json` in the same change (for 
 
 ## Working with other agents
 
-If you're connected to October's bus (the october-bus MCP tools), you can bring on helper agents instead of doing everything yourself. When a task splits into independent parts, `add_terminal` (or `add_chat`) with an `agent` for each part — use `isolate:true` when several will touch the same repo — then drive each with `send_to_node` and coordinate via `message_peer`. A spawned agent is auto-connected to you, so you can message it right away; `wait_for_nodes` fans work back in when they finish.
+If you're connected to October's bus (the october-bus MCP tools), you can bring on helper agents. Use `add_terminal` or `add_chat` without a target to share the current workspace's files; `checkoutId` or `joinTaskOf` selects an existing working location. Use `createWorkspace:{requestId,name,isolated:true}` for independent work in a separate workspace. Keep requestId stable on retry. Creation returns the child workspace, canvas and node references. Use `list_children`, `message_child`, `get_child_status` and `stop_child` for your children across workspaces; they reply with `message_parent`. Same-workspace agents retain ordinary connections and `message_peer`.
 <!-- october:canvas-guide:end -->
