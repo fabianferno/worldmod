@@ -18,13 +18,17 @@ pattern. Raw data never moves, each contribution is hashable and therefore
 verifiable, and payment can be tied to participating in a round with a
 measurable outcome.
 
-What it does NOT demonstrate is privacy, and that distinction is load-bearing.
-FedAvg alone is not private — gradient inversion against shared updates is a
-real, published attack, and it is at its most effective with few clients, which
-is exactly this setup. Differential privacy, secure aggregation and client-count
-thresholds are roadmap. Calling two-client FedAvg "private federated learning"
-would be the single most checkable false claim in the project, so this module
-claims federated COORDINATION, which is what it does.
+Privacy is a separate, load-bearing distinction. FedAvg *alone* is not private —
+gradient inversion against shared updates is a real, published attack, most
+effective with few clients, which is exactly this setup. Two of the three
+roadmap mitigations are now implemented here and are opt-in (see privacy.py):
+a **client-count threshold** (a round below N_min participants is recorded but
+not aggregated) and **per-round differential privacy** (clip each client update
+to L2 norm C, add Gaussian noise σ = C·√(2·ln(1.25/δ))/ε — the analytic Gaussian
+mechanism, a genuine per-round (ε, δ) guarantee, NOT composed across rounds, and
+central DP with a trusted aggregator). **Secure aggregation remains roadmap.**
+With DP off this is plain FedAvg and claims only federated COORDINATION, never
+privacy — the results file says which, per round, and never both.
 """
 
 from __future__ import annotations
@@ -39,6 +43,7 @@ import torch.nn.functional as F
 from .encoder import pick_device
 from .experiment import EncodedEpisode, _standardise
 from .model import LatentDynamics, baseline_error
+from .privacy import add_gaussian_noise, clip_update, gaussian_sigma
 
 StateDict = dict[str, torch.Tensor]
 
@@ -61,6 +66,13 @@ class Round:
     global_hash: str = ""
     global_error: float = float("nan")
     baseline_error: float = float("nan")
+    # Minimum participants required to aggregate this round.
+    threshold: int = 1
+    # Per-round DP guarantee {epsilon, delta, sigma, clip_norm}, or None when
+    # differential privacy was not applied to this round.
+    dp: dict | None = None
+    # False when the round was below `threshold` and therefore not aggregated.
+    aggregated: bool = True
 
 
 @dataclass
@@ -175,11 +187,34 @@ def run_rounds(
     # FedAvg literature predicts, so the shortest local schedule is used.
     local_epochs: int = 5,
     seed: int = 0,
+    # Client-count threshold: a round with fewer than this many participants is
+    # recorded but NOT aggregated (roadmap item, now real).
+    min_participants: int = 1,
+    # Differential privacy (opt-in): supply BOTH dp_epsilon and dp_clip to apply
+    # the per-round analytic Gaussian mechanism. Either left None → DP off.
+    dp_epsilon: float | None = None,
+    dp_delta: float = 1e-5,
+    dp_clip: float | None = None,
+    dp_seed: int = 0,
 ) -> FederatedResults:
     device = pick_device()
     torch.manual_seed(seed)
 
-    train, held = _standardise(train, held)
+    dp_enabled = dp_epsilon is not None and dp_clip is not None
+    sigma = gaussian_sigma(dp_clip, dp_epsilon, dp_delta) if dp_enabled else 0.0
+    dp_config = (
+        {"epsilon": dp_epsilon, "delta": dp_delta, "sigma": sigma, "clip_norm": dp_clip}
+        if dp_enabled
+        else None
+    )
+    # A dedicated CPU generator so the DP noise is reproducible from dp_seed,
+    # independent of the RNG draws that training itself consumes.
+    noise_gen = torch.Generator()
+    noise_gen.manual_seed(dp_seed)
+
+    # _standardise returns (train, held, mean, std); the federated loop doesn't
+    # do live inference, so the normalisation stats are unused here.
+    train, held, _mean, _std = _standardise(train, held)
     parts = partition(train, orgs)
 
     if len(parts) < 2:
@@ -191,16 +226,33 @@ def run_rounds(
     global_model = LatentDynamics(latent_dim).to(device)
     global_state = _clone(global_model.state_dict())
 
+    if dp_enabled:
+        privacy_note = (
+            f"Differential privacy IS applied this run: each client update is "
+            f"L2-clipped to C={dp_clip} and Gaussian noise (σ={sigma:.4g}) is "
+            f"added to the summed update at aggregation — a per-round "
+            f"(ε={dp_epsilon}, δ={dp_delta}) guarantee via the analytic Gaussian "
+            f"mechanism. It is PER-ROUND, not composed across rounds; it is "
+            f"central DP (a trusted aggregator adds the noise), not local DP or "
+            f"secure aggregation; with few clients gradient-inversion is "
+            f"mitigated but the small-client regime stays adversarially hard."
+        )
+    else:
+        privacy_note = (
+            "FedAvg alone provides no privacy guarantee. Gradient inversion "
+            "against shared updates is a published attack and is most effective "
+            "with few clients, as here. This shows federated coordination, not "
+            "private federated learning — run with dp_epsilon and dp_clip set to "
+            "apply a real per-round (ε, δ) guarantee."
+        )
+
     results = FederatedResults(
         orgs=[f"org_{chr(97 + i)}" for i in range(len(parts))],
         parameters=global_model.parameter_count,
         horizon=horizon,
         heldout_episodes=len(held),
         notes=[
-            "FedAvg alone provides no privacy guarantee. Gradient inversion "
-            "against shared updates is a published attack and is most effective "
-            "with few clients, as here. This shows federated coordination, not "
-            "private federated learning.",
+            privacy_note,
             "Both organisations are simulated on one machine over partitions of "
             "the same corpus. Nothing here proves data would stay put across a "
             "real trust boundary; it shows the protocol that would govern it.",
@@ -214,7 +266,11 @@ def run_rounds(
     )
 
     for round_id in range(1, rounds + 1):
-        record = Round(round_id=round_id)
+        record = Round(
+            round_id=round_id,
+            threshold=min_participants,
+            dp=dict(dp_config) if dp_config else None,
+        )
         deltas: list[StateDict] = []
         weights: list[int] = []
 
@@ -225,6 +281,12 @@ def run_rounds(
 
             local_error = train_locally(local, part, horizon, local_epochs, device)
             delta = _delta(local.state_dict(), global_state)
+
+            # Under DP the client clips its own update to L2 norm C before
+            # sharing, so the clipped update is what is committed on-chain and
+            # what the aggregator sees.
+            if dp_enabled:
+                delta = clip_update(delta, dp_clip)
 
             frames = int(sum(len(e.latents) for e in part))
             deltas.append(delta)
@@ -242,12 +304,34 @@ def run_rounds(
                 )
             )
 
-        # FedAvg proper: average the updates weighted by how much data each
-        # org actually trained on, not one-org-one-vote.
-        total = float(sum(weights)) or 1.0
-        for key in global_state:
-            update = sum(d[key] * (w / total) for d, w in zip(deltas, weights))
-            global_state[key] = global_state[key] + update
+        # Client-count threshold: below it, record the round but do NOT
+        # aggregate — the global model is left unchanged this round.
+        if len(record.participants) < min_participants:
+            record.aggregated = False
+            record.dp = None
+            error, baseline = evaluate(global_model, held, horizon, device)
+            record.global_hash = hash_state(global_state)
+            record.global_error = error
+            record.baseline_error = baseline
+            results.rounds.append(record)
+            continue
+
+        if dp_enabled:
+            # Central DP-FedAvg: sum the clipped updates (L2-sensitivity to any
+            # one client = clip_norm), add Gaussian noise calibrated to (ε, δ),
+            # then average by participant count. Dividing after noising is
+            # post-processing and preserves the (ε, δ) guarantee.
+            summed = {key: sum(d[key] for d in deltas) for key in global_state}
+            noised = add_gaussian_noise(summed, sigma, noise_gen)
+            for key in global_state:
+                global_state[key] = global_state[key] + noised[key] / len(deltas)
+        else:
+            # FedAvg proper: average the updates weighted by how much data each
+            # org actually trained on, not one-org-one-vote.
+            total = float(sum(weights)) or 1.0
+            for key in global_state:
+                update = sum(d[key] * (w / total) for d, w in zip(deltas, weights))
+                global_state[key] = global_state[key] + update
 
         global_model.load_state_dict(global_state)
         error, baseline = evaluate(global_model, held, horizon, device)

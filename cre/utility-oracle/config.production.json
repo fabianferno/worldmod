@@ -1,0 +1,16 @@
+{
+  "schedule": "0 */5 * * * *",
+  "appBaseUrl": "https://worldmod.example",
+  "bountyId": "bounty_keyboard_001",
+  "resultsPath": "/model-results.json",
+  "secretIds": {
+    "gammaId": "UTILITY_GAMMA"
+  },
+  "evms": [
+    {
+      "chainSelectorName": "ethereum-testnet-sepolia",
+      "consumerAddress": "0x47Ad260F6930392Df5109F3293500e8026b71f90",
+      "gasLimit": "800000"
+    }
+  ]
+}

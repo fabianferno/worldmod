@@ -11,13 +11,28 @@ export const metadata = {
   description: "Datasets minted on-chain, tokenizable as Hedera Bonds.",
 };
 
-const usd = (cents6: bigint) => `$${(Number(cents6) / 1_000_000).toFixed(2)}`;
+// priceUsdc is USDC's own 6-decimal integer (e.g. 6_000_000 = $6.00).
+const usd = (priceUsdc6: bigint) => `$${(Number(priceUsdc6) / 1_000_000).toFixed(2)}`;
+
+type Dataset = Awaited<ReturnType<typeof readDatasetRegistry>>;
 
 export default async function DatasetsPage() {
-  const count = await datasetRegistryCount();
-  const ids = Array.from({ length: count }, (_, i) => i + 1);
-  const datasets = await Promise.all(ids.map((id) => readDatasetRegistry(id)));
   const configured = hederaConfigured();
+
+  // Read the registry defensively: a chain hiccup, or a single dataset that
+  // fails to read, must not take down the whole page. Show whatever resolved.
+  let datasets: Dataset[] = [];
+  let loadError: string | null = null;
+  try {
+    const count = await datasetRegistryCount();
+    const ids = Array.from({ length: count }, (_, i) => i + 1);
+    const settled = await Promise.allSettled(ids.map((id) => readDatasetRegistry(id)));
+    datasets = settled
+      .filter((r): r is PromiseFulfilledResult<Dataset> => r.status === "fulfilled")
+      .map((r) => r.value);
+  } catch (err) {
+    loadError = err instanceof Error ? err.message : String(err);
+  }
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-5 py-8">
@@ -44,11 +59,17 @@ export default async function DatasetsPage() {
         </p>
       ) : null}
 
-      {datasets.length === 0 ? (
+      {loadError ? (
+        <p className="mt-5 rounded-2xl border border-negative/30 bg-negative/5 p-4 text-sm leading-relaxed text-negative">
+          Could not read the {CHAIN.name} registry right now: {loadError}
+        </p>
+      ) : null}
+
+      {!loadError && datasets.length === 0 ? (
         <p className="mt-6 rounded-2xl border border-dashed border-line p-8 text-center text-sm text-subtle">
           No datasets minted yet.
         </p>
-      ) : (
+      ) : datasets.length > 0 ? (
         <ul className="mt-6 space-y-3">
           {datasets.map((dataset) => (
             <li key={dataset.datasetId} className="rounded-2xl border border-line bg-surface p-4">
@@ -82,7 +103,7 @@ export default async function DatasetsPage() {
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
 
       <p className="mt-6 text-center text-xs text-subtle">
         {CHAIN.name} registry:{" "}

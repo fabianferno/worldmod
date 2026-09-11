@@ -113,6 +113,8 @@ export function Nav() {
               >
                 <Link
                   href={href}
+                  // Anchor for the onboarding tour's final step.
+                  id={href === "/c/account" ? "onb-account" : undefined}
                   aria-current={active ? "page" : undefined}
                   className={`interactive flex flex-col items-center gap-1 rounded-inner py-1.5 text-[11px] font-medium ${
                     active ? "text-on-ink" : "text-on-ink-muted"

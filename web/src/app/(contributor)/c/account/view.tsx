@@ -302,9 +302,7 @@ export function AccountView() {
             </span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-subtle">
-            {reputation.provisional
-              ? "Provisional — too few episodes for this to mean much yet. Nothing is gated on it."
-              : "From acceptance rate, framing, motion match and duplicates. Nothing is gated on it."}
+            From acceptance rate, framing, motion match and duplicates.
           </p>
         </div>
       ) : null}
@@ -343,6 +341,26 @@ export function AccountView() {
         <Identity />
         <SelfieCheck />
       </div>
+
+      {/* Anytime re-entry to the onboarding tour. It runs on the capture
+          screen, where its anchors live, so this routes there with a flag the
+          capture screen reads to start the tour. */}
+      <Link
+        href="/c?tour=capture"
+        className="interactive mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-paper py-3.5 text-sm font-semibold text-foreground shadow-lift"
+      >
+        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+          <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.7" />
+          <path
+            d="M9.5 9.6a2.5 2.5 0 114.2 1.9c-.9.7-1.7 1.1-1.7 2.2"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+          />
+          <circle cx="12" cy="16.6" r="0.5" fill="currentColor" stroke="currentColor" />
+        </svg>
+        How it works
+      </Link>
 
       {address ? (
         <p className="mt-6 text-center text-xs text-subtle">

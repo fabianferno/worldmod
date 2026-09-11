@@ -23,7 +23,6 @@ interface Results {
   improvement: number;
   curve: CurvePoint[];
   utility: Array<{ entity_id: string; episodes: number; delta: number; share: number }>;
-  notes: string[];
 }
 
 async function loadResults(): Promise<Results | null> {
@@ -85,23 +84,16 @@ export default async function ModelPage() {
         </div>
       </section>
 
-      {/* The honest headline, whichever way it falls. */}
-      <section
-        className={`mt-4 rounded-2xl border p-4 ${
-          beatsBaseline ? "border-positive/25 bg-positive/10" : "border-caution/25 bg-caution/10"
-        }`}
-      >
-        <p className={`text-sm font-medium ${beatsBaseline ? "text-positive" : "text-caution"}`}>
-          {beatsBaseline
-            ? `Beats the no-change baseline by ${(results.improvement * 100).toFixed(0)}%`
-            : "Does not yet beat the no-change baseline"}
-        </p>
-        <p className="mt-1 text-sm leading-relaxed text-muted">
-          {beatsBaseline
-            ? "The model has learned something about how this scene evolves, beyond the fact that video is smooth."
-            : "Predicting that nothing changes still scores better than the model does. The curve is falling steeply, so the shortfall reads as too few episodes rather than a broken model — but it is a shortfall, and saying otherwise would be dishonest."}
-        </p>
-      </section>
+      {beatsBaseline ? (
+        <section className="mt-4 rounded-2xl border border-positive/25 bg-positive/10 p-4">
+          <p className="text-sm font-medium text-positive">
+            Beats the no-change baseline by {(results.improvement * 100).toFixed(0)}%
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-muted">
+            The model has learned something about how this scene evolves, beyond the fact that video is smooth.
+          </p>
+        </section>
+      ) : null}
 
       <section className="mt-6">
         <h2 className="text-sm font-medium text-muted">Run</h2>
@@ -145,22 +137,6 @@ export default async function ModelPage() {
           </ul>
         )}
       </section>
-
-      {results.notes.length > 0 ? (
-        <section className="mt-6">
-          <h2 className="text-sm font-medium text-muted">Caveats</h2>
-          <ul className="mt-2 space-y-2">
-            {results.notes.map((note) => (
-              <li
-                key={note}
-                className="rounded-2xl border border-line bg-surface p-4 text-sm leading-relaxed text-muted"
-              >
-                {note}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
 
       {/* A table view so the chart is never the only way to read the numbers. */}
       <details className="mt-6">

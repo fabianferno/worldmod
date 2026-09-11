@@ -5,110 +5,100 @@
       "participants": [
         {
           "org_id": "org_a",
-          "episodes": 2,
-          "frames": 121,
-          "update_hash": "0x3c4d1c6f270e0b250c4845eb17260a2747b27797588f426d0dfba2a3408e8ed4",
-          "local_error": 0.33519741892814636
+          "episodes": 3,
+          "frames": 182,
+          "update_hash": "0xf7e8dcf6437997f0a7785937ac0a42b8c9c90824b2a24301d7044595f95ad542",
+          "local_error": 0.29144635796546936
         },
         {
           "org_id": "org_b",
           "episodes": 2,
-          "frames": 121,
-          "update_hash": "0x474bb47d09a2200b3b095d3960c312b24f9666895c9630120159409512bf5be1",
-          "local_error": 0.5581564158201218
+          "frames": 120,
+          "update_hash": "0xe06663f985ab4fa01b2b7d67ac39923d759fff5612574185722a09f6fbefac51",
+          "local_error": 0.588872566819191
         }
       ],
-      "global_hash": "0x98198d0ded5c13a79007f00c695d49eb72ff8908ca39eec6341f3a7a6e646421",
-      "global_error": 0.25434792041778564,
-      "baseline_error": 0.2201709896326065
+      "global_hash": "0x9173e6365ff9aacb30b2718e150fb2a99dfe4b325f75e6a13ae7d98fed3a662d",
+      "global_error": 0.21579375863075256,
+      "baseline_error": 0.19727857410907745,
+      "threshold": 2,
+      "dp": null,
+      "aggregated": true
     },
     {
       "round_id": 2,
       "participants": [
         {
           "org_id": "org_a",
-          "episodes": 2,
-          "frames": 121,
-          "update_hash": "0xb4b1ab219821bf91a12bf1c622fc5dba29b4713555a0d7d60fee2ef939ba827b",
-          "local_error": 0.3144422844052315
+          "episodes": 3,
+          "frames": 182,
+          "update_hash": "0x3c6a115670e913e7f982c21118228806ae79fb3a4c9997e94fdbd6e32126ce4e",
+          "local_error": 0.2745642165342967
         },
         {
           "org_id": "org_b",
           "episodes": 2,
-          "frames": 121,
-          "update_hash": "0xd4830d9af78bbee04eac2313f6bcc49497e0bf39d3d8bb46ca0f80ed8d4a3368",
-          "local_error": 0.5227442681789398
+          "frames": 120,
+          "update_hash": "0xbc380728594f8e1f64c9ed19d9baba64540ec799e8812a9062d69ded3366a587",
+          "local_error": 0.5276473611593246
         }
       ],
-      "global_hash": "0x903cdc540af822f4115d0aadaa3186ca97c5ba9fa0573469d6ba5cb49024f25c",
-      "global_error": 0.25004762411117554,
-      "baseline_error": 0.2201709896326065
+      "global_hash": "0xa70c829b68bf2652b811a23bc5ae3fd1d245f9f19879ff1d6558e4743547d3b3",
+      "global_error": 0.21191149950027466,
+      "baseline_error": 0.19727857410907745,
+      "threshold": 2,
+      "dp": null,
+      "aggregated": true
     },
     {
       "round_id": 3,
       "participants": [
         {
           "org_id": "org_a",
-          "episodes": 2,
-          "frames": 121,
-          "update_hash": "0xc8249ad27962ca0ce3e333b5d54eabb9455c2bf4915b67c366b23ede5634fe6c",
-          "local_error": 0.2773311361670494
+          "episodes": 3,
+          "frames": 182,
+          "update_hash": "0xfd62bec804c67b38544a13ff41afe1689da2f2911ec3ddcd8a70dbf2cf9f874e",
+          "local_error": 0.2408744196097056
         },
         {
           "org_id": "org_b",
           "episodes": 2,
-          "frames": 121,
-          "update_hash": "0x2b997ea6eac0a31ffcb663c275ecf7a6ce7e9724b42d90c4417cdc5227ae5cf0",
-          "local_error": 0.41638486087322235
+          "frames": 120,
+          "update_hash": "0xdb85af9bcc5991487e1177858302a9fa5996fcfa3defd9a7829c9a13efca9a6a",
+          "local_error": 0.4356934279203415
         }
       ],
-      "global_hash": "0xa6e2fda6de2d806cfa5de4c3f0a1c82969c07d826d9d98b36ca7fa5258363048",
-      "global_error": 0.2767367959022522,
-      "baseline_error": 0.2201709896326065
+      "global_hash": "0x1591649383152d0555e7996500f3009a851932965343e8d39b6e5f1758b522f8",
+      "global_error": 0.2311112880706787,
+      "baseline_error": 0.19727857410907745,
+      "threshold": 2,
+      "dp": null,
+      "aggregated": true
     },
     {
       "round_id": 4,
       "participants": [
         {
           "org_id": "org_a",
-          "episodes": 2,
-          "frames": 121,
-          "update_hash": "0x07e222f8d2a68279e4e18f23184b90fdeec77576125d2e9b4b1a817d5fe07367",
-          "local_error": 0.24689981341362
+          "episodes": 3,
+          "frames": 182,
+          "update_hash": "0xd8360d83bb19ceb7ea2e229dec491b4aa9326faa95944604e0e62e116506cbf1",
+          "local_error": 0.21549278497695923
         },
         {
           "org_id": "org_b",
           "episodes": 2,
-          "frames": 121,
-          "update_hash": "0xa03abc922debd68111293b48ffa4ea6db70531aab4bba18adb3ce566a465d069",
-          "local_error": 0.36630062758922577
+          "frames": 120,
+          "update_hash": "0x30d5a8f1b8a468879a364ca62cb3ff9ec396423c818bdfe6b0858f5547309058",
+          "local_error": 0.3801797181367874
         }
       ],
-      "global_hash": "0x3f15c5909466728dc9be59532129e28976c05494a03fff49ddaf705af7969c7f",
-      "global_error": 0.32074636220932007,
-      "baseline_error": 0.2201709896326065
-    },
-    {
-      "round_id": 5,
-      "participants": [
-        {
-          "org_id": "org_a",
-          "episodes": 2,
-          "frames": 121,
-          "update_hash": "0x241ca21b73c024e97a47a39635bf1e736eac9b96811a9bd3bf2527b4ccfe2100",
-          "local_error": 0.22262893617153168
-        },
-        {
-          "org_id": "org_b",
-          "episodes": 2,
-          "frames": 121,
-          "update_hash": "0x9035497ceb03af8765dc8980e52339fb1b748b8bbfc207ab92f077ca4d37a689",
-          "local_error": 0.31069616973400116
-        }
-      ],
-      "global_hash": "0xe31c45100ad7224e72a6fbc5611f54ace32f47d18b4a53d7685f7f88f5f78e5f",
-      "global_error": 0.3332105278968811,
-      "baseline_error": 0.2201709896326065
+      "global_hash": "0xf01acf553603ff800db27b0f9b7c5ffb9e38f233b09dd2509cff540fb4ab5113",
+      "global_error": 0.26341676712036133,
+      "baseline_error": 0.19727857410907745,
+      "threshold": 2,
+      "dp": null,
+      "aggregated": true
     }
   ],
   "orgs": [
@@ -119,7 +109,7 @@
   "horizon": 2,
   "heldout_episodes": 1,
   "notes": [
-    "FedAvg alone provides no privacy guarantee. Gradient inversion against shared updates is a published attack and is most effective with few clients, as here. This shows federated coordination, not private federated learning.",
+    "FedAvg alone provides no privacy guarantee. Gradient inversion against shared updates is a published attack and is most effective with few clients, as here. This shows federated coordination, not private federated learning \u2014 run with dp_epsilon and dp_clip set to apply a real per-round (\u03b5, \u03b4) guarantee.",
     "Both organisations are simulated on one machine over partitions of the same corpus. Nothing here proves data would stay put across a real trust boundary; it shows the protocol that would govern it.",
     "Held-out error does not improve across rounds at this corpus size \u2014 it rises. With two episodes per organisation the local models overfit their partitions faster than averaging can help, which matches the centralised result where the model also fails to beat the no-change baseline. The coordination is sound; the data is too little for federating to pay off yet."
   ]

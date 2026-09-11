@@ -48,7 +48,18 @@ interface DistributeResult {
 
 type Step = "idle" | "pending" | "done" | "error";
 
-const txUrl = (hash: string) => `https://hashscan.io/testnet/transaction/${hash}`;
+// Transaction links point at the Hedera mirror node's REST records, not
+// HashScan: HashScan is a client-rendered SPA whose /transaction/ deep links
+// return 404 server-side and don't accept a raw EVM tx hash, so those links
+// can't be relied on. The mirror node is the authoritative on-chain record and
+// always resolves. EVM (0x) tx hashes are contract-call results; the USDC
+// transfer uses a native Hedera tx id (0.0.x@seconds.nanos).
+const MIRROR = "https://testnet.mirrornode.hedera.com/api/v1";
+const evmTxUrl = (hash: string) => `${MIRROR}/contracts/results/${hash}`;
+const hieroTxUrl = (id: string) => {
+  const [account, rest] = id.split("@");
+  return `${MIRROR}/transactions/${account}-${(rest ?? "").replace(".", "-")}`;
+};
 const fmtUsdc = (smallest: string) => `$${(Number(smallest) / 1_000_000).toFixed(2)}`;
 
 async function postAction<T>(url: string, body: unknown): Promise<T> {
@@ -165,6 +176,13 @@ export function IssueBondButton({ datasetId }: { datasetId: number }) {
   }
 
   // Issued: the bond card plus the lifecycle steps.
+  // Distribute needs a coupon AND at least one payable holder — otherwise the
+  // route falls back to SDK holder-enumeration, which errors on external EOAs.
+  const distributeBlocked = !coupon
+    ? "Set a coupon first."
+    : !mint && !extraHolder.trim()
+      ? "Mint to the creator or enter a holder address to pay."
+      : null;
   return (
     <div className="mt-3 space-y-3">
       <div className="rounded-xl border border-positive/25 bg-positive/5 p-3">
@@ -240,8 +258,8 @@ export function IssueBondButton({ datasetId }: { datasetId: number }) {
         pendingLabel="Distributing USDC…"
         state={distState}
         error={distError}
-        disabled={!coupon}
-        disabledHint="Set a coupon first."
+        disabled={Boolean(distributeBlocked)}
+        disabledHint={distributeBlocked ?? undefined}
         onRun={() => void runDistribute()}
       >
         {dist ? (
@@ -250,7 +268,17 @@ export function IssueBondButton({ datasetId }: { datasetId: number }) {
               <li key={p.holder} className="border-t border-line/60 pt-1 first:border-0 first:pt-0">
                 <Line label={`${p.holder.slice(0, 12)}…`} value={`${fmtUsdc(p.amountUsdcSmallest)} (${p.unitsHeld} seats)`} />
                 {p.transferTxId ? (
-                  <p className="font-mono text-[11px] text-positive">paid · {p.transferTxId}</p>
+                  <p className="text-[11px] text-positive">
+                    paid ·{" "}
+                    <a
+                      href={hieroTxUrl(p.transferTxId)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="interactive break-all font-mono underline underline-offset-2"
+                    >
+                      {p.transferTxId}
+                    </a>
+                  </p>
                 ) : (
                   <p className="text-[11px] text-caution">{p.note}</p>
                 )}
@@ -287,7 +315,7 @@ function LifecycleAction({
       <button
         type="button"
         onClick={onRun}
-        disabled={state === "pending" || disabled}
+        disabled={state === "pending" || state === "done" || disabled}
         className="interactive rounded-lg border border-line px-3 py-1.5 text-xs font-medium hover:border-line-strong disabled:opacity-40"
       >
         {state === "pending" ? pendingLabel : state === "done" ? `${label} ✓` : label}
@@ -313,7 +341,7 @@ function TxLine({ label, hash }: { label: string; hash: string }) {
     <p className="flex flex-wrap justify-between gap-x-3">
       <span className="text-subtle">{label}</span>
       <a
-        href={txUrl(hash)}
+        href={evmTxUrl(hash)}
         target="_blank"
         rel="noreferrer"
         className="interactive break-all font-mono underline underline-offset-2"

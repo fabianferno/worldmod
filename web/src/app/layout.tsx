@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Manrope, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/nav";
+import { AppMenu } from "@/components/app-menu";
 import { ServiceWorkerRegistration } from "@/components/service-worker";
 import { MiniKitClientProvider } from "./minikit-client-provider";
+import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
 
 /**
  * Manrope for everything a person reads: a geometric grotesque with a tall
@@ -81,17 +83,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         */}
         <MiniKitClientProvider>
           <ServiceWorkerRegistration />
-          {/* Keyboard users need a way past the nav on every page. */}
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-on-ink"
-          >
-            Skip to content
-          </a>
-          <div id="main" className="flex flex-1 flex-col overflow-hidden">
-            {children}
-          </div>
-          <Nav />
+          <OnboardingProvider>
+            {/* Keyboard users need a way past the nav on every page. */}
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-on-ink"
+            >
+              Skip to content
+            </a>
+            <div id="main" className="flex flex-1 flex-col overflow-hidden">
+              {children}
+            </div>
+            <AppMenu />
+            <Nav />
+          </OnboardingProvider>
         </MiniKitClientProvider>
       </body>
     </html>

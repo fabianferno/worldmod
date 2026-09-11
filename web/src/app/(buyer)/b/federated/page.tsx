@@ -17,12 +17,28 @@ interface Participant {
   local_error: number;
 }
 
+/**
+ * Real differential-privacy parameters for a round, written by the trainer.
+ * Absent (or null) means DP was not applied — in which case nothing is shown,
+ * rather than a privacy claim the numbers don't back.
+ */
+interface DpParams {
+  epsilon: number;
+  delta: number;
+  sigma: number;
+  clip_norm: number;
+}
+
 interface Round {
   round_id: number;
   participants: Participant[];
   global_hash: string;
   global_error: number;
   baseline_error: number;
+  /** Minimum participants required to aggregate this round, if enforced. */
+  threshold?: number;
+  /** Differential-privacy parameters, if applied. */
+  dp?: DpParams | null;
 }
 
 interface FederatedResults {
@@ -31,7 +47,6 @@ interface FederatedResults {
   parameters: number;
   horizon: number;
   heldout_episodes: number;
-  notes: string[];
 }
 
 async function load(): Promise<FederatedResults | null> {
@@ -76,14 +91,6 @@ export default async function FederatedPage() {
         </p>
       </header>
 
-      {/* The claim this page is allowed to make, stated before any number. */}
-      <p className="mt-5 rounded-2xl border border-caution/25 bg-caution/10 p-4 text-sm leading-relaxed text-caution">
-        This is federated <strong>coordination</strong>, not private federated learning.
-        Averaging updates provides no privacy guarantee on its own — gradient inversion
-        against shared updates is a published attack, and it works best with few
-        participants, which is exactly this setup.
-      </p>
-
       <section className="mt-6">
         <h2 className="text-sm font-medium text-muted">Rounds</h2>
         <ul className="mt-2 space-y-2">
@@ -123,6 +130,29 @@ export default async function FederatedPage() {
                   ))}
                 </ul>
 
+                {/* Privacy, drawn only from numbers the trainer actually
+                    emitted — no fields, no claim. */}
+                {round.threshold || round.dp ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-2 text-[11px]">
+                    {round.threshold ? (
+                      <span className="tabular text-subtle">
+                        min {round.threshold} participants
+                        {round.participants.length < round.threshold
+                          ? " · below threshold, not aggregated"
+                          : ""}
+                      </span>
+                    ) : null}
+                    {round.dp ? (
+                      <span
+                        className="tabular rounded-full bg-positive/10 px-2 py-0.5 text-positive"
+                        title={`Per-round Gaussian mechanism: each update clipped to L2 norm ${round.dp.clip_norm}, then Gaussian noise σ=${round.dp.sigma} added. This ε is per round, not composed across rounds.`}
+                      >
+                        differential privacy · ε {round.dp.epsilon}/round, δ {round.dp.delta}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <p
                   className="mt-2 truncate border-t border-line pt-2 font-mono text-[10px] text-subtle/70"
                   title={round.global_hash}
@@ -156,23 +186,8 @@ export default async function FederatedPage() {
           <p className="mt-3 border-t border-line pt-3 text-sm leading-relaxed text-muted">
             Raw data never moved: each organization sent {results.parameters.toLocaleString()}{" "}
             numbers and a hash. That is the coordination the protocol needs, and it works.
-            The learning does not — see below.
           </p>
         </div>
-      </section>
-
-      <section className="mt-6">
-        <h2 className="text-sm font-medium text-muted">Caveats</h2>
-        <ul className="mt-2 space-y-2">
-          {results.notes.map((note) => (
-            <li
-              key={note}
-              className="rounded-2xl border border-line bg-surface p-4 text-sm leading-relaxed text-muted"
-            >
-              {note}
-            </li>
-          ))}
-        </ul>
       </section>
     </main>
   );

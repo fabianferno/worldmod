@@ -46,6 +46,15 @@ def main() -> int:
     parser.add_argument(
         "--federated-out", type=Path, default=Path("../web/public/federated-results.json")
     )
+    # Federated privacy (product-spec §9 roadmap, now real & opt-in).
+    parser.add_argument("--min-participants", type=int, default=1,
+                        help="don't aggregate a federated round below this many participants")
+    parser.add_argument("--dp-epsilon", type=float, default=None,
+                        help="enable per-round DP with this epsilon (also needs --dp-clip)")
+    parser.add_argument("--dp-delta", type=float, default=1e-5, help="DP delta")
+    parser.add_argument("--dp-clip", type=float, default=None,
+                        help="enable per-round DP: L2 clip norm C on each client update")
+    parser.add_argument("--dp-seed", type=int, default=0, help="seed for DP noise")
     args = parser.parse_args()
 
     episodes = load_episodes(args.data)
@@ -124,7 +133,10 @@ def main() -> int:
     # never exchange data. One artefact, two demos.
     print("\nfederated rounds")
     federated = run_rounds(train, held, horizon=args.horizon, rounds=args.rounds,
-                              local_epochs=args.local_epochs)
+                              local_epochs=args.local_epochs,
+                              min_participants=args.min_participants,
+                              dp_epsilon=args.dp_epsilon, dp_delta=args.dp_delta,
+                              dp_clip=args.dp_clip, dp_seed=args.dp_seed)
 
     for record in federated.rounds:
         who = " ".join(

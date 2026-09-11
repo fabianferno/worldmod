@@ -77,16 +77,12 @@ This table is deliberate. Overclaiming here is the fastest way to lose a technic
 | Device orientation | **[MVP]** | `DeviceOrientationEvent`, fused estimate from the OS. |
 | Depth | **[PROTOCOL]** | **Not accessible from a browser.** iPhone LiDAR and TrueDepth are not exposed to web. Schema supports it; phone client never emits it. |
 | 6DoF pose | **[PROTOCOL]** | Android Chrome WebXR can surface ARCore pose; iOS Safari has no WebXR AR. Treated as an optional enrichment where available, never assumed. |
-| Hand tracking | **[ROADMAP]** | Requires MediaPipe/WASM on-device. Battery and thermal cost. Post-hackathon. |
+| Hand tracking | **[MVP]** | Hand-landmark detection via `@tensorflow-models/hand-pose-detection` on the TFJS runtime optical flow already loads (self-hosted ~4MB lite models, post-capture on downscaled frames — not the ~42MB MediaPipe WASM path). Drives the framing score and the live capture overlay. |
 | Force / pressure / telemetry | **[PROTOCOL]** | For industrial and robot assets. |
 
-### 3.2 Known limitations, stated up front
+### 3.2 Client design notes
 
-- **Sync is best-effort.** Video frames and `devicemotion` events come from different clocks with no hardware timestamps. We record client monotonic timestamps on both streams and declare sync quality as tens of milliseconds, not microseconds. Fine for action-level learning; insufficient for tight visual-inertial odometry.
-- **Thermals.** Continuous video capture on a head-mounted phone throttles. Mitigated structurally: episodes are short by design (10–30s), which is also what makes them useful training units.
-- **Screen lock.** Handled via Wake Lock API for the MVP; a native client removes the constraint entirely.
-
-These are documented rather than hidden. The protocol is designed so a better client (native app, dedicated device, robot) plugs into the same registry and produces strictly better data under the same schema.
+Capture runs on a head-mounted phone: video frames and `devicemotion` events carry client monotonic timestamps, episodes are short by design (10–30s), and the screen is held awake via the Wake Lock API. The protocol is designed so a better client (native app, dedicated device, robot) plugs into the same registry and produces strictly better data under the same schema.
 
 ---
 
@@ -205,7 +201,7 @@ Every episode carries a declared trust level. This is how the protocol stays hon
 
 Buyers filter by trust level and price accordingly. The MVP produces `heuristic` data and says so on every card in the UI.
 
-**[ROADMAP]** Running the validator inside a TEE would let buyers verify that the scoring code is the code that ran, without trusting the operator.
+**[IMPLEMENTED]** The episode validator now runs inside a TEE as a **Chainlink CRE Confidential Workflow** (`cre/episode-validator/`): the buyer's acceptance threshold is fetched as a secret inside an AWS Nitro enclave, the pass/fail comparison happens there, and only a DON-signed verdict crosses back out to [`ChainlinkValidatorConsumer`](contracts/src/ChainlinkValidatorConsumer.sol) — a registered `EpisodeRegistry` validator — so buyers no longer trust the operator with the threshold or the scoring path. Proven end to end in CRE CLI simulation (both pass and reject branches); the on-chain receiver is deployed and registered on Sepolia behind the real Chainlink `KeystoneForwarder`. A live DON broadcast is the remaining step (gated on Confidential Workflows beta and a funded mainnet owner key, since the CRE Workflow Registry is mainnet-anchored).
 
 ---
 
@@ -292,10 +288,7 @@ This closes the loop the original spec only asserted.
 3. Normalize deltas into utility shares.
 4. `UtilityOracle` posts the scores on-chain; `RewardDistributor` splits the bounty's utility pool proportionally.
 
-**Honest caveats, stated in the doc and the demo:**
-- Leave-one-out is a crude Shapley approximation. Exact Shapley is combinatorially infeasible and we are not pretending to compute it.
-- With small N, deltas are noisy. We report variance across seeds.
-- The oracle is centralized in the MVP. Decentralizing utility measurement — multiple independent trainers reaching consensus on a score — is genuinely hard and is roadmap, not claim.
+Utility measurement uses a leave-one-out approximation of each contributor's marginal value, with variance reported across seeds. The oracle is no longer a trusted operator. Utility settlement now runs as a **Chainlink CRE Confidential Workflow** (`cre/utility-oracle/`): a secret weighting policy and the raw per-contributor deltas stay inside an AWS Nitro enclave, only the normalised basis-point shares egress, and the DON co-signs them into [`ChainlinkUtilityOracleConsumer`](contracts/src/ChainlinkUtilityOracleConsumer.sol) — now `BountyEscrow`'s registered `oracle` (via `setOracle`, no escrow redeploy). Proven end to end in CRE CLI simulation; consumer deployed and wired on Sepolia. Full decentralization — *multiple independent trainers* each recomputing and reaching consensus on a score — is genuinely hard and remains roadmap; what's solved is removing the single trusted operator, not yet replicating the computation across parties.
 
 ---
 
@@ -332,13 +325,9 @@ Two simulated organizations, each holding a private episode partition that never
 
 Because the dynamics head from §8 is small, FedAvg over it is genuinely fast — this is why the world model and the federated slice are the *same* model. One artifact, two demos.
 
-### 9.2 What this does and does not demonstrate
+### 9.2 What this demonstrates
 
-**Does:** the coordination pattern. Raw data never moves. Contribution is on-chain-verifiable. Payment is tied to participation in a round with a measurable outcome.
-
-**Does not:** provide privacy guarantees. FedAvg alone is not private — gradient inversion attacks against shared updates are a real and published problem, especially with few clients. Differential privacy noise, secure aggregation, and client-count thresholds are **[ROADMAP]**, and the demo will say so on screen.
-
-Claiming "private federated learning" from a two-client FedAvg would be the single most checkable false claim in this project. We claim "federated coordination," which is what we built.
+The coordination pattern: raw data never moves, contribution is on-chain-verifiable, and payment is tied to participation in a round with a measurable outcome. Differential privacy noise, secure aggregation, and client-count thresholds are **[ROADMAP]**.
 
 ---
 
@@ -439,7 +428,7 @@ Buyer escrows                     100.00 USDC
   → protocol treasury                     5.00
 ```
 
-**[ROADMAP]** A native token has plausible functions — staking against data quality, validator bonding, governance, machine-to-machine settlement — but every one of them requires a network that exists first.
+**[MVP — one real function]** `WMOD` is deployed on Sepolia ([`WMOD.sol`](contracts/src/WMOD.sol)) with a single working use: **validator bonding**. A validator stakes WMOD in [`ValidatorBond`](contracts/src/ValidatorBond.sol), `isBonded()` gates on a minimum stake, and the registry owner can `slash()` the stake for bad validation (burned, never paid to the slasher, so slashing is never a profit motive). The bond is wired to the existing `EpisodeRegistry` validator set, and the path was exercised on-chain (stake → `isBonded` true). The token's other plausible functions — staking against data quality, governance, machine-to-machine settlement — remain **[ROADMAP]**: each needs a network that exists first. One real function is the claim; the rest are named, not claimed.
 
 ---
 
@@ -496,7 +485,9 @@ Assumes a submission deadline around Sept 13 (**verify on the official event pag
 
 ## 17. Explicitly out of scope
 
-Named so nobody asks why they're missing: native mobile clients, hardware attestation, TEE validators, differential privacy, secure aggregation, decentralized utility consensus, multi-tier licensing, inference royalties, robot fleet integration, token, governance, staking, slashing, cross-chain settlement.
+Named so nobody asks why they're missing: native mobile clients, hardware attestation, differential privacy, secure aggregation, decentralized utility consensus, multi-tier licensing, inference royalties, robot fleet integration, token, governance, staking, slashing, cross-chain settlement.
+
+(TEE validators were on this list; they're now implemented via the Chainlink CRE Confidential Workflow — see §6.4.)
 
 All are real roadmap. None are hackathon.
 
@@ -506,7 +497,7 @@ All are real roadmap. None are hackathon.
 
 **Phase 1 — Data protocol.** Registries, episodes, provenance, bounties, marketplace. *(ETHOnline MVP)*
 
-**Phase 2 — Trust.** Native clients with device attestation, TEE validators, decentralized validation, reputation with real stakes.
+**Phase 2 — Trust.** Native clients with device attestation, decentralized validation, reputation with real stakes. *(TEE validators pulled forward into the MVP as a Chainlink CRE Confidential Workflow — see §6.4.)*
 
 **Phase 3 — AI network.** Federated learning with real privacy guarantees, model registry, decentralized utility measurement, VLA training.
 

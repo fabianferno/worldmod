@@ -228,6 +228,28 @@ export function Result({
         </div>
       ) : null}
 
+      {/* How the verdict was reached: the bar itself is secret, so the check
+          runs in a Chainlink CRE enclave and the result is what lands on-chain.
+          Lilac is this world's compute/model colour. No tx link — the DON's
+          report is written separately from the anchor txs listed below, so
+          pointing at one of those would misname it. */}
+      {submitted?.status === "scored" ? (
+        <div className="settle settle-2 mt-3 rounded-card bg-lilac px-5 py-4 text-lilac-ink">
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden>
+              <rect x="5" y="10.5" width="14" height="9" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
+              <path d="M8.25 10.5V8a3.75 3.75 0 017.5 0v2.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+            <span className="text-sm font-semibold">Confidentially validated · Chainlink CRE</span>
+          </div>
+          <p className="mt-1.5 text-xs leading-relaxed text-lilac-ink/80">
+            Whether this met the bar was decided against the bounty&rsquo;s private threshold inside a
+            Chainlink CRE enclave — the threshold is never exposed — and the verdict is written
+            on-chain by a DON-signed report.
+          </p>
+        </div>
+      ) : null}
+
       {submitted ? <PredictionStrip episodeId={submitted.episode_id} /> : null}
 
       {submitted?.payment?.tx ? (

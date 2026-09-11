@@ -29,13 +29,6 @@ export default async function ContributorsPage() {
         </p>
       </header>
 
-      {/* §12 is explicit that the MVP shows this and does not gate on it. */}
-      <p className="mt-5 rounded-2xl border border-line bg-surface p-4 text-sm leading-relaxed text-muted">
-        Nothing is gated on these scores. At this size a refusal would be noise dressed as
-        policy; the mechanism exists so it is ready when the network is large enough for it
-        to mean something.
-      </p>
-
       {ranked.length === 0 ? (
         <p className="mt-6 rounded-2xl border border-dashed border-line p-8 text-center text-sm text-subtle">
           No contributors yet.

@@ -24,6 +24,7 @@ import { anchorEpisode } from "@/lib/chain/anchor-client";
 import { useSigner } from "@/lib/chain/signer-context";
 import { AccountBar } from "./account";
 import { PredictiveArcBackdrop } from "@/app/_components/PredictiveArcBackdrop";
+import { useCaptureTour } from "@/components/onboarding/use-capture-tour";
 import { SelfieCheck } from "./account/selfie-check";
 import { buildEpisodeManifest, toSubmission, type SelfReport } from "@/lib/episode/build";
 import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/episode/queue";
@@ -696,6 +697,10 @@ export default function CaptureClient() {
   const live = phase === "countdown" || phase === "recording";
   const seconds = Math.ceil(remainingMs / 1000);
 
+  // First-run onboarding (and the account screen's "Replay the tour"), started
+  // only while idle since the tour's anchors live on the idle screen.
+  useCaptureTour(phase);
+
   return (
     <main className="relative flex flex-1 flex-col overflow-hidden px-4 pt-3">
       {/*
@@ -703,9 +708,11 @@ export default function CaptureClient() {
         decide whether they bother — what they have, and what this take adds —
         face each other across the top before anything else loads.
       */}
-      <header className="settle settle-1 flex items-start justify-between gap-3 pb-3">
+      {/* pr-14 keeps the pay pill clear of the fixed top-right menu button. */}
+      <header className="settle settle-1 flex items-start justify-between gap-3 pb-3 pr-14">
         <Link
           href="/c/account"
+          id="onb-earned"
           className="interactive -m-1.5 block rounded-inner p-1.5"
           aria-label="Your account and earnings"
         >
@@ -717,7 +724,7 @@ export default function CaptureClient() {
         </Link>
 
         {bounty ? (
-          <div className="rounded-full bg-mint px-4 py-2.5 text-right">
+          <div id="onb-rate" className="rounded-full bg-mint px-4 py-2.5 text-right">
             <p className="text-[11px] font-medium leading-none text-mint-ink">
               This take pays
             </p>
@@ -852,13 +859,19 @@ export default function CaptureClient() {
         {phase === "uploading" || phase === "scoring" ? (
           <div className="on-ink absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/95 p-6 text-center backdrop-blur">
             <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-lilac" />
+            {phase === "scoring" ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-lilac/15 px-3 py-1 text-[11px] font-semibold text-lilac">
+                <span className="h-1.5 w-1.5 rounded-full bg-lilac" />
+                Chainlink CRE · confidential
+              </span>
+            ) : null}
             <p className="text-base font-semibold text-on-ink">
-              {phase === "uploading" ? "Sending your episode" : "Scoring on the server"}
+              {phase === "uploading" ? "Sending your episode" : "Validating confidentially"}
             </p>
             <p className="max-w-xs text-sm leading-relaxed text-on-ink-muted">
               {phase === "uploading"
                 ? "Saved on your phone already — this can retry if it drops."
-                : "Every frame is being checked, which takes about a minute. You can put the phone down."}
+                : "Your episode's scores are checked against this bounty's private bar inside a Chainlink CRE enclave, and the verdict is written on-chain by a DON-signed report. About a minute — you can put the phone down."}
             </p>
           </div>
         ) : null}
@@ -882,7 +895,7 @@ export default function CaptureClient() {
       </section>
 
       {/* Primary action sits in the thumb zone, above the dock. */}
-      <div className="settle settle-3 pb-3 pt-3">
+      <div id="onb-action" className="settle settle-3 pb-3 pt-3">
         {phase === "idle" && signer && verified === false ? (
           <>
             {/* Hard gate: Selfie Check must pass before this identity's
@@ -992,7 +1005,7 @@ export default function CaptureClient() {
 
         {phase === "uploading" || phase === "scoring" ? (
           <p className="py-4 text-center text-sm text-subtle">
-            {phase === "uploading" ? "Uploading" : "Waiting for the validator"}
+            {phase === "uploading" ? "Uploading" : "Confidential check · Chainlink CRE"}
           </p>
         ) : null}
 
