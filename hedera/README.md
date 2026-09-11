@@ -311,6 +311,70 @@ Submitted that same standard-JSON input to Sourcify's `POST
 address, with the real transaction hash that created it — genuinely
 verified, not merely "looks right locally."
 
+**T9 — done, verified: the identity bridge, built.** `mint-to-creator.mjs`
+(and the app's "Mint licence seats to creator" action) reads a dataset's real
+`creator` off the registry, KYC's that EVM address, and mints the Bond's
+`numberOfUnits` licence seats to it — so the creator is the actual holder of
+the token representing their data, not the platform relayer. The relayer keeps
+the compliance/admin roles (it needs them to run KYC and coupons); economic
+ownership via holding the tokens is the thing that moves to the creator.
+Minting is also what gives a coupon a non-zero holder to pay (T10).
+
+```
+Bond:        0x47c164f910e4fc5d30fa4b971b56e5b251a36a44   (0.0.10504209)
+Creator:     0x89EA57a0E61Ac9B167e263839b65E58E8DFDAAe8   (from DatasetRegistry #1)
+Seats minted: 100   (balance read back from chain = 100)
+KYC tx:      0xca102fea339b9c9efc475b3f96b562f68e0d76e7524281cb9fecdc5b13d6ec6f
+Mint tx:     0xf7e00ab4a530433407255a94723e30a4fed7cdb8fba8e279bb00e463530ef377
+```
+
+Mirror-node confirmed on the mint: `result: SUCCESS`, `status: 0x1`,
+`gas_used: 375865`. KYC precedes the mint deliberately — every Bond carries
+`internalKycActivated: true`, so issuing units to a non-KYC'd holder reverts.
+
+**What T9 does NOT change, stated rather than hidden:** diamond *admin* stays
+with the relayer (the platform runs compliance and corporate actions);
+transferring diamond ownership to the creator is a different, deliberately
+untaken step. And the creator EOA holds the units regardless, but to *receive
+USDC* (T10) it must have a Hedera account associated with the USDC token — see
+T10's caveat.
+
+**T10 — done, verified: the coupon, paid in real USDC.** `distribute-coupon.mjs`
+(and the app's "Distribute coupon (USDC)" action) reads a Bond's coupon rate
+and, for each holder, transfers the licence-fee owed in real testnet USDC
+(HTS `0.0.429274`) from the relayer. This is the step T5 explicitly did not
+take — it fixed a rate but moved no value. The amount math is the pure, tested
+`src/coupon-payout.mjs` (`unitsHeld × nominalValueCents × rate%`, scaled to
+USDC's 6 decimals).
+
+```
+Bond:      0xd7a725e7d250f3570d817630c0abb9c729a22861   coupon #1 @ 5%, nominal $6.00/seat
+Holder:    0xb7095784eb436887d5166ae0c0fdec623e0f2bf2   (0.0.10504514)  — 5 seats
+Payout:    1,500,000 USDC smallest units = $1.50   (5 × $6.00 × 5%)
+Transfer:  0.0.7290316@1789228282.954601437
+```
+
+[Transfer on HashScan](https://hashscan.io/testnet/transaction/0.0.7290316-1789228282-954601437).
+Mirror-node confirmed: the holder account `0.0.10504514` USDC balance read back
+as `1500000` after the distribution — real USDC received on-chain, not just an
+SDK return value.
+
+**Honest caveats, handled rather than hidden:**
+- Units held for the payout come from the security's *current* balance
+  (`getBalanceOf`), not the coupon's on-chain snapshot — the snapshot
+  (`getCouponFor`) is only populated after the coupon's recordDate, so keying
+  to it would make a run either wait or silently pay zero. The coupon supplies
+  the rate.
+- An ATS holder is an EVM address inside the diamond; paying it real USDC needs
+  a Hedera account associated with the USDC token. A holder that is an external
+  EOA with no Hedera account (e.g. a Sepolia dataset creator) cannot receive
+  USDC yet — its payout is computed and reported with a caveat, and the run
+  continues. In the run above, the external creator holder correctly hit that
+  caveat while the onboarded holder was paid.
+- The SDK's own `getSecurityHolders` cannot be used to enumerate holders here:
+  it resolves each holder's Hedera account info and throws when a holder is an
+  external EOA. Holders are passed to `distribute-coupon` explicitly.
+
 ## Running it
 
 ```sh
@@ -319,8 +383,10 @@ npm run spike                       # T1: a standalone Bond, proves the SDK path
 node --env-file=.env issue-dataset-bond.mjs <datasetId>   # T2: issue against a real Sepolia dataset
 node --env-file=.env kyc-exercise.mjs <bondEvmAddress>    # T4: grant, check, revoke KYC for real
 node --env-file=.env set-coupon.mjs <bondEvmAddress>       # T5: set and read back a real coupon
+node --env-file=.env mint-to-creator.mjs <bondEvmAddress> <datasetId>          # T9: KYC + mint licence seats to the dataset creator
+node --env-file=.env distribute-coupon.mjs <bondEvmAddress> <couponId> <holder...>  # T10: pay the coupon to holders in real USDC
 node verify-contract.mjs <bondEvmAddress> [creationTxHash]  # T6: verify on Sourcify/HashScan
-node --test src/*.test.mjs          # the pure mapping and checksum logic, no network needed
+node --test src/*.test.mjs          # the pure mapping, checksum, and coupon-payout logic, no network needed
 ```
 
 Needs `hedera/.env` with `HEDERA_ACCOUNT_ID`, `HEDERA_PRIVATE_KEY` (raw hex,
@@ -399,5 +465,10 @@ a number anyone has validated against how these deals actually get priced.
 
 - T7: make this repo public (currently private — a decision for whoever
   owns it, not this script).
-- The identity bridge (Sepolia creator → Hedera issuing account) named above
-  and left open.
+- The identity bridge is now **built** (T9): the dataset creator holds the
+  Bond's licence seats. What remains open is transferring diamond *admin* to
+  the creator (kept with the relayer by design) and onboarding an external
+  creator EOA to a Hedera account + USDC association so it can *receive* a
+  coupon payout (T10's caveat).
+- Wiring a coupon distribution to Sepolia's own USDC flow / an automated payout
+  trigger, rather than the manual `distribute-coupon` step.

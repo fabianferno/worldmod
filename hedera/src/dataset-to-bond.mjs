@@ -12,11 +12,15 @@
  * `setCoupon` (T5) is the natural fit for a future licence-fee distribution;
  * Equity's dividend/voting-rights machinery has nothing to attach to here.
  *
- * What this does NOT solve, and says so rather than hiding it: a Sepolia
- * dataset's `creator` is an Ethereum EOA, which has no Hedera equivalent.
- * `diamondOwnerAccount` here is the issuing Hedera account you pass in, not a
- * derivation from the Sepolia creator — that identity bridge is unbuilt, and
- * pretending otherwise would be worse than naming the gap.
+ * The identity bridge this once left unbuilt is now built elsewhere: the
+ * dataset creator becomes the real holder of the Bond's licence seats via
+ * mint-to-creator.mjs (KYC the creator's EVM address, then mint to it).
+ * `diamondOwnerAccount` here is still the issuing Hedera account you pass in —
+ * it names who holds diamond *admin* (kept with the platform relayer, to run
+ * KYC and coupons), which is a separate thing from economic ownership via
+ * holding the tokens. What remains: transferring diamond admin to the creator,
+ * and onboarding an external creator EOA to a Hedera account so it can receive
+ * a USDC coupon payout (see distribute-coupon.mjs's caveat).
  */
 
 import { realIsin } from "./isin.mjs";

@@ -14,13 +14,15 @@
  * a future licence-fee distribution; Equity's dividend/voting-rights
  * machinery has nothing to attach to here.
  *
- * What this does NOT solve, and says so rather than hiding it: a registry
- * dataset's `creator` is an EVM address, which has no direct equivalent in
- * Hedera's own native account-id model (0.0.X, distinct from a Hedera
- * account's aliased EVM address). `diamondOwnerAccount` is the issuing
- * Hedera account passed in, not a derivation from the registry's own
- * `creator` field — that identity bridge is unbuilt, on either chain the
- * registry has lived on.
+ * The identity bridge this once left unbuilt is now built: the dataset's
+ * `creator` (an EVM address) becomes the real holder of the Bond's licence
+ * seats via mint-to-creator (KYC the creator, then mint to it).
+ * `diamondOwnerAccount` is still the issuing Hedera account passed in — it
+ * names who holds diamond *admin* (kept with the platform relayer, to run KYC
+ * and coupons), a separate thing from economic ownership via holding the
+ * tokens. What remains: transferring diamond admin to the creator, and
+ * onboarding an external creator EOA to a Hedera account so it can *receive* a
+ * USDC coupon payout (see distribute-coupon.ts's caveat).
  */
 
 import { CHAIN } from "@/lib/chain/config";
