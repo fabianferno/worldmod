@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         error: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined,
+        stack: process.env.NODE_ENV !== "production" && err instanceof Error ? err.stack : undefined,
       },
       { status: 500 },
     );

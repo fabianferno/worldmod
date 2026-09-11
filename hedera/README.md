@@ -374,6 +374,16 @@ SDK return value.
 - The SDK's own `getSecurityHolders` cannot be used to enumerate holders here:
   it resolves each holder's Hedera account info and throws when a holder is an
   external EOA. Holders are passed to `distribute-coupon` explicitly.
+- **In the app**, the "Distribute coupon (USDC)" step pays the dataset creator
+  by default — an external EOA — so it will show the caveat and move nothing
+  unless that creator has been onboarded to a Hedera account + USDC
+  association. The step also takes an optional additional holder address, so an
+  already-onboarded holder (like `0.0.10504514` above) can be paid for real
+  from the app. The $1.50 payment above was made to such a holder.
+- **`distribute-coupon` is not idempotent**: it pays each holder from their
+  current balance with no already-paid guard, so running it twice for the same
+  coupon pays twice. It is a manual demo-grade step — do not re-run it for a
+  coupon already distributed.
 
 ## Running it
 

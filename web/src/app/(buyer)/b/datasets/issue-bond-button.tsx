@@ -78,6 +78,7 @@ export function IssueBondButton({ datasetId }: { datasetId: number }) {
   const [distState, setDistState] = useState<Step>("idle");
   const [dist, setDist] = useState<DistributeResult | null>(null);
   const [distError, setDistError] = useState<string | null>(null);
+  const [extraHolder, setExtraHolder] = useState("");
 
   async function issue() {
     setIssueState("pending");
@@ -130,10 +131,13 @@ export function IssueBondButton({ datasetId }: { datasetId: number }) {
     setDistState("pending");
     setDistError(null);
     try {
+      const holders = [mint?.creator, extraHolder.trim()].filter(
+        (h): h is string => Boolean(h),
+      );
       const data = await postAction<{ distribution: DistributeResult }>("/api/hedera/distribute-coupon", {
         securityId: bond.evmAddress,
         couponId: coupon.couponId,
-        holders: mint ? [mint.creator] : [],
+        holders,
       });
       setDist(data.distribution);
       setDistState("done");
@@ -209,6 +213,26 @@ export function IssueBondButton({ datasetId }: { datasetId: number }) {
           </>
         ) : null}
       </LifecycleAction>
+
+      {/* Optional onboarded holder: the creator is an external EOA and will
+          show the "no Hedera account" caveat; an already-onboarded, USDC-
+          associated holder can be paid for real. */}
+      {coupon && distState !== "done" ? (
+        <div className="rounded-xl border border-line bg-surface p-3">
+          <label className="block text-[11px] text-subtle" htmlFor={`extra-holder-${datasetId}`}>
+            Optional: an onboarded (USDC-associated) holder to also pay for real. The creator is an
+            external address and will show the &ldquo;no Hedera account&rdquo; caveat by design.
+          </label>
+          <input
+            id={`extra-holder-${datasetId}`}
+            type="text"
+            value={extraHolder}
+            onChange={(e) => setExtraHolder(e.target.value)}
+            placeholder="0x… or 0.0.…"
+            className="mt-1 w-full rounded-lg border border-line bg-transparent px-2 py-1 font-mono text-xs"
+          />
+        </div>
+      ) : null}
 
       {/* Step: distribute the coupon in real USDC (needs a coupon) */}
       <LifecycleAction

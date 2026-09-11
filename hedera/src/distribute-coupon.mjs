@@ -27,6 +27,14 @@
  * case above. Callers know their holders (the minted-to creator, plus anyone
  * else), so `distributeCoupon` takes the list and only falls back to
  * best-effort enumeration when none is given.
+ *
+ * NOT IDEMPOTENT: each call issues a fresh USDC transfer per holder computed
+ * from their CURRENT balance — there is no per-(coupon, holder) paid-guard, so
+ * running it twice for the same coupon pays every holder twice. This is a
+ * manual, demo-grade payout step; do not re-run it for a coupon already
+ * distributed. Making it a safe repeatable primitive (record and check prior
+ * payments, or consume the coupon's snapshot) is deliberately left as
+ * follow-up.
  */
 
 import {
