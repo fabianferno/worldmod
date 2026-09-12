@@ -1,0 +1,349 @@
+{
+  "screens": [],
+  "chatBoxes": [],
+  "stickies": [],
+  "analytics": [],
+  "youtube": [
+    {
+      "ownerUserId": "8cd12685-d536-48a6-ae64-4655c442b42b",
+      "ownerDeviceId": "6ae1adc7-027a-489a-8ada-7f15765106ab",
+      "ownerName": "silas.ashar5",
+      "createdAt": 1789222365106,
+      "id": "yt-mtygssky-h",
+      "position": {
+        "x": -797.6583879586967,
+        "y": 2359.882304510929
+      },
+      "size": {
+        "width": 548,
+        "height": 794
+      },
+      "url": "http://localhost:3000/c/account",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "extractedMarkdown": "Ready to withdraw\n\n$0.00USDC\n\nAccepted episodes credit here. Gas is covered — you sign, we pay for it.\n\nEpisodes\n\n0\n\n0 accepted\n\nEarned so far\n\n$0.00\n\nacross all bounties\n\n## Your episodes\n\nNothing yet. [Record your first](http://localhost:3000/c).\n\n## Your identity\n\nSelfie Check verified\n\n12/09/2026\n\n[How it works](http://localhost:3000/c?tour=capture)\n\nPaid to [0x2299…Dec7](https://sepolia.etherscan.io/address/0x2299a63D8b7e908125cC22394EA516A2f50BDec7)",
+      "extractedTitle": "Your account — World Mod",
+      "extractedUrl": "http://localhost:3000/c/account",
+      "extractedAt": 1789292972648
+    }
+  ],
+  "experiments": [],
+  "terminals": [
+    {
+      "createdAt": 1789222311499,
+      "ownerUserId": "8cd12685-d536-48a6-ae64-4655c442b42b",
+      "ownerDeviceId": "6ae1adc7-027a-489a-8ada-7f15765106ab",
+      "ownerName": "silas.ashar5",
+      "id": "term-mtygrn7v-c",
+      "title": "Terminal",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "agentName": "Apollo",
+      "position": {
+        "x": -414.184830687035,
+        "y": 2061.3874027836177
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      },
+      "cwd": "/Users/silas/worldmod/web",
+      "launchPending": false,
+      "permissionMode": "default",
+      "startCommand": "claude",
+      "harness": "claude-code",
+      "workspaceLocked": true
+    },
+    {
+      "createdAt": 1789222322827,
+      "ownerUserId": "8cd12685-d536-48a6-ae64-4655c442b42b",
+      "ownerDeviceId": "6ae1adc7-027a-489a-8ada-7f15765106ab",
+      "ownerName": "silas.ashar5",
+      "id": "term-mtygrvyj-d",
+      "title": "Terminal",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "agentName": "Atlas",
+      "position": {
+        "x": 317.8613346543699,
+        "y": 2046.4476851235886
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      },
+      "cwd": "/Users/silas/worldmod/web",
+      "launchPending": false,
+      "permissionMode": "default",
+      "startCommand": "claude",
+      "harness": "claude-code",
+      "workspaceLocked": true
+    },
+    {
+      "createdAt": 1789222384673,
+      "ownerUserId": "8cd12685-d536-48a6-ae64-4655c442b42b",
+      "ownerDeviceId": "6ae1adc7-027a-489a-8ada-7f15765106ab",
+      "ownerName": "silas.ashar5",
+      "id": "term-mtygt7og-k",
+      "title": "Terminal",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "agentName": "Juno",
+      "position": {
+        "x": -135.25836916238828,
+        "y": 2576.453808680067
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      },
+      "cwd": "/Users/silas/worldmod/web",
+      "launchPending": false,
+      "permissionMode": "default",
+      "startCommand": "claude",
+      "harness": "claude-code",
+      "workspaceLocked": true
+    },
+    {
+      "createdAt": 1789224412624,
+      "ownerUserId": "8cd12685-d536-48a6-ae64-4655c442b42b",
+      "ownerDeviceId": "6ae1adc7-027a-489a-8ada-7f15765106ab",
+      "ownerName": "silas.ashar5",
+      "id": "term-mtyi0ogf-1d",
+      "title": "Terminal",
+      "agentName": "Athena",
+      "position": {
+        "x": 495.70081976074357,
+        "y": 2538.510082807435
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      }
+    },
+    {
+      "createdAt": 1789288951963,
+      "ownerUserId": "8cd12685-d536-48a6-ae64-4655c442b42b",
+      "ownerDeviceId": "6ae1adc7-027a-489a-8ada-7f15765106ab",
+      "ownerName": "silas.ashar5",
+      "id": "term-mtzkfzbv-25",
+      "title": "Terminal",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "agentName": "Orion",
+      "position": {
+        "x": 1002.3416120413033,
+        "y": 2046.4476851235886
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      },
+      "cwd": "/Users/silas/worldmod/web",
+      "launchPending": false,
+      "permissionMode": "default",
+      "startCommand": "claude",
+      "harness": "claude-code",
+      "workspaceLocked": true
+    }
+  ],
+  "closedTerminals": [
+    {
+      "id": "term-mtyt3727-21",
+      "agentName": "Orion",
+      "harness": "claude-code",
+      "title": "Terminal",
+      "cwd": "/Users/silas/worldmod/web",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "position": {
+        "x": 1002.3416120413033,
+        "y": 2046.4476851235886
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      },
+      "session": {
+        "agent": "claude",
+        "sessionId": "bf657c92-9fc8-507e-acca-f59fcf95cea3",
+        "file": "/Users/silas/.claude/projects/-Users-silas-worldmod-web/bf657c92-9fc8-507e-acca-f59fcf95cea3.jsonl",
+        "cwd": "/Users/silas/worldmod/web"
+      },
+      "permissionMode": "default",
+      "closedAt": 1789243014138
+    },
+    {
+      "id": "term-mtyhvqch-1c",
+      "agentName": "Orion",
+      "harness": "codex",
+      "title": "Terminal",
+      "cwd": "/Users/silas/worldmod/web",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "position": {
+        "x": 589.3408728898114,
+        "y": 2573.8169880856085
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      },
+      "session": {
+        "agent": "codex"
+      },
+      "permissionMode": "default",
+      "closedAt": 1789224418628
+    },
+    {
+      "id": "term-mtygu4s3-n",
+      "agentName": "Orion",
+      "harness": "codex",
+      "title": "Terminal",
+      "cwd": "/Users/silas/worldmod/web",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "position": {
+        "x": 468.83687009256835,
+        "y": 2553.8609111892497
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      },
+      "session": {
+        "agent": "codex"
+      },
+      "permissionMode": "default",
+      "closedAt": 1789224179841
+    },
+    {
+      "id": "term-mtygt63z-j",
+      "agentName": "Orion",
+      "harness": "claude-code",
+      "title": "Terminal",
+      "cwd": "/Users/silas/worldmod/web",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "position": {
+        "x": 274.4003378251955,
+        "y": 2769.6658354840674
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      },
+      "session": {
+        "agent": "claude",
+        "sessionId": "fb41e263-a796-5ec6-9128-4a835ccfc206",
+        "file": "/Users/silas/.claude/projects/-Users-silas-worldmod-web/fb41e263-a796-5ec6-9128-4a835ccfc206.jsonl",
+        "cwd": "/Users/silas/worldmod/web"
+      },
+      "permissionMode": "default",
+      "closedAt": 1789222426655
+    },
+    {
+      "id": "term-mtygsdvt-g",
+      "agentName": "Orion",
+      "harness": "claude-code",
+      "title": "Terminal",
+      "cwd": "/Users/silas/worldmod/web",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "position": {
+        "x": -630.1316586819948,
+        "y": 2486.4902780189786
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      },
+      "session": {
+        "agent": "claude",
+        "sessionId": "e1d57cc6-6812-5ee2-ae04-a925c16aa1d1",
+        "file": "/Users/silas/.claude/projects/-Users-silas-worldmod-web/e1d57cc6-6812-5ee2-ae04-a925c16aa1d1.jsonl",
+        "cwd": "/Users/silas/worldmod/web"
+      },
+      "permissionMode": "default",
+      "closedAt": 1789222380106
+    },
+    {
+      "id": "term-mtygsa1x-f",
+      "agentName": "Orion",
+      "harness": "claude-code",
+      "title": "Terminal",
+      "cwd": "/Users/silas/worldmod/web",
+      "workspaceId": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "position": {
+        "x": 180.68756341228837,
+        "y": 2470.192404208038
+      },
+      "size": {
+        "width": 560,
+        "height": 360
+      },
+      "session": {
+        "agent": "claude"
+      },
+      "permissionMode": "default",
+      "closedAt": 1789222344698
+    }
+  ],
+  "closedChats": [
+    {
+      "chat": {
+        "ownerUserId": "8cd12685-d536-48a6-ae64-4655c442b42b",
+        "ownerDeviceId": "6ae1adc7-027a-489a-8ada-7f15765106ab",
+        "ownerName": "silas.ashar5",
+        "id": "chat-mtygpxv1-a",
+        "title": "Chat",
+        "position": {
+          "x": 80,
+          "y": 2040
+        },
+        "size": {
+          "width": 380,
+          "height": 420
+        },
+        "messages": [],
+        "agentName": "Apollo"
+      },
+      "closedAt": 1789222297615
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn-mtygs32g-e",
+      "source": "term-mtygrn7v-c",
+      "target": "term-mtygrvyj-d",
+      "sourceHandle": "r",
+      "targetHandle": "l"
+    },
+    {
+      "id": "conn-mtygu10x-m",
+      "source": "yt-mtygssky-h",
+      "target": "term-mtygrn7v-c",
+      "sourceHandle": "t",
+      "targetHandle": "b"
+    },
+    {
+      "id": "conn-mtygy6jc-o",
+      "source": "term-mtygrn7v-c",
+      "target": "term-mtygt7og-k",
+      "sourceHandle": "b",
+      "targetHandle": "t"
+    },
+    {
+      "id": "conn-mtyi0y6d-1e",
+      "source": "term-mtygrvyj-d",
+      "target": "term-mtyi0ogf-1d",
+      "sourceHandle": "b",
+      "targetHandle": "t"
+    }
+  ],
+  "busCanvasId": "dda06c35-452a-41d3-adb7-242426b8c920",
+  "workspaces": [
+    {
+      "id": "487335ab-eda1-4dbe-8771-51a88acd807b",
+      "name": "web",
+      "color": "#6ea8fe"
+    }
+  ],
+  "workspaceBindings": {
+    "487335ab-eda1-4dbe-8771-51a88acd807b": {
+      "root": "/Users/silas/worldmod/web",
+      "allocation": "ready"
+    }
+  },
+  "primaryCheckoutId": "487335ab-eda1-4dbe-8771-51a88acd807b"
+}

@@ -2,6 +2,11 @@
 # CRE PROJECT SETTINGS FILE
 # ==========================================================================
 staging-settings:
+  account:
+    # The deploy key's own address (same EOA as the Sepolia contract deployer).
+    # Needed for --unsigned gas estimation and for a real `deploy` to know who
+    # the workflow's on-chain owner is.
+    workflow-owner-address: "0x89EA57a0E61Ac9B167e263839b65E58E8DFDAAe8"
   rpcs:
     - chain-name: ethereum-testnet-sepolia
       url: https://ethereum-sepolia-rpc.publicnode.com

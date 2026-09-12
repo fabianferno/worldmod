@@ -3,9 +3,15 @@
 Working towards World's Selfie Check track — see `world.md` (repo root) for
 the qualification bar. Short version: World Mod is now a World mini app
 (MiniKit provides the recoverable contributor identity, replacing Privy),
-and a Selfie Check credential is a non-gating abuse-resistance/continuity
-badge on a contributor's account — never a requirement to record or get
-paid, matching how reputation (product-spec §12) already works.
+and Selfie Check is a **hard gate**: a contributor cannot record their first
+episode until they've completed it. This is a deliberate reversal of an
+earlier design in this same document, which treated it as a non-gating
+badge (matching how reputation, product-spec §12, "computes and displays
+but does not gate"). That framing didn't survive contact with the actual
+abuse vector — see "Why Selfie Check fits here, specifically" below for
+why gating won out. It's a one-time gate, not a per-episode one: the
+credential is a standing fact valid 90 days, so it blocks nothing after
+the first recording.
 
 ## What's real, what's mocked, and why
 
@@ -79,18 +85,26 @@ same physical action — exactly what a low-friction liveness/facial-biometric
 check is good at catching without requiring an Orb visit or a passport.
 Framed against world.md's qualification list:
 
-- **Abuse-prevention**: a Selfie Check badge is a real signal against
-  Sybil-style bounty farming, without requiring hardware most contributors
+- **Abuse-prevention**: a real signal against Sybil-style bounty farming —
+  one person running many device identities to multiply payouts for the
+  same physical action — without requiring hardware most contributors
   don't have.
 - **Continuity**: because the credential is tied to World App's own
   account (not a fresh identity each install), it's the same signal on a
   replacement phone that it was on the lost one — matching exactly why
   §10.3 wanted a recoverable identity in the first place.
-- **Not eligibility or fairness gating**: deliberately. §12 already commits
-  to "computes and displays it but does not gate on it" for reputation; a
-  Selfie Check badge follows the same rule. At this network's current size,
-  gating payouts on a Beta-access-gated credential would exclude far more
-  honest contributors than bad actors it would catch.
+- **Eligibility gating, deliberately — a reversal from an earlier design
+  here.** This originally followed §12's "computes and displays it but does
+  not gate on it" rule for reputation, on the reasoning that gating on a
+  Beta-access-gated credential would exclude more honest contributors than
+  bad actors. That held only while access was pending. Once Beta access was
+  actually granted for this app, the calculus changed: the abuse vector
+  (duplicate accounts farming the same bounty) is a real, first-order
+  payment-integrity problem, not a nice-to-have, and there's no honest
+  reason to leave it unaddressed once the credential is actually available.
+  So it's now a hard gate — once, before a contributor's first recording,
+  never per-episode, since the credential is a 90-day standing fact rather
+  than something to re-prove each take.
 
 ## Architecture
 

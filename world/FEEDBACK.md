@@ -3,15 +3,23 @@
 Written while integrating Selfie Check into World Mod (see `world/README.md`
 for what got built). Scoped honestly: a Developer Portal app and RP now
 exist (`app_d4bef1c976c0674e0583c328c02f3c10`, `rp_0f7bb62abb7fba06`), and
-`web/src/app/api/world/verify/route.ts` calls World's real, live verify API
-— but this document's author never had a logged-in portal session, and
-Selfie Check Beta access still hasn't been granted, so the Developer Portal
-and Sandbox App sections below remain based on what the docs describe, not
-hands-on navigation or a completed check — that distinction is called out
-inline rather than blurred. The SDK/integration-flow section is firsthand:
-real npm packages, real installed type definitions, real request/response
-round-trips, including one real rejection from World's own verify API
-confirming it's genuinely live, not just documented.
+`web/src/app/api/world/verify/route.ts` calls World's real, live verify API.
+At the time most of this document was written, this project's author never
+had a logged-in portal session and Selfie Check Beta access hadn't been
+granted, so the Developer Portal and Sandbox App sections below were based
+on what the docs describe, not hands-on navigation or a completed check —
+that distinction is called out inline rather than blurred, and left
+standing below as the honest record of what the integration experience was
+like *before* access existed. **Update: Beta access was subsequently
+granted for this app**, the sandbox World ID App build was installed, and a
+real Selfie Check was completed end to end — see `world/README.md`'s "Done"
+section. That doesn't retroactively change what's written below (the
+gaps identified while working docs-first were real gaps at the time), but
+it does mean the "hard to test" / "still secondhand" framing in a few
+places is now historical, not current. The SDK/integration-flow section is
+firsthand: real npm packages, real installed type definitions, real
+request/response round-trips, including one real rejection from World's
+own verify API confirming it's genuinely live, not just documented.
 
 ## SelfieCheck docs and integration flow
 
@@ -105,9 +113,12 @@ a logged-in portal session, and never saw the actual screens described.
 
 ## Sandbox App: states, proof flows, test users, errors, edge cases
 
-**Still secondhand — Beta access is the prerequisite the docs state for even
-starting sandbox testing**, and this project doesn't have it, so nothing
-below was clicked through. Read the full `sandbox/testing-selfie-check` page
+**Written while still secondhand — Beta access is the prerequisite the docs
+state for even starting sandbox testing**, and at the time this section was
+drafted, this project didn't have it, so nothing below had been clicked
+through yet. (Access was granted later — see the update at the top of this
+document — but the finding stands as written: everything below came from
+reading the page, not from a session.) Read the full `sandbox/testing-selfie-check` page
 (not just a fetched summary of it) after an earlier draft of this document
 undersold it — worth correcting in place rather than leaving the weaker
 claim standing:
@@ -160,15 +171,20 @@ claim standing:
    Check Beta access is a human email request with no in-product start
    point. Both gate testing; only one explains how to get unblocked without
    leaving the docs.
-4. **Hard to test**: the Beta gate blocks sandbox testing entirely until a
-   human grants access — reasonable for a Beta feature, and the sandbox
-   coverage page itself is well-specified once you have that access (see
-   above — it names exact states, platforms, and known limitations). But
-   until access exists, the whole integration below the RP-context layer
-   had to be built against a self-built mock (clearly labelled `mock: true`
-   throughout, see `world/README.md`) rather than verified against anything
-   real. That mock is honest about its own limits; it is not a substitute
-   for World actually exercising this against a live sandbox session.
+4. **Hard to test, until it wasn't**: the Beta gate blocked sandbox testing
+   entirely until a human granted access — reasonable for a Beta feature,
+   and the sandbox coverage page itself is well-specified once you have
+   that access (see above — it names exact states, platforms, and known
+   limitations). Until access existed, the whole integration below the
+   RP-context layer had to be built against a self-built mock (clearly
+   labelled `mock: true` throughout, see `world/README.md`) rather than
+   verified against anything real — that mock was honest about its own
+   limits, but was not a substitute for actually exercising this against a
+   live sandbox session. Access was later granted, and that final exercise
+   happened for real — see `world/README.md`'s "Done" section. The gap this
+   point describes was real for most of this project's development, and is
+   worth keeping on record as what a Beta-gated credential costs a team
+   building against it in good faith before access lands.
 5. **Missing**: an error-code catalogue anywhere in the docs — every error
    this integration handles came from reading the SDK's own `.d.ts`, not
    from documentation aimed at developers who haven't installed the package

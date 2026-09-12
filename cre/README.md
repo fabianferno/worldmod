@@ -66,9 +66,10 @@ installed `cre` CLI (`v1.33.0`), not guessed from docs.
 ## Running the simulation
 
 Chainlink's own qualification bar for this bounty accepts a CLI simulation as
-sufficient proof (no live TEE deployment required — deployment is separately
-gated behind Confidential Workflows' private beta, requested but not yet
-approved for this account).
+sufficient proof, no live TEE deployment required. Confidential Workflows
+deploy access is granted for this account (`cre account access` confirms it)
+— the simulation below is run by choice, not by necessity, because it
+exercises the exact same enclave code path a live deployment would.
 
 ```bash
 # 1. Install the CRE CLI (installs to ~/.cre, adds it to PATH)

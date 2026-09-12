@@ -1,0 +1,582 @@
+<!doctype html>
+<title>World Mod Demo Reel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #e9e9e6;
+    --surface: #ffffff;
+    --surface-sunk: #f2f2ee;
+    --ink: #16140f;
+    --muted: #57544b;
+    --subtle: #8b8778;
+    --accent: #5b3d8c;
+    --accent-ink: #ffffff;
+    --accent-soft: #ece6f7;
+    --mint: #c7e6da;
+    --mint-ink: #1d5b49;
+    --butter: #f3e0a8;
+    --butter-ink: #6b4f16;
+    --negative: #a8402a;
+    --negative-soft: #f6e2dc;
+    --line: rgba(22, 20, 15, 0.13);
+    --line-strong: rgba(22, 20, 15, 0.24);
+    --shadow: 0 1px 2px rgba(22,20,15,.04), 0 8px 24px rgba(22,20,15,.06);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15130f;
+      --surface: #201d16;
+      --surface-sunk: #0f0d0a;
+      --ink: #eeeae0;
+      --muted: #b6b1a2;
+      --subtle: #7d7969;
+      --accent: #b79ee8;
+      --accent-ink: #15130f;
+      --accent-soft: #2c2540;
+      --mint: #24493c;
+      --mint-ink: #a7e2c8;
+      --butter: #4a3c17;
+      --butter-ink: #f0d385;
+      --negative: #e0836c;
+      --negative-soft: #3d241d;
+      --line: rgba(238,234,224,.14);
+      --line-strong: rgba(238,234,224,.26);
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15130f;
+    --surface: #201d16;
+    --surface-sunk: #0f0d0a;
+    --ink: #eeeae0;
+    --muted: #b6b1a2;
+    --subtle: #7d7969;
+    --accent: #b79ee8;
+    --accent-ink: #15130f;
+    --accent-soft: #2c2540;
+    --mint: #24493c;
+    --mint-ink: #a7e2c8;
+    --butter: #4a3c17;
+    --butter-ink: #f0d385;
+    --negative: #e0836c;
+    --negative-soft: #3d241d;
+    --line: rgba(238,234,224,.14);
+    --line-strong: rgba(238,234,224,.26);
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  code, .mono, .tabular { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  a { color: var(--accent); }
+
+  .shell {
+    display: grid;
+    grid-template-columns: 240px minmax(0,1fr);
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+    nav.toc { position: static; border-right: none; border-bottom: 1px solid var(--line); }
+  }
+
+  nav.toc {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    padding: 28px 18px 28px 24px;
+    border-right: 1px solid var(--line);
+  }
+  @media (max-width: 860px) { nav.toc { height: auto; } }
+  nav.toc .brand { display: flex; align-items: center; gap: 9px; margin-bottom: 22px; }
+  nav.toc .brand .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); flex: none; }
+  nav.toc .brand b { font-size: 14px; letter-spacing: .01em; }
+  nav.toc .brand span { display: block; font-size: 10.5px; color: var(--subtle); }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: sec; }
+  nav.toc li { counter-increment: sec; margin-bottom: 2px; }
+  nav.toc a {
+    display: flex; gap: 8px; align-items: baseline;
+    padding: 6px 8px; margin: 0 -8px; border-radius: 8px;
+    font-size: 12.5px; font-weight: 600; color: var(--muted); text-decoration: none;
+  }
+  nav.toc a:hover { background: var(--surface-sunk); color: var(--ink); }
+  nav.toc a::before {
+    content: counter(sec, decimal-leading-zero);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--subtle); font-weight: 500;
+  }
+
+  main { padding: 32px 28px 90px; min-width: 0; }
+  @media (max-width: 860px) { main { padding: 24px 18px 70px; } }
+
+  header.masthead { padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 34px; }
+  header.masthead .eyebrow {
+    font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 10px;
+  }
+  header.masthead h1 { font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; margin: 0 0 14px; text-wrap: balance; font-weight: 800; }
+  header.masthead .pitch { font-size: 17px; color: var(--muted); max-width: 62ch; margin: 0 0 18px; text-wrap: balance; }
+  header.masthead .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 12.5px; color: var(--subtle); }
+  header.masthead .meta b { color: var(--ink); }
+
+  section { margin-bottom: 46px; scroll-margin-top: 20px; }
+  section > h2 {
+    font-size: 21px; font-weight: 800; margin: 0 0 6px;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  section > h2 .num { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--subtle); font-weight: 500; }
+  section > .dek { color: var(--muted); font-size: 14.5px; margin: 0 0 18px; max-width: 68ch; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 99px; white-space: nowrap;
+  }
+  .badge.real { background: var(--mint); color: var(--mint-ink); }
+  .badge.sim  { background: var(--butter); color: var(--butter-ink); }
+  .badge.mock { background: var(--negative-soft); color: var(--negative); }
+
+  table.status { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.status th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--subtle); font-weight: 700; padding: 0 12px 8px 0; border-bottom: 1px solid var(--line-strong);
+  }
+  table.status td { padding: 11px 12px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.status tr:last-child td { border-bottom: none; }
+  table.status td.area { font-weight: 700; white-space: nowrap; }
+  table.status td.note { color: var(--muted); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 14px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px; box-shadow: var(--shadow);
+  }
+  .card h3 { margin: 0 0 4px; font-size: 15.5px; }
+  .card .role { font-size: 11.5px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px; }
+  .card dl { margin: 0; display: grid; gap: 8px; }
+  .card dt { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--subtle); font-weight: 700; }
+  .card dd { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+  .card .limitation { color: var(--negative); }
+  .card .source { display: block; margin-top: 12px; font-size: 11.5px; }
+
+  blockquote.insight {
+    margin: 0; padding: 18px 20px; background: var(--accent-soft); border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0; font-size: 15.5px; font-weight: 600; text-wrap: balance;
+  }
+
+  .narrative { display: grid; gap: 14px; }
+  .narrative .row { display: grid; grid-template-columns: 130px 1fr; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  @media (max-width: 640px) { .narrative .row { grid-template-columns: 1fr; gap: 4px; } }
+  .narrative .row dt { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: var(--subtle); }
+  .narrative .row dd { margin: 0; font-size: 14.5px; }
+
+  .hooks { display: grid; gap: 12px; }
+  .hook { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; background: var(--surface); }
+  .hook.recommended { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .hook .label { display:flex; align-items:center; gap:10px; margin-bottom: 6px; }
+  .hook .label b { font-size: 14.5px; }
+  .hook .tag { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); text-transform: uppercase; letter-spacing: .04em; }
+  .hook p { margin: 0; font-size: 13.5px; color: var(--muted); }
+
+  table.timeline { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.timeline th {
+    position: sticky; top: 0; background: var(--bg);
+    text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--subtle); font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--line-strong);
+  }
+  table.timeline td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.timeline td.time { font-family: 'JetBrains Mono', monospace; white-space: nowrap; color: var(--accent); font-weight: 600; }
+  table.timeline td.screen { color: var(--muted); white-space: nowrap; }
+  table.timeline td.notice { color: var(--mint-ink); font-weight: 600; }
+  .timeline-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .timeline-wrap table { min-width: 720px; }
+  .timeline-wrap td, .timeline-wrap th { padding-left: 14px; }
+
+  .beat { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); margin-bottom: 14px; overflow: hidden; }
+  .beat .beat-head { display:flex; justify-content: space-between; align-items:center; gap: 12px; padding: 12px 18px; background: var(--surface-sunk); }
+  .beat .beat-head .t { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: var(--accent); font-weight: 700; }
+  .beat .beat-head .s { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+  .beat .lines { padding: 16px 18px; font-size: 15px; line-height: 1.65; }
+  .beat .lines .say { display: block; margin-bottom: 10px; }
+  .beat .lines .say:last-child { margin-bottom: 0; }
+  .beat .note { padding: 0 18px 16px; font-size: 12.5px; color: var(--subtle); }
+  .beat .note b { color: var(--mint-ink); }
+
+  .checklist { display: grid; gap: 8px; }
+  .cl-group { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 14px 16px; }
+  .cl-group h4 { margin: 0 0 8px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--subtle); }
+  .cl-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 13.5px; }
+  .cl-item input { margin-top: 3px; width: 15px; height: 15px; accent-color: var(--accent); flex: none; }
+  .cl-item label { cursor: pointer; }
+  .cl-item.checked label { color: var(--subtle); text-decoration: line-through; }
+
+  .dontshow { display: grid; gap: 10px; }
+  .dontshow li { list-style: none; padding: 12px 16px; border-radius: var(--radius); background: var(--negative-soft); color: var(--negative); font-size: 13.5px; font-weight: 600; }
+  .dontshow li span { display: block; font-weight: 400; color: var(--ink); opacity: .82; margin-top: 3px; font-size: 13px; }
+
+  .judge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 700px) { .judge-grid { grid-template-columns: 1fr; } }
+  .judge-card { border-radius: var(--radius); padding: 16px 18px; font-size: 13.5px; }
+  .judge-card h4 { margin: 0 0 8px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  .judge-card.good { background: var(--mint); color: var(--mint-ink); }
+  .judge-card.risk { background: var(--negative-soft); color: var(--negative); }
+  .judge-card ul { margin: 0; padding-left: 18px; }
+  .judge-card li { margin-bottom: 6px; }
+
+  .footer-note { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 12px; color: var(--subtle); }
+
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+</style>
+
+<div class="shell">
+  <nav class="toc">
+    <div class="brand">
+      <span class="dot"></span>
+      <div><b>World Mod</b><span>ETHOnline demo reel</span></div>
+    </div>
+    <ol>
+      <li><a href="#snapshot">Build snapshot</a></li>
+      <li><a href="#story">The story</a></li>
+      <li><a href="#landscape">Who else does this</a></li>
+      <li><a href="#hooks">Opening hooks</a></li>
+      <li><a href="#timeline">Full timeline</a></li>
+      <li><a href="#narration">Narration script</a></li>
+      <li><a href="#recording">Recording plan</a></li>
+      <li><a href="#checklist">Prep checklist</a></li>
+      <li><a href="#cutlist">Cut list</a></li>
+      <li><a href="#judge">Judge simulation</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="masthead">
+      <p class="eyebrow">ETHOnline submission video — production plan</p>
+      <h1>The threshold you have to clear is invisible — including to us.</h1>
+      <p class="pitch">World Mod pays people in USDC to record real physical tasks on a head-mounted phone, scores the footage from the actual bytes instead of trusting anyone's word, and — the part worth a video — moves the buyer's pass/fail bar into a Chainlink CRE enclave so the platform operator can no longer read it either.</p>
+      <div class="meta">
+        <span>Target length: <b>3:15</b></span>
+        <span>Primary track: <b>Chainlink — Best Confidential Workflow</b></span>
+        <span>Supporting evidence: <b>Hedera ATS · World ID Selfie Check</b></span>
+        <span>Prepared: <b>Sept 2026</b></span>
+      </div>
+    </header>
+
+    <section id="snapshot">
+      <h2><span class="num">01</span> What's actually real</h2>
+      <p class="dek">Phase 1 — inspected the running repo directly, not the README's claims about it. This is the honesty ledger the whole script is built on; nothing below is asserted without a file, a test run, or a transaction hash behind it.</p>
+      <table class="status">
+        <thead><tr><th>Area</th><th>Status</th><th>Evidence</th></tr></thead>
+        <tbody>
+          <tr><td class="area">Episode capture &amp; scoring</td><td><span class="badge real">Real</span></td><td class="note">Server re-decodes every uploaded frame; hand-framing + optical-flow-vs-gyro correlation measured, not asserted. Phone only draws a skeleton overlay.</td></tr>
+          <tr><td class="area">Anti-spoof accuracy</td><td><span class="badge real">Measured</span></td><td class="note">Real genuine-vs-mismatched-pair table exists (below) — a rare thing for a hackathon to actually publish.</td></tr>
+          <tr><td class="area">USDC escrow &amp; payout</td><td><span class="badge real">Real</span></td><td class="note">Deployed on Sepolia + Hedera testnet; a bounty escrows its full budget before it's listed; contributor withdraws with their own signature.</td></tr>
+          <tr><td class="area">World App mini app + Selfie Check</td><td><span class="badge real">Real</span></td><td class="note"><code>environment="production"</code>; hard gate before a contributor's first recording; one completed verification on record with <code>mock:false</code>.</td></tr>
+          <tr><td class="area">Chainlink CRE — confidential validator</td><td><span class="badge real">Real</span> <span class="badge sim">Sim</span></td><td class="note">Threshold redaction, TEE secret-fetch, and the on-chain consumer contract are real and deployed. Confidential Workflows deploy access is now <b>granted</b> (<code>cre account access</code> confirms it) — the workflow just hasn't been registered on-chain yet, since that costs real mainnet gas and CLI simulation is what the bounty's own bar accepts as proof. A deliberate choice, not a blocked one.</td></tr>
+          <tr><td class="area">Chainlink CRE — utility oracle</td><td><span class="badge real">Real</span> <span class="badge sim">Sim</span></td><td class="note">Same pattern, second workflow: a secret weighting exponent decides each contributor's share of a bounty's utility pool. Consumer deployed, wired as <code>BountyEscrow</code>'s oracle. Same "could deploy, choosing to simulate" position.</td></tr>
+          <tr><td class="area">Hedera Asset Tokenization</td><td><span class="badge real">Real</span></td><td class="note">Strongest evidence in the repo — real bond issuance, KYC grant/revoke, coupon-set, all with HashScan-visible, mirror-node-confirmed transaction hashes.</td></tr>
+          <tr><td class="area">Live world-model prediction</td><td><span class="badge real">Real</span> <span class="badge mock">Weak</span></td><td class="note">Real ONNX inference, numerically verified to 2.5e-5 — but trained on 5 episodes, so it doesn't beat a "predict no change" baseline yet. True, but not a demo moment.</td></tr>
+          <tr><td class="area">Standalone landing site</td><td><span class="badge sim">Unverified</span></td><td class="note">Real Next.js app in <code>landing/</code>. No confirmed live deployment — leave out of the video.</td></tr>
+        </tbody>
+      </table>
+      <p class="dek" style="margin-top:16px">Measured anti-spoof result (flow-vs-gyro correlation, genuine capture vs. a mismatched screen-replay pair):</p>
+      <div class="timeline-wrap">
+        <table class="timeline" style="min-width:0">
+          <thead><tr><th>Sample</th><th>Genuine</th><th>Mismatched pairs</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">24526d93</td><td class="notice">75.4%</td><td class="mono">23.4%, 8.7%</td></tr>
+            <tr><td class="mono">57cbf6bd</td><td class="notice">59.6%</td><td class="mono">24.7%, 25.6%</td></tr>
+            <tr><td class="mono">149d2df5</td><td class="notice">42.7%</td><td class="mono">22.8%, 39.7%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="dek" style="margin-top:10px">Mean genuine 59% vs. mean spoof 24%; a 45% threshold catches every spoof in this sample at one genuine false negative. Evidence the check works — not proof it's unbeatable, and the script says so.</p>
+    </section>
+
+    <section id="story">
+      <h2><span class="num">02</span> The story</h2>
+      <p class="dek">Phases 2 &amp; 4 — problem, insight, and the two things a judge should remember.</p>
+      <div class="narrative">
+        <div class="row"><dt>Problem</dt><dd>Embodied-AI and robotics models need first-person video of real hands doing real tasks. That footage barely exists at any scale, and 2026's funding wave (Physical Intelligence's $600M raise, humanoid teleoperation labs everywhere) is all bottlenecked on getting more of it.</dd></div>
+        <div class="row"><dt>User</dt><dd>Anyone with a phone and fifteen seconds — the same person Hivemapper or DIMO already pay to point a sensor at the world, just pointed at their own hands instead of the road.</dd></div>
+        <div class="row"><dt>Existing workflow</dt><dd>Either an institution flies out Meta Aria glasses to a few hundred people (Ego4D/EgoExo4D — real, valuable, ~88–3,670 hours total, hardware nobody can buy), or a gig platform like Scale AI/Surge AI pays contractors to label data through an opaque backend.</dd></div>
+        <div class="row"><dt>Their limitation</dt><dd>Institutional collection doesn't scale past a few hundred contributors. The gig-platform model scales, but Surge AI is being sued right now for wage theft and worker misclassification — and the actual, specific failure is an opaque ledger: workers get deactivated with no explanation and no appeal, across every platform the same company owns.</dd></div>
+        <div class="row"><dt>Our insight</dt><dd>The DePIN-for-physical-data model already works at real scale (Hivemapper: $18M revenue; DIMO: 180k vehicles) for data that's easy to verify (GPS trivially proves you drove somewhere). Nobody's pointed that model at data where "did a human genuinely do this" is the hard part — because verifying that requires a validator, and a validator is exactly where Surge AI's opacity problem re-appears. So we removed it twice: the accept/reject decision is measured from re-decoded bytes, not asserted; and the buyer's pass bar lives inside a Chainlink CRE TEE, invisible even to us.</dd></div>
+        <div class="row"><dt>Why Web3</dt><dd>Not because "blockchain." Because the actual bug in the Web2 version of this idea is a trusted middleman who can quietly move the goalposts or freeze an account with no audit trail. Escrow + on-chain payment release + a TEE-attested validator remove that middleman in a way a judge can check on Etherscan, not just trust.</dd></div>
+        <div class="row"><dt>Why now</dt><dd>Chainlink CRE Confidential Workflows and World ID Selfie Check both went beta this cycle. The demand curve for this exact data type is the steepest it's ever been.</dd></div>
+      </div>
+      <blockquote class="insight" style="margin-top:20px">Strongest differentiator: the bar you have to clear to get paid is gone from the API, gone from the page, gone from your rejection reason — on purpose, in code — and compared against your score somewhere no one, including us, can read it.</blockquote>
+      <p class="dek" style="margin-top:14px"><b style="color:var(--ink)">"Holy shit" moment:</b> pull up the live bounty API in a browser tab — no threshold field. Cut to a real terminal running <code>cre workflow simulate</code> — the enclave rejecting a real episode with zero on-chain call. Then lower the secret by one line in <code>.env</code>, re-run the same episode, and watch the verdict flip and a real <code>ValidationRecorded</code> event land on the same deployed Sepolia contract. Same code, same episode, different secret, different on-chain outcome — visible, not asserted.</p>
+    </section>
+
+    <section id="landscape">
+      <h2><span class="num">03</span> Who else does this — for real</h2>
+      <p class="dek">Phase 3 — four real products, not invented competitors. Two prove the economic model works; one shows what happens without an honest validator; one shows what the underlying data is worth right now.</p>
+      <div class="cards">
+        <div class="card">
+          <h3>Hivemapper</h3>
+          <div class="role">DePIN precedent — proves the model</div>
+          <dl>
+            <dt>What it does</dt><dd>Pays drivers HONEY tokens to capture 4K dashcam imagery; developers burn tokens to consume the map data.</dd>
+            <dt>Real usage</dt><dd>33% of the global road network mapped; $18M revenue (Jan 2026); customers include Lyft, TomTom, Trimble.</dd>
+            <dt class="limitation">Limitation</dt><dd class="limitation">Authenticity is easy here — GPS + accelerometer trivially proves you drove somewhere. Doesn't need a validator.</dd>
+          </dl>
+          <a class="source" href="https://depinscan.io/projects/hivemapper" target="_blank" rel="noreferrer">depinscan.io/projects/hivemapper ↗</a>
+        </div>
+        <div class="card">
+          <h3>DIMO</h3>
+          <div class="role">DePIN precedent — proves the marketplace</div>
+          <dl>
+            <dt>What it does</dt><dd>Vehicle owners connect a device, share telemetry, and sell it in a token-settled marketplace to automakers/insurers.</dd>
+            <dt>Real usage</dt><dd>180,000+ vehicles connected; drivers saw $1,250 average annualized rewards (2023).</dd>
+            <dt class="limitation">Limitation</dt><dd class="limitation">Same as Hivemapper — vehicle telemetry is self-verifying. A different kind of physical data, one that doesn't have to solve "prove a human did this."</dd>
+          </dl>
+          <a class="source" href="https://www.gate.com/learn/articles/dimo-decentralized-revolution-of-vehicle-data/2789" target="_blank" rel="noreferrer">gate.com — DIMO explained ↗</a>
+        </div>
+        <div class="card">
+          <h3>Ego4D / Ego-Exo4D</h3>
+          <div class="role">The data type — proves the demand</div>
+          <dl>
+            <dt>What it does</dt><dd>Meta-led academic consortium collecting egocentric video with Project Aria glasses for embodied-AI research.</dd>
+            <dt>Real usage</dt><dd>Ego4D: 3,670 hours, 923 participants, 74 locations. Ego-Exo4D: ~88 hours, Aria + GoPro rigs.</dd>
+            <dt class="limitation">Limitation</dt><dd class="limitation">Hardware isn't commercially available; institutional, slow, and small relative to what training embodied AI actually needs.</dd>
+          </dl>
+          <a class="source" href="https://ai.meta.com/blog/ego-exo4d-video-learning-perception/" target="_blank" rel="noreferrer">ai.meta.com — Ego-Exo4D ↗</a>
+        </div>
+        <div class="card">
+          <h3>Surge AI / DataAnnotation</h3>
+          <div class="role">The failure mode — proves why trust matters</div>
+          <dl>
+            <dt>What it does</dt><dd>Gig platform paying contractors to label/generate AI training data through a centralized backend.</dd>
+            <dt class="limitation">Reality (2025–26)</dt><dd class="limitation">Class-action lawsuit over worker misclassification and unpaid wages; workers report accounts deactivated with no explanation and no path to reapply, blacklisted across every platform the parent company owns.</dd>
+            <dt>How we differ</dt><dd>Acceptance is measured from re-verified bytes and attested in a TEE — not a backend decision anyone can quietly make or unmake.</dd>
+          </dl>
+          <a class="source" href="https://www.inc.com/sam-blum/surge-ai-sued-over-unpaid-wages-the-latest-legal-blow-to-ai-data-labeling-startups/" target="_blank" rel="noreferrer">inc.com — Surge AI lawsuit ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="hooks">
+      <h2><span class="num">04</span> Opening hooks</h2>
+      <p class="dek">Phase 5 — three options, pick one. Recommendation: <b style="color:var(--ink)">Hook C</b>, because the technical claim is the actual differentiator and it's provable on-screen in under ten seconds.</p>
+      <div class="hooks">
+        <div class="hook">
+          <div class="label"><b>Hook A — Product-first</b></div>
+          <p>Open mid-recording: phone strapped to a head, live skeleton overlay, "Contribute an episode" — cut to the payout screen ticking up in real USDC. Fast, concrete, but doesn't signal the technical story.</p>
+        </div>
+        <div class="hook">
+          <div class="label"><b>Hook B — Real-world-first</b></div>
+          <p>Open on the Surge AI lawsuit headline on screen. "This is what happens when the company grading your work can also just... not tell you why it failed you." Strong emotional frame, costs 10–15s of setup before the product appears.</p>
+        </div>
+        <div class="hook recommended">
+          <div class="label"><b>Hook C — Technical-wow-first</b><span class="tag">Recommended</span></div>
+          <p>Open on a real browser network tab hitting <code>GET /api/bounties/bounty_keyboard_001</code> — no <code>min_framing</code>, no <code>min_plausibility</code> field. "This is the bar you have to clear to get paid. It's not in here. It's not anywhere I can read." Immediate, specific, and it's the actual thing that makes this project different — not a mood, a fact on screen in the first ten seconds.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="timeline">
+      <h2><span class="num">05</span> Full shot timeline</h2>
+      <p class="dek">Phase 6 — record directly from this table. 3:15 total.</p>
+      <div class="timeline-wrap">
+        <table class="timeline">
+          <thead><tr><th>Time</th><th>Screen</th><th>Action</th><th>Judge should notice</th></tr></thead>
+          <tbody>
+            <tr><td class="time">0:00–0:10</td><td class="screen">Browser dev tools</td><td>Network tab, <code>GET /api/bounties/bounty_keyboard_001</code> response expanded</td><td class="notice">No threshold field exists in the payload at all</td></tr>
+            <tr><td class="time">0:10–0:18</td><td class="screen">Same tab → bounty page</td><td>Scroll to Terms card — "Minimum framing: confidential"</td><td class="notice">The UI says confidential, not a number</td></tr>
+            <tr><td class="time">0:18–0:35</td><td class="screen">Static headline / browser</td><td>Surge AI lawsuit headline, then Ego-Exo4D dataset page, ~4s each</td><td>Real gig-labor lawsuit; real but small/closed academic dataset</td></tr>
+            <tr><td class="time">0:35–0:45</td><td class="screen">Cut to World App</td><td>"So we built the thing that fixes both problems at once."</td><td>Transition line, no lingering</td></tr>
+            <tr><td class="time">0:45–1:05</td><td class="screen">World App mini app, <code>/c</code></td><td>Wallet auth completes, Selfie Check gate appears once, complete it live</td><td class="notice">Real production Selfie Check, not a mock — one-time, 90-day gate</td></tr>
+            <tr><td class="time">1:05–1:35</td><td class="screen">Capture screen</td><td>Pick "Typing at a keyboard" bounty, record ~15s with hands in frame</td><td>Skeleton overlay only — nothing scored on-device</td></tr>
+            <tr><td class="time">1:35–1:55</td><td class="screen">Result screen</td><td>Scoring completes, episode accepted, <code>+$0.60 USDC</code> lands</td><td class="notice">Real payout number, tied to a real bounty rate</td></tr>
+            <tr><td class="time">1:55–2:05</td><td class="screen">Terminal</td><td>Cut to <code>cre workflow simulate episode-validator</code> already running</td><td>Real CLI, real TEE simulator banner ("AWS Nitro in us-west-2")</td></tr>
+            <tr><td class="time">2:05–2:20</td><td class="screen">Terminal output</td><td>Log lines scroll: <code>getsecrets-ok</code> → <code>reject episode_id=...</code></td><td class="notice">Enclave fetched the secret, rejected — zero on-chain call made</td></tr>
+            <tr><td class="time">2:20–2:35</td><td class="screen">Editor → <code>.env</code></td><td>Lower <code>SECRET_MIN_FRAMING</code> by one line, re-run the same simulate command</td><td>Same episode, same code, one secret changed</td></tr>
+            <tr><td class="time">2:35–2:50</td><td class="screen">Terminal + Sepolia explorer</td><td>Log shows <code>writeReport</code> reaching the mock forwarder; cut to the deployed <code>ChainlinkValidatorConsumer</code> contract page</td><td class="notice">Real deployed contract, real registered validator — deploy access is granted, simulation is a deliberate choice, not a limitation</td></tr>
+            <tr><td class="time">2:50–3:00</td><td class="screen">HashScan (Hedera)</td><td>Flash a real bond-issuance transaction, <code>status: SUCCESS</code></td><td>Second chain, second sponsor track, both real money-moving transactions</td></tr>
+            <tr><td class="time">3:00–3:15</td><td class="screen">Static architecture beat / talking head</td><td>Closing line delivered straight to camera</td><td>What this actually removes: the trusted middleman</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="narration">
+      <h2><span class="num">06</span> Narration script</h2>
+      <p class="dek">Phase 7 — exact words, timed to the beats above. Read it like you're explaining your own code to another engineer, not pitching a room.</p>
+
+      <div class="beat">
+        <div class="beat-head"><span class="t">0:00</span><span class="s">Network tab — bounty API</span></div>
+        <div class="lines">
+          <span class="say">"This is a bounty on World Mod. It pays sixty cents in USDC for a fifteen-second recording of someone typing at a keyboard — if the recording passes."</span>
+          <span class="say">"Here's the API response for that bounty. Look for the acceptance threshold. It's not here. It's not on the page either. It's not even in the message you get when you're rejected."</span>
+        </div>
+        <div class="note"><b>Why:</b> the differentiator has to be the first thing on screen, as a fact, not a claim.</div>
+      </div>
+
+      <div class="beat">
+        <div class="beat-head"><span class="t">0:18</span><span class="s">Context beat</span></div>
+        <div class="lines">
+          <span class="say">"Right now, if you want to get paid for AI training data, you've got two options. An academic program flies out hardware you can't buy to a few hundred people. Or a gig platform pays you through a backend that — as of last year — is being sued for unpaid wages and deactivating workers with no explanation."</span>
+          <span class="say">"Neither of those is a blockchain problem. They're a trust problem. So we built the version where the thing deciding if you got paid can't be quietly changed by whoever runs the platform — including us."</span>
+        </div>
+      </div>
+
+      <div class="beat">
+        <div class="beat-head"><span class="t">0:45</span><span class="s">World App — capture</span></div>
+        <div class="lines">
+          <span class="say">"This is World Mod running as a World App mini app. First time, every contributor does a Selfie Check — a real one, against World's production verification API, not a mock. It's good for ninety days, then it's out of the way for good."</span>
+          <span class="say">"Now I record. The phone only ever draws a skeleton overlay — it used to score the take on-device, and that cost us frame rate on the footage we're actually trying to sell. So scoring moved server-side, from the actual bytes."</span>
+        </div>
+      </div>
+
+      <div class="beat">
+        <div class="beat-head"><span class="t">1:35</span><span class="s">Result screen</span></div>
+        <div class="lines">
+          <span class="say">"Accepted. Sixty cents, USDC, real testnet money, released the moment the server re-verified the bytes I uploaded — hand framing, and motion against the phone's own gyroscope, checked against a real measured anti-spoof number, not a guess."</span>
+        </div>
+      </div>
+
+      <div class="beat">
+        <div class="beat-head"><span class="t">1:55</span><span class="s">Terminal — CRE simulate</span></div>
+        <div class="lines">
+          <span class="say">"Here's how that pass-or-fail bar actually gets checked. This is a real Chainlink CRE Confidential Workflow, running right now. It fetches the buyer's threshold as a secret, inside a TEE — an actual enclave, not our server."</span>
+          <span class="say">"It just rejected this episode. Watch the log: it never made an on-chain call. Not 'wrote a rejection' — made zero call at all. The absence of that transaction is the rejection."</span>
+        </div>
+      </div>
+
+      <div class="beat">
+        <div class="beat-head"><span class="t">2:20</span><span class="s">.env → re-run</span></div>
+        <div class="lines">
+          <span class="say">"I'm changing one line — the buyer's secret threshold — and running the exact same episode again."</span>
+          <span class="say">"Same code. Same recording. Different secret. And now it passes: the workflow reaches consensus on the DON and writes the verdict to this deployed contract on Sepolia. I'll say plainly — Chainlink's already approved us for live Confidential Workflows deployment. What you're watching is the CLI simulation anyway, because that's what their own qualification bar accepts as proof, and it exercises the exact same enclave code path a live deploy would. The contract, the redaction, the enclave call, the reject-versus-accept branch — all real, all here to check."</span>
+        </div>
+        <div class="note">Deploy access is genuinely granted — verified via <code>cre account access</code>. Simulating anyway is a choice, not a workaround, so say it that way rather than apologizing for it.</div>
+      </div>
+
+      <div class="beat">
+        <div class="beat-head"><span class="t">2:50</span><span class="s">HashScan</span></div>
+        <div class="lines">
+          <span class="say">"Same principle, second chain: this bond was issued on Hedera's Asset Tokenization Studio, backed by episodes that passed this exact validation. Real transaction, real Sourcify-verified contract, right there on HashScan."</span>
+        </div>
+      </div>
+
+      <div class="beat">
+        <div class="beat-head"><span class="t">3:00</span><span class="s">Closing</span></div>
+        <div class="lines">
+          <span class="say">"We didn't add a blockchain to a data-labeling app. We took the one thing that made the last version of this idea fail people — an operator who could quietly decide who gets paid — and put it somewhere nobody can reach. Not the buyer. Not us."</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="recording">
+      <h2><span class="num">07</span> Recording plan</h2>
+      <p class="dek">Phase 8 — exact windows, exact zoom, what stays off screen.</p>
+      <table class="status">
+        <thead><tr><th>Scene</th><th>Prepare</th><th>Hide</th></tr></thead>
+        <tbody>
+          <tr><td class="area">API / network tab</td><td class="note">Chrome DevTools open to Network, response pre-filtered to the bounty request, font size bumped for recording legibility.</td><td class="note">Any other open tab, extension icons, personal bookmarks bar.</td></tr>
+          <tr><td class="area">World App capture</td><td class="note">Phone screen-mirrored (QuickTime/scrcpy), battery >50%, do-not-disturb on, ngrok tunnel confirmed live beforehand.</td><td class="note">Notification banners, battery/signal clutter — crop tightly to the app viewport if possible.</td></tr>
+          <tr><td class="area">CRE terminal</td><td class="note">Font size ≥16pt, dark theme, <code>cd cre</code> already done, command typed but not yet run, second pane ready with <code>.env</code> open in an editor.</td><td class="note">Shell prompt showing your real username/host — anonymize or crop.</td></tr>
+          <tr><td class="area">Sepolia / HashScan</td><td class="note">Both explorer tabs pre-loaded and pre-scrolled to the relevant tx/contract before recording starts.</td><td class="note">Wallet balance, any unrelated transaction history.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="checklist">
+      <h2><span class="num">08</span> Pre-recording checklist</h2>
+      <p class="dek">Phase 9 — work through this once, in order, before you hit record. Checks persist locally in this browser tab.</p>
+      <div class="checklist" id="checklist-root">
+        <div class="cl-group">
+          <h4>App state</h4>
+          <div class="cl-item"><input type="checkbox" id="c1"><label for="c1">Dev server running, ngrok tunnel live and pointed at the registered Developer Portal App URL</label></div>
+          <div class="cl-item"><input type="checkbox" id="c2"><label for="c2">Seed bounty (<code>bounty_keyboard_001</code>) has zero prior episodes from this test account, so the accept flow is clean</label></div>
+          <div class="cl-item"><input type="checkbox" id="c3"><label for="c3">Test account's Selfie Check is NOT already completed — you want to record it live once</label></div>
+          <div class="cl-item"><input type="checkbox" id="c4"><label for="c4">Relayer wallet funded with testnet ETH/HBAR for gas, USDC escrow already funded on the demo bounty</label></div>
+        </div>
+        <div class="cl-group">
+          <h4>Chainlink CRE</h4>
+          <div class="cl-item"><input type="checkbox" id="c5"><label for="c5"><code>cre login</code> session valid; <code>cre workflow simulate episode-validator</code> dry-run once off-camera to confirm it still logs the reject path cleanly</label></div>
+          <div class="cl-item"><input type="checkbox" id="c6"><label for="c6"><code>cre/.env</code>'s <code>SECRET_MIN_FRAMING</code> value noted so you know exactly what to lower on camera</label></div>
+          <div class="cl-item"><input type="checkbox" id="c7"><label for="c7">Sepolia explorer tab pre-loaded to <code>ChainlinkValidatorConsumer</code> (<code>0xe0ca68241159A635Bc383f79c7095dC09d9C3dde</code>)</label></div>
+        </div>
+        <div class="cl-group">
+          <h4>Hedera</h4>
+          <div class="cl-item"><input type="checkbox" id="c8"><label for="c8">HashScan tab pre-loaded to the real bond-issuance transaction — no need to issue a new one live</label></div>
+        </div>
+        <div class="cl-group">
+          <h4>Recording hygiene</h4>
+          <div class="cl-item"><input type="checkbox" id="c9"><label for="c9">Phone + laptop notifications off; do-not-disturb confirmed on both</label></div>
+          <div class="cl-item"><input type="checkbox" id="c10"><label for="c10">No API keys, private keys, or real email addresses visible in any terminal, .env file, or browser tab</label></div>
+          <div class="cl-item"><input type="checkbox" id="c11"><label for="c11">Backup: a second full take of the accept path recorded in case the CRE simulate log is messy on the first pass</label></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="cutlist">
+      <h2><span class="num">09</span> Cut list — do not show</h2>
+      <p class="dek">Phase 12 — built the feature doesn't mean the judge needs to see it.</p>
+      <ul class="dontshow">
+        <li>The bounty-creation form in full<span>Admin CRUD, not interesting to anyone but you. If buyer-side matters, show the result (an escrowed bounty), not the form.</span></li>
+        <li>The live world-model prediction panel, lingered on<span>Real, but trained on 5 episodes and doesn't beat its own baseline yet. A one-second flash at most — dwelling on it undercuts confidence in everything else.</span></li>
+        <li>The standalone landing site<span>Deployment status unconfirmed. Don't put an unverified asset in a judged video.</span></li>
+        <li>Full test-suite output scrolling by<span>A "107/107" badge earns more credibility per second than a terminal scroll nobody's reading.</span></li>
+        <li>IDKit/MiniKit SDK internals or code<span>Show Selfie Check working on the phone. The judge doesn't need to see the hook usage.</span></li>
+        <li>Any moment presented as "the DON broadcast a live transaction"<span>It didn't happen — deploy access is granted, but this is the CLI simulation on purpose. Say "simulated, by choice, same code path" every time, not "pending."</span></li>
+      </ul>
+    </section>
+
+    <section id="judge">
+      <h2><span class="num">10</span> Judge simulation</h2>
+      <p class="dek">Phase 11 — brutally honest, not the highlight reel.</p>
+      <div class="judge-grid">
+        <div class="judge-card good">
+          <h4>What lands</h4>
+          <ul>
+            <li>The redacted-threshold fact — verifiable on screen, not a slide claim</li>
+            <li>A real, measured anti-spoof accuracy table most hackathon demos never bother publishing</li>
+            <li>Money actually moves, on two chains, with tx hashes a judge can click</li>
+            <li>Being upfront that deploy access is already granted and simulation is a deliberate choice — not a blocked feature — reads as confident, not defensive</li>
+          </ul>
+        </div>
+        <div class="judge-card risk">
+          <h4>What to watch for</h4>
+          <ul>
+            <li>Three sponsor tracks (Hedera, World ID, Chainlink) can read as bounty-chasing if not narrated as one story — the script above deliberately threads them through a single trust argument</li>
+            <li>A judge who reads the repo will find "no workflows deployed yet" in <code>cre workflow list</code> regardless — own the "we chose to simulate, access is granted" framing on camera before they find the gap themselves</li>
+            <li>The world-model feature, if shown at length, invites "so it doesn't actually work" — keep it to a flash or cut it entirely</li>
+            <li>Landing site exists in code with no confirmed deploy — don't reference it as if it's live</li>
+          </ul>
+        </div>
+      </div>
+      <p class="dek" style="margin-top:16px"><b style="color:var(--ink)">What would make this stronger:</b> deploy access is already granted, so a real live DON deploy turning the pass-path into an actual Sepolia transaction is genuinely one funded mainnet wallet away — not gated on anyone's approval anymore. Also worth closing: a second live recording that clears the confidential bar on camera, so a real accept is shown through the same CRE path, not just the app's own off-chain scorer.</p>
+    </section>
+
+    <div class="footer-note">
+      Built from a direct inspection of the running repository — every real/simulated/mocked label above traces to a file, a test run, or a transaction hash, not a README's word for it. Nothing here was invented to make the story work.
+    </div>
+  </main>
+</div>
+
+<script>
+  (function () {
+    var STORE_KEY = "worldmod-hack-checklist-v1";
+    var state = {};
+    try { state = JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch (e) {}
+    document.querySelectorAll('.cl-item input[type=checkbox]').forEach(function (box) {
+      try { box.checked = !!state[box.id]; } catch (e) {}
+      box.closest('.cl-item').classList.toggle('checked', box.checked);
+      box.addEventListener('change', function () {
+        box.closest('.cl-item').classList.toggle('checked', box.checked);
+        state[box.id] = box.checked;
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+      });
+    });
+  })();
+</script>
