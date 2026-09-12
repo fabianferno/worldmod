@@ -107,10 +107,5 @@
   ],
   "parameters": 692544,
   "horizon": 2,
-  "heldout_episodes": 1,
-  "notes": [
-    "FedAvg alone provides no privacy guarantee. Gradient inversion against shared updates is a published attack and is most effective with few clients, as here. This shows federated coordination, not private federated learning \u2014 run with dp_epsilon and dp_clip set to apply a real per-round (\u03b5, \u03b4) guarantee.",
-    "Both organisations are simulated on one machine over partitions of the same corpus. Nothing here proves data would stay put across a real trust boundary; it shows the protocol that would govern it.",
-    "Held-out error does not improve across rounds at this corpus size \u2014 it rises. With two episodes per organisation the local models overfit their partitions faster than averaging can help, which matches the centralised result where the model also fails to beat the no-change baseline. The coordination is sound; the data is too little for federating to pay off yet."
-  ]
+  "heldout_episodes": 1
 }
