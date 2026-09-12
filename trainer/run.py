@@ -149,8 +149,14 @@ def main() -> int:
         for note in federated.notes:
             print(f"  {note}")
 
+    # The shipped federated artifact is kept free of the prose notes[] at the
+    # user's request; the federated page never rendered them. The honest
+    # not-private disclosure still lives in the module docstring and is printed
+    # to the console below when there is nothing to aggregate.
+    federated_data = asdict(federated)
+    federated_data.pop("notes", None)
     args.federated_out.parent.mkdir(parents=True, exist_ok=True)
-    args.federated_out.write_text(json.dumps(asdict(federated), indent=2) + "\n")
+    args.federated_out.write_text(json.dumps(federated_data, indent=2) + "\n")
     print(f"wrote {args.federated_out}")
     return 0
 
