@@ -12,6 +12,7 @@
  */
 
 import { useState } from "react";
+import { HederaMark } from "@/components/hedera-mark";
 
 interface IssuedBond {
   hederaContractId: string;
@@ -166,8 +167,9 @@ export function IssueBondButton({ datasetId }: { datasetId: number }) {
           type="button"
           onClick={() => void issue()}
           disabled={issueState === "pending"}
-          className="interactive rounded-lg border border-line px-3 py-1.5 text-xs font-medium hover:border-line-strong disabled:opacity-40"
+          className="interactive inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-medium hover:border-line-strong disabled:opacity-40"
         >
+          <HederaMark className="h-3.5 w-3.5" />
           {issueState === "pending" ? "Issuing on Hedera…" : "Issue as Hedera Bond"}
         </button>
         {issueError ? <p className="mt-2 text-xs text-negative">{issueError}</p> : null}
@@ -186,7 +188,10 @@ export function IssueBondButton({ datasetId }: { datasetId: number }) {
   return (
     <div className="mt-3 space-y-3">
       <div className="rounded-xl border border-positive/25 bg-positive/5 p-3">
-        <p className="text-xs font-medium text-positive">Issued on Hedera testnet</p>
+        <p className="flex items-center gap-1.5 text-xs font-medium text-positive">
+          <HederaMark className="h-3.5 w-3.5" />
+          Issued on Hedera testnet
+        </p>
         <p className="mt-1 break-all font-mono text-xs text-muted">{bond.hederaContractId}</p>
         <a
           href={bond.hashscanUrl}

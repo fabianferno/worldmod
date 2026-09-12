@@ -25,6 +25,7 @@ import { useSigner } from "@/lib/chain/signer-context";
 import { AccountBar } from "./account";
 import { PredictiveArcBackdrop } from "@/app/_components/PredictiveArcBackdrop";
 import { useCaptureTour } from "@/components/onboarding/use-capture-tour";
+import { ChainlinkMark } from "@/components/chainlink-mark";
 import { SelfieCheck } from "./account/selfie-check";
 import { buildEpisodeManifest, toSubmission, type SelfReport } from "@/lib/episode/build";
 import { enqueueEpisode, flushQueue, listPending, uploadEpisode } from "@/lib/episode/queue";
@@ -861,7 +862,7 @@ export default function CaptureClient() {
             <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-lilac" />
             {phase === "scoring" ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-lilac/15 px-3 py-1 text-[11px] font-semibold text-lilac">
-                <span className="h-1.5 w-1.5 rounded-full bg-lilac" />
+                <ChainlinkMark className="h-3.5 w-3.5" />
                 Chainlink CRE · confidential
               </span>
             ) : null}

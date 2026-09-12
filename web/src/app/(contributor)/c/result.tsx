@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ChainlinkMark } from "@/components/chainlink-mark";
 import { explorerTx } from "@/lib/chain/config";
 import { pendingWithdrawal, withdrawEarnings } from "@/lib/chain/withdraw-client";
 import type { StoredEpisode } from "@/lib/market/types";
@@ -236,10 +237,7 @@ export function Result({
       {submitted?.status === "scored" ? (
         <div className="settle settle-2 mt-3 rounded-card bg-lilac px-5 py-4 text-lilac-ink">
           <div className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden>
-              <rect x="5" y="10.5" width="14" height="9" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
-              <path d="M8.25 10.5V8a3.75 3.75 0 017.5 0v2.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-            </svg>
+            <ChainlinkMark className="h-4 w-4 shrink-0" />
             <span className="text-sm font-semibold">Confidentially validated · Chainlink CRE</span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-lilac-ink/80">
