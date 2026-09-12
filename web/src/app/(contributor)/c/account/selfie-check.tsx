@@ -126,9 +126,11 @@ export function SelfieCheck({ onVerified }: { onVerified?: (v: Verification) => 
         <div className="min-w-0">
           <p className="text-sm font-semibold">Selfie Check</p>
           <p className="mt-1 text-xs leading-relaxed text-subtle">
-            A one-time liveness check via World App, required before your
-            first recording. Good for 90 days — you won&rsquo;t need to do it
-            again after this.
+            Required before your first recording: your World personhood is
+            verified against this Selfie Check — the network&rsquo;s Sybil
+            check — so the incentives can&rsquo;t be farmed by one person
+            spinning up multiple accounts. Tied to one real, World-verified
+            person; good for 90 days, and you won&rsquo;t need to redo it.
           </p>
         </div>
         <button
