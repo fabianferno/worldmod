@@ -56,7 +56,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${manrope.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-bone text-foreground">
+      {/* suppressHydrationWarning: browser extensions (Grammarly et al.) inject
+          attributes onto <body> before React hydrates; this silences that noise
+          on this element only, without masking real hydration bugs elsewhere. */}
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-bone text-foreground">
         {/*
           THESIS: A payout ledger you can read at arm's length with a phone
           still warm on your forehead. It refuses the dark crypto dashboard —
