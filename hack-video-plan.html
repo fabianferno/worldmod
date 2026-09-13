@@ -377,19 +377,19 @@
         </div>
         <div class="hook recommended">
           <div class="label"><b>Hook C — Technical-wow-first</b><span class="tag">Recommended</span></div>
-          <p>Open on a real browser network tab hitting <code>GET /api/bounties/bounty_keyboard_001</code> — no <code>min_framing</code>, no <code>min_plausibility</code> field. "This is the bar you have to clear to get paid. It's not in here. It's not anywhere I can read." Immediate, specific, and it's the actual thing that makes this project different — not a mood, a fact on screen in the first ten seconds.</p>
+          <p>Open on a real browser network tab hitting <code>GET /api/bounties/bounty_keyboard_001</code> — no <code>min_framing</code>, no <code>min_plausibility</code> field. "This is the bar you have to clear to get paid. It's not in here. It's not anywhere I can read." Immediate, specific, and it's the actual thing that makes this project different — not a mood, a fact on screen in the first ten seconds. One risk to manage: a "look what's <i>missing</i>" open is a negative-space reveal, harder to read on video than something visibly working. If it feels slow in a test cut, lead with a 3–4s cold tease of the product working (skeleton overlay, USDC ticking up) <em>then</em> land the threshold reveal — earn the attention, then make the point.</p>
         </div>
       </div>
     </section>
 
     <section id="timeline">
       <h2><span class="num">05</span> Full shot timeline</h2>
-      <p class="dek">Phase 6 — record directly from this table. 3:15 total.</p>
+      <p class="dek">Phase 6 — record directly from this table. 3:15 total — confirm the submission's length cap first; if it's 3:00, the cleanest 15s to reclaim is the trimmed justification aside at 2:20 and the on-device-scoring tangent at 1:05.</p>
       <div class="timeline-wrap">
         <table class="timeline">
           <thead><tr><th>Time</th><th>Screen</th><th>Action</th><th>Judge should notice</th></tr></thead>
           <tbody>
-            <tr><td class="time">0:00–0:10</td><td class="screen">Browser dev tools</td><td>Network tab, <code>GET /api/bounties/bounty_keyboard_001</code> response expanded</td><td class="notice">No threshold field exists in the payload at all</td></tr>
+            <tr><td class="time">0:00–0:10</td><td class="screen">Browser dev tools</td><td>Network tab, <code>GET /api/bounties/bounty_keyboard_001</code> response expanded; hold the frame, on-screen callout circling the empty space where a threshold field would sit</td><td class="notice">No threshold field exists in the payload at all — the absence has to be made unmistakable, not implied</td></tr>
             <tr><td class="time">0:10–0:18</td><td class="screen">Same tab → bounty page</td><td>Scroll to Terms card — "Minimum framing: confidential"</td><td class="notice">The UI says confidential, not a number</td></tr>
             <tr><td class="time">0:18–0:35</td><td class="screen">Static headline / browser</td><td>Surge AI lawsuit headline, then Ego-Exo4D dataset page, ~4s each</td><td>Real gig-labor lawsuit; real but small/closed academic dataset</td></tr>
             <tr><td class="time">0:35–0:45</td><td class="screen">Cut to World App</td><td>"So we built the thing that fixes both problems at once."</td><td>Transition line, no lingering</td></tr>
@@ -399,7 +399,7 @@
             <tr><td class="time">1:55–2:05</td><td class="screen">Terminal</td><td>Cut to <code>cre workflow simulate episode-validator</code> already running</td><td>Real CLI, real TEE simulator banner ("AWS Nitro in us-west-2")</td></tr>
             <tr><td class="time">2:05–2:20</td><td class="screen">Terminal output</td><td>Log lines scroll: <code>getsecrets-ok</code> → <code>reject episode_id=...</code></td><td class="notice">Enclave fetched the secret, rejected — zero on-chain call made</td></tr>
             <tr><td class="time">2:20–2:35</td><td class="screen">Editor → <code>.env</code></td><td>Lower <code>SECRET_MIN_FRAMING</code> by one line, re-run the same simulate command</td><td>Same episode, same code, one secret changed</td></tr>
-            <tr><td class="time">2:35–2:50</td><td class="screen">Terminal + Sepolia explorer</td><td>Log shows <code>writeReport</code> reaching the mock forwarder; cut to the deployed <code>ChainlinkValidatorConsumer</code> contract page</td><td class="notice">Real deployed contract, real registered validator — deploy access is granted, simulation is a deliberate choice, not a limitation</td></tr>
+            <tr><td class="time">2:35–2:50</td><td class="screen">Terminal + Sepolia explorer</td><td>Log shows <code>writeReport</code> reaching the mock forwarder; cut to the deployed <code>ChainlinkValidatorConsumer</code> contract page</td><td class="notice">Real deployed consumer contract; workflow simulated by choice — deploy access is granted, not blocked</td></tr>
             <tr><td class="time">2:50–3:00</td><td class="screen">HashScan (Hedera)</td><td>Flash a real bond-issuance transaction, <code>status: SUCCESS</code></td><td>Second chain, second sponsor track, both real money-moving transactions</td></tr>
             <tr><td class="time">3:00–3:15</td><td class="screen">Static architecture beat / talking head</td><td>Closing line delivered straight to camera</td><td>What this actually removes: the trusted middleman</td></tr>
           </tbody>
@@ -455,7 +455,7 @@
         <div class="beat-head"><span class="t">2:20</span><span class="s">.env → re-run</span></div>
         <div class="lines">
           <span class="say">"I'm changing one line — the buyer's secret threshold — and running the exact same episode again."</span>
-          <span class="say">"Same code. Same recording. Different secret. And now it passes: the workflow reaches consensus on the DON and writes the verdict to this deployed contract on Sepolia. I'll say plainly — Chainlink's already approved us for live Confidential Workflows deployment. What you're watching is the CLI simulation anyway, because that's what their own qualification bar accepts as proof, and it exercises the exact same enclave code path a live deploy would. The contract, the redaction, the enclave call, the reject-versus-accept branch — all real, all here to check."</span>
+          <span class="say">"Same code. Same recording. Different secret — and now it passes: the workflow writes the verdict to this deployed contract on Sepolia. To be clear, Chainlink's already granted us live-deploy access; this is the CLI simulation on purpose — the exact same enclave code path a live deploy runs. Contract, redaction, reject-versus-accept branch, all real and here to check."</span>
         </div>
         <div class="note">Deploy access is genuinely granted — verified via <code>cre account access</code>. Simulating anyway is a choice, not a workaround, so say it that way rather than apologizing for it.</div>
       </div>
@@ -515,6 +515,7 @@
           <div class="cl-item"><input type="checkbox" id="c9"><label for="c9">Phone + laptop notifications off; do-not-disturb confirmed on both</label></div>
           <div class="cl-item"><input type="checkbox" id="c10"><label for="c10">No API keys, private keys, or real email addresses visible in any terminal, .env file, or browser tab</label></div>
           <div class="cl-item"><input type="checkbox" id="c11"><label for="c11">Backup: a second full take of the accept path recorded in case the CRE simulate log is messy on the first pass</label></div>
+          <div class="cl-item"><input type="checkbox" id="c12"><label for="c12">Backup: a clean pre-recorded Selfie Check pass on hand — live third-party verification can hang or fail, and it's not worth a re-shoot if it does</label></div>
         </div>
       </div>
     </section>
