@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { CONTRIBUTE_URL } from "@/lib/links";
 
@@ -5,9 +6,14 @@ export function SiteHeader() {
   return (
     <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-5 sm:px-6">
       <Link href="/" className="flex items-center gap-2.5 rounded-full">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink">
-          <span className="h-3 w-3 rounded-full bg-mint" aria-hidden />
-        </span>
+        <Image
+          src="/icons/icon-192.png"
+          alt=""
+          width={32}
+          height={32}
+          priority
+          className="h-8 w-8 rounded-full"
+        />
         <span className="text-[15px] font-semibold tracking-[-0.02em]">World Mod</span>
       </Link>
       <nav className="flex items-center gap-1 text-[13px] font-medium text-muted">
