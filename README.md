@@ -1,15 +1,19 @@
 # World Mod
 
-A permissionless network for physical-world data — starting with a phone strapped
-to your head.
+A permissionless network for physical-world data — starting with a phone,
+optionally strapped to your head.
 
-Anyone with a phone opens a web page, performs a short physical task, and their
-recording is scored on their own device before it is uploaded. A buyer posts a
-bounty describing what they need and escrows what it pays. The protocol
-underneath is asset-agnostic: a factory sensor network registers the same way a
-phone does.
+Anyone with a phone opens a web page, performs a short physical task, and the
+recording is sealed on their own device before it is uploaded, then scored on
+the server and paid from a buyer's escrow. A buyer posts a bounty describing
+what they need and escrows what it pays. The protocol underneath is
+asset-agnostic: a factory sensor network registers the same way a phone does.
 
 Full specification: [`product-spec.md`](product-spec.md).
+ETHGlobal judges: [`docs/sponsor-links.md`](docs/sponsor-links.md) maps each
+sponsor integration to the exact files, lines and on-chain state.
+
+![How an episode earns](docs/diagrams/how-an-episode-earns.png)
 
 ---
 
@@ -20,10 +24,12 @@ Full specification: [`product-spec.md`](product-spec.md).
 | [`web/`](web) | The PWA — contributor capture, buyer dashboard, validator, marketplace API |
 | [`contracts/`](contracts) | Solidity registries and escrow (Foundry), deployed to Sepolia and Hedera testnet |
 | [`trainer/`](trainer) | World model, scaling curve, federated rounds (PyTorch) |
-| [`cre/`](cre) | Chainlink CRE Confidential Workflow — episode validation against a private threshold |
-| [`hedera/`](hedera) | Standalone Hedera scripts: Asset Tokenization Studio bond issuance, KYC, coupon ops |
-| [`world/`](world) | World App mini app notes — MiniKit wallet auth, Selfie Check |
-| [`docs/superpowers/specs/`](docs/superpowers/specs) | Design document for the PWA |
+| [`cre/`](cre) | Two Chainlink CRE Confidential Workflows — episode validation against a private threshold, utility settlement with a private weighting |
+| [`hedera/`](hedera) | Hedera Asset Tokenization Studio: dataset → KYC-gated Bond, licence seats to the creator, coupons paid in USDC |
+| [`world/`](world) | World App mini app — MiniKit wallet auth, Selfie Check gate, sponsor feedback |
+| [`docs/sponsor-links.md`](docs/sponsor-links.md) | One link per sponsor to the exact code and on-chain state |
+| [`docs/diagrams/`](docs/diagrams) | Episode lifecycle and component diagrams (PNG + Excalidraw source) |
+| [`docs/superpowers/specs/`](docs/superpowers/specs) | Design documents for the PWA and the Hedera identity/coupon work |
 | [`ENV_VARS.md`](ENV_VARS.md) | Every environment variable this repo uses, and why |
 
 ## Running it
@@ -103,12 +109,20 @@ relayed submission so a contributor never needs gas of their own. Every
 episode gets a real IPFS content address, pinned to a local node. A world
 model and federated rounds over the real episodes, with a working account
 page for a contributor to see their own history and collect their own
-balance. Episode validation runs inside a Chainlink CRE Confidential
-Workflow — see [`cre/README.md`](cre/README.md) — so a buyer's acceptance
-threshold is compared against an episode's score inside a TEE, never in
-plaintext. The app itself is a World App mini app: wallet auth and identity
+balance. Episode validation and utility settlement each run inside a
+Chainlink CRE Confidential Workflow — see [`cre/README.md`](cre/README.md) —
+so a buyer's acceptance threshold and the utility weighting policy are only
+ever compared inside a TEE, and the DON-signed results land in consumer
+contracts that are the registered validator and oracle on Sepolia. A licensed
+dataset can be issued from the buyer dashboard as a KYC-gated Hedera Asset
+Tokenization Studio Bond, with licence seats minted to the dataset's creator
+and coupons paid in real HTS USDC (see [`hedera/README.md`](hedera/README.md)).
+Validators stake the native WMOD token through a bond that the registry owner
+can slash. The app itself is a World App mini app: wallet auth and identity
 via MiniKit, a one-time Selfie Check gate before a contributor's first
 recording (see [`world/README.md`](world/README.md)).
+
+![Component diagram](docs/diagrams/component-diagram.png)
 
 **Measured and not good enough yet.** The world model does not beat a
 "predict no change" baseline. Five episodes across three contributors now,

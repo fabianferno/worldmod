@@ -1,17 +1,12 @@
 # World Mod × World App (MiniKit + Selfie Check)
 
-Working towards World's Selfie Check track — see `world.md` (repo root) for
-the qualification bar. Short version: World Mod is now a World mini app
-(MiniKit provides the recoverable contributor identity, replacing Privy),
-and Selfie Check is a **hard gate**: a contributor cannot record their first
-episode until they've completed it. This is a deliberate reversal of an
-earlier design in this same document, which treated it as a non-gating
-badge (matching how reputation, product-spec §12, "computes and displays
-but does not gate"). That framing didn't survive contact with the actual
-abuse vector — see "Why Selfie Check fits here, specifically" below for
-why gating won out. It's a one-time gate, not a per-episode one: the
-credential is a standing fact valid 90 days, so it blocks nothing after
-the first recording.
+World Mod is a World mini app. MiniKit provides the recoverable contributor
+identity (replacing Privy), and Selfie Check is a **hard gate**: a
+contributor cannot record their first episode until they have completed
+it. It is a one-time gate, not a per-episode one; the credential is a
+standing fact valid for 90 days, so it blocks nothing after the first
+recording. Why gating rather than a badge is explained under "Why Selfie
+Check fits here" below. Sponsor feedback is in [`FEEDBACK.md`](FEEDBACK.md).
 
 ## What's real, what's mocked, and why
 
@@ -83,7 +78,7 @@ World Mod pays contributors per accepted episode. The obvious abuse vector
 is one person running many device identities to multiply payouts for the
 same physical action — exactly what a low-friction liveness/facial-biometric
 check is good at catching without requiring an Orb visit or a passport.
-Framed against world.md's qualification list:
+Framed against World's qualification list:
 
 - **Abuse-prevention**: a real signal against Sybil-style bounty farming —
   one person running many device identities to multiply payouts for the
@@ -141,10 +136,8 @@ npm run dev
 ```
 
 Needs `web/.env.local`: `NEXT_PUBLIC_WORLD_APP_ID`, `WORLD_RP_ID`,
-`WORLD_RP_SIGNING_KEY` — all three now set. The one thing still missing is
-Selfie Check Beta access for this specific app, requested through a World
-point of contact — the one step in this whole integration that is genuinely
-not a coding task; see FEEDBACK.md.
+`WORLD_RP_SIGNING_KEY`. Selfie Check Beta access is granted for this app;
+without it the widget opens but World App refuses the check.
 
 ## Done
 
@@ -159,8 +152,7 @@ not a coding task; see FEEDBACK.md.
   World's real verify API (`POST /api/v4/verify/{rp_id}`, found via
   `sandbox/sandbox-access` → `api-reference/developer-portal/verify.md`, not
   linked from either page this bounty task named) and confirms `success`
-  before recording anything. See FEEDBACK.md for the correction to what an
-  earlier draft called the biggest gap.
+  before recording anything.
 
 ## Next
 

@@ -73,7 +73,7 @@ Sponsor feedback document: [`world/FEEDBACK.md`](../world/FEEDBACK.md).
 
 Feedback document, mapped to the qualification list:
 
-- SelfieCheck docs and integration flow: [`world/FEEDBACK.md#selfiecheck-docs-and-integration-flow`](../world/FEEDBACK.md#selfiecheck-docs-and-integration-flow)
+- SelfieCheck docs and integration flow: [`world/FEEDBACK.md#selfie-check-docs-and-integration-flow`](../world/FEEDBACK.md#selfie-check-docs-and-integration-flow)
 - Developer Portal navigation, search, product discovery, debugging: [`world/FEEDBACK.md#developer-portal-navigation-search-product-discovery-debugging`](../world/FEEDBACK.md#developer-portal-navigation-search-product-discovery-debugging)
 - Sandbox App states, proof flows, test users, errors, edge cases: [`world/FEEDBACK.md#sandbox-app-states-proof-flows-test-users-errors-edge-cases`](../world/FEEDBACK.md#sandbox-app-states-proof-flows-test-users-errors-edge-cases)
-- What was confusing, missing, broken, or hard to test: [`world/FEEDBACK.md#what-was-confusing-missing-broken-or-hard-to-test--summary`](../world/FEEDBACK.md#what-was-confusing-missing-broken-or-hard-to-test--summary)
+- What was confusing, missing, broken, or hard to test: [`world/FEEDBACK.md#what-was-confusing-missing-broken-or-hard-to-test`](../world/FEEDBACK.md#what-was-confusing-missing-broken-or-hard-to-test)
