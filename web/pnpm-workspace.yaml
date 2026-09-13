@@ -1,0 +1,8 @@
+allowBuilds:
+  '@mattrglobal/node-bbs-signatures': set this to true or false
+  core-js: set this to true or false
+  keccak: set this to true or false
+  onnxruntime-node: set this to true or false
+  protobufjs: set this to true or false
+  secp256k1: set this to true or false
+  unrs-resolver: set this to true or false
