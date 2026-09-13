@@ -22,6 +22,7 @@ Full specification: [`product-spec.md`](product-spec.md).
 | [`trainer/`](trainer) | World model, scaling curve, federated rounds (PyTorch) |
 | [`subgraph/`](subgraph) | The provenance graph, indexed from the six contracts |
 | [`docs/superpowers/specs/`](docs/superpowers/specs) | Design document for the PWA |
+| [attestcoin](https://github.com/Ashar20/attestcoin) (separate repo) | The Attestcoin ASC on Creditcoin testnet that proves a Sepolia settlement — see below |
 
 ## Running it
 
@@ -83,6 +84,36 @@ The commitment is still computed on the device before any byte leaves it, so
 measured on the server from the bytes that arrived. Scoring takes about a
 minute, so an upload does not wait on it: episodes arrive `scoring` and the
 client polls.
+
+## Attestcoin: proving a settlement cross-chain, without a centralized oracle
+
+`BountyEscrow.acceptEpisode` (above) emits a dedicated
+`EpisodeAcceptedForAttestation(episodeId, contributor, score, bountyId)` event.
+A separate ASC (Attestcoin Smart Contract) on **Creditcoin CC3 testnet** —
+[`AttestcoinSettlement`](https://github.com/Ashar20/attestcoin) — verifies that
+this exact Sepolia transaction happened via the Attestcoin Protocol's native
+block-prover precompile (Merkle + continuity proofs, real receipt-status
+check), then credits the contributor on Creditcoin. No relayer, no trusted
+bridge operator: the ASC's own on-chain verification is what makes it true.
+
+```
+Sepolia BountyEscrow.acceptEpisode → EpisodeAcceptedForAttestation
+              ↓
+     Attestcoin attestors + hosted Proof Builder
+              ↓
+     AttestcoinSettlement.execute() on Creditcoin (block-prover precompile @ 0xFD2)
+              ↓
+     SettlementRecorded — contributorPoints / settlementCount, POSTed back to
+     this app's /api/chain/attestation, shown as "verified on Creditcoin" next
+     to the episode on both the buyer and contributor pages
+```
+
+Proven live, not simulated: a real `acceptEpisode` tx
+([`0x30bb6678...`](https://sepolia.etherscan.io/tx/0x30bb667870eb96941b0822e0c6e80d068e9e5c08f970b2ff60aefe339c161ce0))
+produced a real proof from the hosted Proof Builder, which a real
+`execute()` call ([`0x5361a404...`](https://creditcoin-testnet.blockscout.com/tx/0x5361a4047173abb976e1233d7849609fc47e6adbcea216a36952322076b9b11c))
+verified on Creditcoin testnet — full writeup, contract, and tests in the
+[attestcoin](https://github.com/Ashar20/attestcoin) repo.
 
 ## What works, and what is honestly not there yet
 

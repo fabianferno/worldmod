@@ -21,6 +21,12 @@ Chainlink CRE confidential-workflow experiment were all built and then removed
 from this codebase; don't reintroduce them or treat old comments referencing
 them as current.
 
+That integration's ASC lives in a **separate repo**,
+[github.com/Ashar20/attestcoin](https://github.com/Ashar20/attestcoin) — not a
+subdirectory here. This repo's side of it is just the `EpisodeAcceptedForAttestation`
+event on `BountyEscrow` and the `POST /api/chain/attestation` webhook the other
+repo's readability worker calls back into (see README's "Attestcoin" section).
+
 ## Commands
 
 ```sh
@@ -67,7 +73,10 @@ Six registries, deployed addresses in `contracts/deployments.json` (chain
 - `AssetRegistry` — registered sensors/phones and a capability bitmask, tied to an entity.
 - `EpisodeRegistry` — episode manifest commitments and validator results (score, trust level).
 - `BountyEscrow` — a buyer escrows USDC per bounty; payout on acceptance reads validation
-  from `EpisodeRegistry` rather than trusting the caller.
+  from `EpisodeRegistry` rather than trusting the caller. `acceptEpisode` also emits
+  `EpisodeAcceptedForAttestation`, a dedicated event the separate Attestcoin ASC repo
+  proves via the block-prover precompile — don't rename or drop its fields without
+  updating that repo's `sourceEmitter`/decoder expectations.
 - `DatasetRegistry` — bundles episode commitments into a licensed dataset.
 - `FederatedRound` — coordinates federated training rounds; only hashes/metrics move on-chain, never data.
 
@@ -109,7 +118,12 @@ manifest hash against stored state (never trusts the client's own score) and
 calls `lib/chain/relay.ts`, which submits the episode on-chain and records
 validation via the relayer's key → an accepted episode's payment is released
 through `BountyEscrow`, plus a small ETH dust transfer so the contributor can
-later pay gas to withdraw.
+later pay gas to withdraw. Separately and asynchronously, the Attestcoin
+readability worker (other repo) proves that acceptance on Creditcoin and
+`POST`s the result to `/api/chain/attestation`, which looks the episode up by
+its on-chain id and attaches an `EpisodeAttestation` — rendered as a "verified
+on Creditcoin" link on both the buyer bounty page and the contributor account
+page.
 
 **Identity:** a single kind — a device key generated client-side (viem,
 secp256k1) and cached in `localStorage`. It signs everything

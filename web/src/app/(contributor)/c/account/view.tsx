@@ -12,7 +12,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { explorerAddress, explorerTx } from "@/lib/chain/config";
+import { explorerAddress, explorerCreditcoinTx, explorerTx } from "@/lib/chain/config";
 import { useSigner } from "@/lib/chain/signer-context";
 import { pendingWithdrawal, withdrawEarnings } from "@/lib/chain/withdraw-client";
 import { reputationFor, type Reputation } from "@/lib/market/reputation";
@@ -121,6 +121,22 @@ function Episode({ episode }: { episode: StoredEpisode }) {
               }`}
             >
               on-chain
+            </a>
+          </>
+        ) : null}
+        {episode.attestation ? (
+          <>
+            <span aria-hidden>·</span>
+            <a
+              href={explorerCreditcoinTx(episode.attestation.tx)}
+              target="_blank"
+              rel="noreferrer"
+              className={`interactive underline decoration-dotted underline-offset-2 ${
+                paid ? "hover:text-on-ink" : "hover:text-foreground"
+              }`}
+              title="Verified by the Attestcoin ASC on Creditcoin testnet"
+            >
+              verified on Creditcoin
             </a>
           </>
         ) : null}

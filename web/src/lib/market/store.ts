@@ -38,6 +38,15 @@ export interface MarketStore {
   recordAnchor(episodeId: string, anchor: StoredEpisode["anchor"]): Promise<StoredEpisode | null>;
   /** Attach the USDC release for an accepted episode. */
   recordPayment(episodeId: string, payment: StoredEpisode["payment"]): Promise<StoredEpisode | null>;
+  /**
+   * Attach a Creditcoin ASC proof, looked up by the registry's own on-chain
+   * episode id (what a readability worker decodes from the proved event) —
+   * not the local `episode_id`, which the worker never sees.
+   */
+  recordAttestationForOnchainEpisode(
+    onchainEpisodeId: string,
+    attestation: StoredEpisode["attestation"],
+  ): Promise<StoredEpisode | null>;
 }
 
 interface Snapshot {
@@ -176,6 +185,19 @@ export const fileStore: MarketStore = {
       if (index < 0) return null;
 
       const updated = { ...snapshot.episodes[index], payment };
+      snapshot.episodes[index] = updated;
+      await write(snapshot);
+      return updated;
+    });
+  },
+
+  async recordAttestationForOnchainEpisode(onchainEpisodeId, attestation) {
+    return enqueue(async () => {
+      const snapshot = await read();
+      const index = snapshot.episodes.findIndex((e) => e.anchor?.onchain_episode_id === onchainEpisodeId);
+      if (index < 0) return null;
+
+      const updated = { ...snapshot.episodes[index], attestation };
       snapshot.episodes[index] = updated;
       await write(snapshot);
       return updated;

@@ -143,6 +143,8 @@ export interface StoredEpisode extends EpisodeSubmission {
    * provisional because an RPC was unreachable.
    */
   payment?: EpisodePayment;
+  /** Cross-chain proof via the Attestcoin ASC, when one exists. See `EpisodeAttestation`. */
+  attestation?: EpisodeAttestation;
 }
 
 /** The USDC release for an accepted episode. */
@@ -164,6 +166,24 @@ export interface EpisodeAnchor {
   txs: Array<{ step: string; hash: string }>;
   anchored_at: number;
   error?: string;
+}
+
+/**
+ * Cross-chain proof that this episode's acceptance really happened on Sepolia —
+ * attestcoin.md's ASC path. Set once a readability worker has proved
+ * `BountyEscrow`'s `EpisodeAcceptedForAttestation` for this episode via the
+ * Attestcoin Protocol and called `execute()` on the Creditcoin ASC; a
+ * centralized relayer's word is not what makes this true, the ASC's own
+ * verified state is.
+ */
+export interface EpisodeAttestation {
+  /** Creditcoin CC3 testnet. */
+  chain_id: number;
+  /** AttestcoinSettlement.execute() tx on Creditcoin. */
+  tx: string;
+  /** ASCBase's own dedupe key for this proof — stable per (chainKey, block, txIndex). */
+  query_id: string;
+  attested_at: number;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { explorerTx } from "@/lib/chain/config";
+import { explorerCreditcoinTx, explorerTx } from "@/lib/chain/config";
 import { Traces } from "./traces";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -95,6 +95,20 @@ function EpisodeRow({ episode }: { episode: StoredEpisode }) {
           >
             on-chain #{episode.anchor.onchain_episode_id}
           </a>
+        ) : null}
+        {episode.attestation ? (
+          <>
+            <span aria-hidden>·</span>
+            <a
+              href={explorerCreditcoinTx(episode.attestation.tx)}
+              target="_blank"
+              rel="noreferrer"
+              className="interactive text-accent underline decoration-dotted"
+              title="Verified by the Attestcoin ASC on Creditcoin testnet"
+            >
+              verified on Creditcoin
+            </a>
+          </>
         ) : null}
         {verified ? (
           <>

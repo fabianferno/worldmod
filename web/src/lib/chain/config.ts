@@ -66,4 +66,11 @@ export function explorerAddress(address: string): string {
   return `${CHAIN.blockExplorers?.default.url ?? "https://sepolia.etherscan.io"}/address/${address}`;
 }
 
+/** Creditcoin CC3 testnet — where the Attestcoin ASC's proof lands. See attestcoin.md. */
+export const CREDITCOIN_CHAIN_ID = 102031;
+
+export function explorerCreditcoinTx(hash: string): string {
+  return `https://creditcoin-testnet.blockscout.com/tx/${hash}`;
+}
+
 export { defineChain };
