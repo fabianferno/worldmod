@@ -135,15 +135,14 @@ social-recovery path in the codebase right now — product-spec §10.3's ask for
 a recoverable identity is unmet (World App/MiniKit was one attempt at this and
 was removed; don't resurrect it without discussing scope first).
 
-### `trainer/` and `subgraph/` — standalone, not both wired in
+### `trainer/` — standalone, one live wiring point
 
-`trainer/` is offline Python (PyTorch): `run.py` writes
-`web/public/model-results.json`, which `/b/model` renders. `export_live.py`
-exports an ONNX model to `web/public/models/world/` that the Node server
-behind `/c` steps through frame-by-frame during capture (`lib/worldmodel/`) —
-this is the one live wiring point between trainer output and the running app.
+Offline Python (PyTorch): `run.py` writes `web/public/model-results.json`,
+which `/b/model` renders. `export_live.py` exports an ONNX model to
+`web/public/models/world/` that the Node server behind `/c` steps through
+frame-by-frame during capture (`lib/worldmodel/`) — this is the one live
+wiring point between trainer output and the running app.
 
-`subgraph/` (The Graph, AssemblyScript mappings over the six Sepolia
-contracts) is *not* wired into `web/` — nothing in `web/src` queries it. It
-compiles and is ready to deploy but needs a Graph Studio key; treat it as a
-reference implementation, not a live dependency.
+There is no subgraph or other indexer in this repo — provenance queries go
+straight to the contracts (`lib/chain/relay.ts`'s `publicClient`,
+`lib/chain/datasets.ts`) rather than through an indexed graph.

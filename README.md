@@ -20,7 +20,6 @@ Full specification: [`product-spec.md`](product-spec.md).
 | [`web/`](web) | The PWA — contributor capture, buyer dashboard, validator, marketplace API |
 | [`contracts/`](contracts) | Solidity registries and escrow (Foundry) |
 | [`trainer/`](trainer) | World model, scaling curve, federated rounds (PyTorch) |
-| [`subgraph/`](subgraph) | The provenance graph, indexed from the six contracts |
 | [`docs/superpowers/specs/`](docs/superpowers/specs) | Design document for the PWA |
 | [attestcoin](https://github.com/Ashar20/attestcoin) (separate repo) | The Attestcoin ASC on Creditcoin testnet that proves a Sepolia settlement — see below |
 
@@ -127,9 +126,9 @@ a contributor withdraws with their own signature. All six §11 contracts are
 live (see [`contracts/deployments.json`](contracts/deployments.json)),
 including relayed submission so a contributor never needs gas of their own.
 Every episode gets a real IPFS content address, pinned to a local node. A
-subgraph indexes all six contracts, built and ready to deploy. A world model
-and federated rounds over the real episodes, with a working account page for
-a contributor to see their own history and collect their own balance.
+world model and federated rounds over the real episodes, with a working
+account page for a contributor to see their own history and collect their own
+balance.
 
 **Measured and not good enough yet.** The world model does not beat a
 "predict no change" baseline. Five episodes across three contributors now,

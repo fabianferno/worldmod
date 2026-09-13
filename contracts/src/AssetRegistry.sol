@@ -16,7 +16,7 @@ import {Relayable} from "./Relayable.sol";
  * sketches `getEligibleAssets(requiredModalities)`, but an on-chain function
  * that loops every registered asset is unbounded — it costs more as the network
  * grows and eventually cannot be called at all. The mask makes eligibility a
- * single AND, and enumeration belongs in the subgraph, which is built for it.
+ * single AND, and enumeration belongs off-chain, in an indexer, not this contract.
  */
 contract AssetRegistry is Relayable {
     /// @dev Bit positions mirror product-spec §3.1's modality table.
