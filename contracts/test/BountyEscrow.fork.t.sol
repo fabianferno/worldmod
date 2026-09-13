@@ -387,6 +387,30 @@ contract BountyEscrowForkTest is Test {
         assertEq(escrow.balanceOf(treasury), SMALL_TREASURY / SMALL_MAX);
     }
 
+    /**
+     * @dev attestcoin.md's A2: a dedicated, unambiguous event an off-chain
+     * worker can decode without guessing at a generic event's meaning —
+     * `EpisodeAccepted` already exists for the marketplace's own use, but
+     * nothing before this named itself for attestation or carried the
+     * validator's score. Both are needed on the Creditcoin side: the
+     * attestor proves this exact Sepolia tx happened, and the ASC's business
+     * logic reads `score` to decide what "accepted" was worth.
+     */
+    function test_emitsAttestationEventOnAcceptance() public onlyForked {
+        _createSmallBounty();
+
+        vm.prank(contributor);
+        uint256 id = episodes.submitEpisode(assetId, SMALL, keccak256("one"), "s3://ep");
+        vm.prank(validator);
+        episodes.recordValidation(id, 8310, EpisodeRegistry.TrustLevel.Heuristic);
+
+        vm.expectEmit(true, true, true, true, address(escrow));
+        emit BountyEscrow.EpisodeAcceptedForAttestation(id, contributor, 8310, SMALL);
+
+        vm.prank(buyer);
+        escrow.acceptEpisode(SMALL, id);
+    }
+
     function test_settlesTheUtilityPoolByMeasuredShare() public onlyForked {
         _createSmallBounty();
 

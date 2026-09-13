@@ -25,12 +25,12 @@ export interface ChainAddresses {
   usdc: `0x${string}`;
 }
 
-/** Deployed 2026-09-04. Mirrors contracts/deployments.json. */
+/** Mirrors contracts/deployments.json. BountyEscrow redeployed 2026-09-10 for EpisodeAcceptedForAttestation. */
 export const ADDRESSES: ChainAddresses = {
   entityRegistry: "0x5f73D8d846AC9E8d487072f7Bd09af5e4E5c8928",
   assetRegistry: "0xd167a52404E546FF1342faf91f6c097568039708",
   episodeRegistry: "0xA5dB7Ad4BcCA2E2a189c257606c4B96AD32b563F",
-  bountyEscrow: "0x0Be163d4795D77dC8CdB2cAedF08e213ADef27D6",
+  bountyEscrow: "0x08310053F696a09B837fdcA8b65E041570ff2CE3",
   datasetRegistry: "0x1df8feDf50394A9e0f78cb0EF8F187D587812cbB",
   federatedRound: "0x65297C410B96C3604b0A41921e355B24E6cf782e",
   usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",

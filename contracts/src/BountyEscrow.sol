@@ -78,6 +78,12 @@ contract BountyEscrow {
 
     event BountyCreated(bytes32 indexed bountyId, address indexed buyer, uint96 budget);
     event EpisodeAccepted(bytes32 indexed bountyId, uint256 indexed episodeId, address contributor, uint96 amount);
+    /// @dev attestcoin.md's A2: a dedicated event for the Attestcoin readability
+    /// worker to key off — unambiguous by name, and carrying the validator's
+    /// score, which `EpisodeAccepted` above does not.
+    event EpisodeAcceptedForAttestation(
+        uint256 indexed episodeId, address indexed contributor, uint16 score, bytes32 indexed bountyId
+    );
     event Withdrawn(address indexed account, uint256 amount);
     event BountyRefunded(bytes32 indexed bountyId, address indexed buyer, uint256 amount);
     event UtilityPaid(bytes32 indexed bountyId, address indexed contributor, uint32 shareBps, uint256 amount);
@@ -207,7 +213,8 @@ contract BountyEscrow {
 
         EpisodeRegistry.Episode memory episode = episodes.getEpisode(episodeId);
         if (episode.bountyId != bountyId) revert WrongBounty();
-        if (!episodes.getValidation(episodeId).recorded) revert EpisodeNotValidated();
+        EpisodeRegistry.Validation memory validation = episodes.getValidation(episodeId);
+        if (!validation.recorded) revert EpisodeNotValidated();
 
         episodePaid[episodeId] = true;
         bounty.accepted += 1;
@@ -221,7 +228,7 @@ contract BountyEscrow {
         uint256 validatorCut = uint256(bounty.validatorFee) / bounty.maxEpisodes;
         uint256 treasuryCut = uint256(bounty.treasuryFee) / bounty.maxEpisodes;
 
-        address validator = episodes.getValidation(episodeId).validator;
+        address validator = validation.validator;
         if (validatorCut > 0 && validator != address(0)) {
             balanceOf[validator] += validatorCut;
         } else {
@@ -239,6 +246,7 @@ contract BountyEscrow {
         bounty.spent += uint96(uint256(bounty.perEpisode) + validatorCut + treasuryCut);
 
         emit EpisodeAccepted(bountyId, episodeId, episode.contributor, bounty.perEpisode);
+        emit EpisodeAcceptedForAttestation(episodeId, episode.contributor, validation.score, bountyId);
         if (validatorCut > 0 || treasuryCut > 0) {
             emit FeeAccrued(bountyId, validator, validatorCut, treasuryCut);
         }

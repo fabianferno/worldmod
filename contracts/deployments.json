@@ -8,14 +8,15 @@
       "EntityRegistry": "0x5f73D8d846AC9E8d487072f7Bd09af5e4E5c8928",
       "AssetRegistry": "0xd167a52404E546FF1342faf91f6c097568039708",
       "EpisodeRegistry": "0xA5dB7Ad4BcCA2E2a189c257606c4B96AD32b563F",
-      "BountyEscrow": "0x0Be163d4795D77dC8CdB2cAedF08e213ADef27D6",
+      "BountyEscrow": "0x08310053F696a09B837fdcA8b65E041570ff2CE3",
       "DatasetRegistry": "0x1df8feDf50394A9e0f78cb0EF8F187D587812cbB",
       "FederatedRound": "0x65297C410B96C3604b0A41921e355B24E6cf782e"
     },
     "notes": [
       "USDC is Circle's real testnet token, not one we deployed.",
       "The deployer is the episode registry's owner and its first validator, and the escrow's oracle and treasury.",
-      "BountyEscrow was redeployed on 2026-09-04 to add settleUtility; the first deployment at 0x583A5Cb7CF570F11CC24be7c4eB74F500Dc4B3b5 could not pay out its utility pool and is abandoned."
+      "BountyEscrow was redeployed on 2026-09-04 to add settleUtility; the first deployment at 0x583A5Cb7CF570F11CC24be7c4eB74F500Dc4B3b5 could not pay out its utility pool and is abandoned.",
+      "BountyEscrow was redeployed again on 2026-09-10 (tx 0xb4c89348d7bd5a5e01fede075b8ee05526fd11c29773e9a26e60a5a253aeab17) to add EpisodeAcceptedForAttestation, attestcoin.md's A2 — the previous deployment at 0x0Be163d4795D77dC8CdB2cAedF08e213ADef27D6 has no way to add an event retroactively and is abandoned; its accepted-episode/balance history does not carry over."
     ]
   }
 }
